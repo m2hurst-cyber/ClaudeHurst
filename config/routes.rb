@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     resources :contacts, only: %i[show edit update destroy]
 
     resources :deals, only: %i[index show edit update destroy] do
+      resources :activities, shallow: true, only: %i[index new create]
       collection do
         get :pipeline
       end

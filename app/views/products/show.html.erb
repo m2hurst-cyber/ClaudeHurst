@@ -1,48 +1,9 @@
-<div class="flex justify-between items-start mb-4">
-  <div>
-    <h1 class="text-2xl font-bold"><%= @product.name %> <span class="text-slate-500 font-mono text-base">(<%= @product.sku %>)</span></h1>
-    <div class="text-sm text-slate-500"><%= link_to @product.company.name, @product.company %> · <%= @product.format %> · <%= @product.case_pack %>/case</div>
-  </div>
-  <div class="flex gap-2">
-    <%= link_to "Edit", edit_product_path(@product), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ New BOM", new_product_bom_path(@product), class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
-  </div>
-</div>
-
-<% if @product.description.present? %>
-  <p class="text-sm text-slate-700 bg-white border rounded p-3 mb-4"><%= simple_format @product.description %></p>
-<% end %>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div class="bg-white border rounded p-4">
-    <h2 class="font-semibold mb-2">BOMs</h2>
-    <% if @boms.any? %>
-      <ul class="text-sm divide-y">
-        <% @boms.each do |bom| %>
-          <li class="py-1.5 flex justify-between">
-            <span><%= link_to bom.code, bom, class: "text-sky-700 hover:underline" %> <%= "(active)" if bom.active? %></span>
-            <span class="text-slate-500"><%= bom.items.count %> items · yield <%= bom.yield_units %></span>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-sm text-slate-500">No BOMs yet.</p>
-    <% end %>
-  </div>
-
-  <div class="bg-white border rounded p-4">
-    <h2 class="font-semibold mb-2">Recent finished-good lots</h2>
-    <% if @fg_lots.any? %>
-      <ul class="text-sm divide-y">
-        <% @fg_lots.each do |lot| %>
-          <li class="py-1.5 flex justify-between">
-            <span><%= link_to lot.lot_code, lot, class: "text-sky-700 hover:underline font-mono" %></span>
-            <span class="text-slate-500"><%= nice_date(lot.produced_on) %> · <%= lot.quantity_on_hand %> on hand</span>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-sm text-slate-500">No production yet.</p>
-    <% end %>
-  </div>
-</div>
+<%= render "shared/operator_cockpit",
+  title: @product.name,
+  subtitle: "Define how the product is built and initiate production.",
+  primary_action: link_to("+ Production Run", new_production_run_path(product_id: @product.id), class: "inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm"),
+  actions: [
+    link_to("+ BOM", new_product_bom_path(@product), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("View company", @product.company, class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("Edit", edit_product_path(@product), class: "rounded-xl border px-3 py-2 text-sm text-center")
+  ] %>

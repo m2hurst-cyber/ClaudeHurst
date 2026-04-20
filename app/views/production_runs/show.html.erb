@@ -24,7 +24,7 @@
     <% end %>
     <% if @run.completed? %>
       <%= button_to "Close", close_production_run_path(@run), method: :post, class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
-      <%= link_to "Create invoice", create_invoice_production_run_path(@run), class: "border px-3 py-1.5 rounded text-sm" %>
+      <%= button_to "Create invoice", create_invoice_production_run_path(@run), method: :post, class: "border px-3 py-1.5 rounded text-sm" %>
     <% end %>
   </div>
 </div>

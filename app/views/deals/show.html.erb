@@ -1,15 +1,14 @@
-<div class="flex justify-between items-start mb-4">
-  <div>
-    <h1 class="text-2xl font-bold"><%= @deal.name %></h1>
-    <div class="text-sm text-slate-500"><%= status_badge @deal.stage %> · <%= money(@deal.amount_cents) %> · <%= link_to @deal.company.name, @deal.company %></div>
-  </div>
-  <div class="flex gap-2">
-    <%= link_to "Edit", edit_deal_path(@deal), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Activity", new_company_activity_path(@deal.company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= button_to "Delete", deal_path(@deal), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
-  </div>
-</div>
+<%= render "shared/operator_cockpit",
+  title: @deal.name,
+  subtitle: "Move the deal forward or capture activity.",
+  primary_action: link_to("+ Activity", new_deal_activity_path(@deal), class: "inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm"),
+  actions: [
+    link_to("+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("+ Task", new_task_path(deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("Advance stage", advance_deal_path(@deal), data: { turbo_method: :post }, class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("View company", @deal.company, class: "rounded-xl border px-3 py-2 text-sm text-center")
+  ] %>
+
 <div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">
   <div><strong>Owner:</strong> <%= @deal.owner&.display_name %></div>
   <div><strong>Expected close:</strong> <%= nice_date(@deal.expected_close_on) %></div>
