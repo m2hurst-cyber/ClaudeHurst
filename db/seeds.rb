@@ -6,7 +6,7 @@ require "securerandom"
 puts "Seeding ClaudeHurst..."
 
 # ----- Users -----
-admin = User.find_or_create_by!(email: "admin@claudehurst.test") do |u|
+admin = User.find_or_create_by!(email: "admin@greatsoutherncopacker.test") do |u|
   u.first_name = "Ada"
   u.last_name = "Hurst"
   u.role = "admin"
@@ -16,11 +16,11 @@ admin = User.find_or_create_by!(email: "admin@claudehurst.test") do |u|
 end
 
 staff_specs = [
-  { email: "sally.sales@claudehurst.test",   first: "Sally",  last: "Sales",   role: "sales" },
-  { email: "omar.ops@claudehurst.test",      first: "Omar",   last: "Ops",     role: "ops" },
-  { email: "fred.finance@claudehurst.test",  first: "Fred",   last: "Finance", role: "finance" },
-  { email: "sam.sales@claudehurst.test",     first: "Sam",    last: "Sales",   role: "sales" },
-  { email: "olive.ops@claudehurst.test",     first: "Olive",  last: "Ops",     role: "ops" }
+  { email: "sally.sales@greatsoutherncopacker.test",   first: "Sally",  last: "Sales",   role: "sales" },
+  { email: "omar.ops@greatsoutherncopacker.test",      first: "Omar",   last: "Ops",     role: "ops" },
+  { email: "fred.finance@greatsoutherncopacker.test",  first: "Fred",   last: "Finance", role: "finance" },
+  { email: "sam.sales@greatsoutherncopacker.test",     first: "Sam",    last: "Sales",   role: "sales" },
+  { email: "olive.ops@greatsoutherncopacker.test",     first: "Olive",  last: "Ops",     role: "ops" }
 ]
 staff = staff_specs.map do |spec|
   User.find_or_create_by!(email: spec[:email]) do |u|
@@ -283,4 +283,4 @@ puts "  reminders: #{Reminder.count}"
 AuditLogger.record(user: admin, action: "seeds.loaded", subject: admin,
                    metadata: { at: Time.current.iso8601 })
 
-puts "Done. Sign in as admin@claudehurst.test / password123"
+puts "Done. Sign in as admin@greatsoutherncopacker.test / password123"

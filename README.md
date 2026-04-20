@@ -25,10 +25,10 @@ Sign in at <http://localhost:3000>:
 
 | Email                                  | Password      | Role    |
 | -------------------------------------- | ------------- | ------- |
-| admin@claudehurst.test                 | password123   | admin   |
-| sally.sales@claudehurst.test           | password123   | sales   |
-| omar.ops@claudehurst.test              | password123   | ops     |
-| fred.finance@claudehurst.test          | password123   | finance |
+| admin@greatsoutherncopacker.test                 | password123   | admin   |
+| sally.sales@greatsoutherncopacker.test           | password123   | sales   |
+| omar.ops@greatsoutherncopacker.test              | password123   | ops     |
+| fred.finance@greatsoutherncopacker.test          | password123   | finance |
 
 Mail preview: <http://localhost:3000/letter_opener>
 Job console (admin only): <http://localhost:3000/jobs>
