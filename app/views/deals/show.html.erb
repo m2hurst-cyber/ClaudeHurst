@@ -7,6 +7,7 @@
     <%= link_to "Edit", edit_deal_path(@deal), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Activity", new_company_activity_path(@deal.company), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= button_to "Delete", deal_path(@deal), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
   </div>
 </div>
 <div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">

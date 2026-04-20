@@ -12,4 +12,5 @@
   <% unless @task.completed? %>
     <%= button_to "Complete", task_path(@task, task: { complete: 1 }), method: :patch, class: "bg-emerald-600 text-white px-3 py-1.5 rounded text-sm" %>
   <% end %>
+  <%= button_to "Delete", task_path(@task), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
 </div>

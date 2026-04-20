@@ -13,6 +13,7 @@
       <%= link_to "+ Payment", new_invoice_payment_path(@invoice), class: "border px-3 py-1.5 rounded text-sm" %>
     <% end %>
     <%= button_to "Void", void_it_invoice_path(@invoice), method: :post, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
+    <%= button_to "Delete", invoice_path(@invoice), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
   </div>
 </div>
 

@@ -12,6 +12,7 @@
     <% if @contract.status == "signed" %>
       <%= button_to "Activate", activate_contract_path(@contract), method: :post, class: "bg-emerald-600 text-white px-3 py-1.5 rounded text-sm" %>
     <% end %>
+    <%= button_to "Delete", contract_path(@contract), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
   </div>
 </div>
 <div class="bg-white border rounded p-4 grid grid-cols-3 gap-2 text-sm mb-4">
