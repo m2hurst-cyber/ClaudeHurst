@@ -3,73 +3,14 @@
     <h1 class="text-2xl font-bold"><%= @company.name %></h1>
     <div class="text-sm text-slate-500"><%= status_badge @company.status %> · Owner: <%= @company.owner&.display_name || "—" %></div>
   </div>
-  <div class="flex gap-2">
+  <div class="flex gap-2 flex-wrap">
     <%= link_to "Edit", edit_company_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Contact", new_company_contact_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Deal", new_company_deal_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Product (SKU)", new_company_product_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Product", new_company_product_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Quote", new_quote_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
     <%= link_to "+ Contract", new_contract_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
-  </div>
-</div>
-
-<div class="grid grid-cols-3 gap-4">
-  <div class="col-span-2 space-y-4">
-    <div class="bg-white rounded shadow-sm border p-4">
-      <h2 class="font-semibold mb-2">Deals (<%= @deals.size %>)</h2>
-      <ul class="text-sm divide-y">
-        <% @deals.each do |d| %>
-          <li class="py-1.5 flex justify-between">
-            <%= link_to d.name, d, class: "text-sky-700" %>
-            <span><%= status_badge d.stage %> <%= money(d.amount_cents) %></span>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-    <div class="bg-white rounded shadow-sm border p-4">
-      <h2 class="font-semibold mb-2">Products / SKUs (<%= @products.size %>)</h2>
-      <ul class="text-sm divide-y">
-        <% @products.each do |p| %>
-          <li class="py-1.5"><%= link_to p.display_name, p, class: "text-sky-700" %> · <span class="text-slate-500"><%= p.format %></span></li>
-        <% end %>
-      </ul>
-    </div>
-    <div class="bg-white rounded shadow-sm border p-4">
-      <h2 class="font-semibold mb-2">Activity timeline</h2>
-      <%= link_to "+ Log activity", new_company_activity_path(@company), class: "text-xs text-sky-700" %>
-      <ul class="text-sm divide-y mt-2">
-        <% @activities.each do |a| %>
-          <li class="py-1.5">
-            <div class="flex justify-between">
-              <strong><%= a.kind.humanize %></strong>
-              <span class="text-slate-400 text-xs"><%= nice_datetime a.occurred_at %></span>
-            </div>
-            <div class="text-slate-600"><%= a.body %></div>
-            <div class="text-xs text-slate-400">by <%= a.user&.display_name || "system" %></div>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-  </div>
-  <div class="space-y-4">
-    <div class="bg-white rounded shadow-sm border p-4">
-      <h2 class="font-semibold mb-2">Contacts (<%= @contacts.size %>)</h2>
-      <ul class="text-sm divide-y">
-        <% @contacts.each do |c| %>
-          <li class="py-1.5">
-            <%= link_to c.display_name, edit_contact_path(c), class: "text-sky-700" %>
-            <% if c.primary? %><span class="text-xs bg-emerald-100 text-emerald-700 px-1 rounded ml-1">primary</span><% end %>
-            <div class="text-xs text-slate-500"><%= c.title %> · <%= c.email %></div>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-    <div class="bg-white rounded shadow-sm border p-4 text-sm">
-      <div><strong>Website:</strong> <%= @company.website %></div>
-      <div><strong>Industry:</strong> <%= @company.industry %></div>
-      <% if @company.notes.present? %>
-        <div class="mt-2"><strong>Notes:</strong><br><%= simple_format @company.notes %></div>
-      <% end %>
-    </div>
+    <%= link_to "+ Task", new_task_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Reminder", new_reminder_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
   </div>
 </div>
