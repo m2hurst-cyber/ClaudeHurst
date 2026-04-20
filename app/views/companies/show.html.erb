@@ -1,16 +1,12 @@
-<div class="flex justify-between items-start mb-4">
-  <div>
-    <h1 class="text-2xl font-bold"><%= @company.name %></h1>
-    <div class="text-sm text-slate-500"><%= status_badge @company.status %> · Owner: <%= @company.owner&.display_name || "—" %></div>
-  </div>
-  <div class="flex gap-2 flex-wrap">
-    <%= link_to "Edit", edit_company_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Contact", new_company_contact_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Deal", new_company_deal_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Product", new_company_product_path(@company), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Quote", new_quote_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Contract", new_contract_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Task", new_task_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
-    <%= link_to "+ Reminder", new_reminder_path(company_id: @company.id), class: "border px-3 py-1.5 rounded text-sm" %>
-  </div>
-</div>
+<%= render "shared/operator_cockpit",
+  title: @company.name,
+  subtitle: "Control the customer relationship, commercial pipeline, and next operating step.",
+  primary_action: link_to("+ Deal", new_company_deal_path(@company), class: "inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm"),
+  actions: [
+    link_to("+ Contact", new_company_contact_path(@company), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("+ Quote", new_quote_path(company_id: @company.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("+ Product", new_company_product_path(@company), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("+ Task", new_task_path(company_id: @company.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("+ Reminder", new_reminder_path(company_id: @company.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    link_to("Edit", edit_company_path(@company), class: "rounded-xl border px-3 py-2 text-sm text-center")
+  ] %>
