@@ -1,20 +1,8 @@
 <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden">
-  <div class="mx-auto grid max-w-md grid-cols-4 gap-1 rounded-2xl bg-slate-100/80 p-1 text-[11px] font-medium text-slate-500">
-    <%= link_to root_path, class: "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 transition hover:bg-white hover:text-slate-950 hover:shadow-sm", aria: { label: "Home" } do %>
-      <span class="grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm" aria-hidden="true">⌂</span>
-      <span>Home</span>
-    <% end %>
-    <%= link_to deals_path, class: "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 transition hover:bg-white hover:text-slate-950 hover:shadow-sm", aria: { label: "Deals" } do %>
-      <span class="grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm" aria-hidden="true">◇</span>
-      <span>Deals</span>
-    <% end %>
-    <%= link_to production_runs_path, class: "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 transition hover:bg-white hover:text-slate-950 hover:shadow-sm", aria: { label: "Production Runs" } do %>
-      <span class="grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm" aria-hidden="true">▣</span>
-      <span>Runs</span>
-    <% end %>
-    <%= link_to invoices_path, class: "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 transition hover:bg-white hover:text-slate-950 hover:shadow-sm", aria: { label: "Invoices" } do %>
-      <span class="grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm" aria-hidden="true">$</span>
-      <span>Invoices</span>
-    <% end %>
+  <div class="mx-auto grid max-w-md grid-cols-4 gap-1 rounded-2xl bg-slate-100/80 p-1 text-[11px] font-medium">
+    <%= mobile_nav_link("Home", root_path, "⌂") %>
+    <%= mobile_nav_link("Deals", deals_path, "◇") %>
+    <%= mobile_nav_link("Runs", production_runs_path, "▣") %>
+    <%= mobile_nav_link("Invoices", invoices_path, "$") %>
   </div>
 </nav>
