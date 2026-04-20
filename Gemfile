@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 ruby "3.3.6"
 
-gem "rails", "~> 7.1.6"
+gem "rails", ">= 7.2.3.1", "< 7.3"
 gem "sprockets-rails"
 gem "pg", "~> 1.5"
 gem "puma", ">= 5.0"
@@ -15,7 +15,7 @@ gem "bootsnap", require: false
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Auth & authorization
-gem "devise", "~> 4.9"
+gem "devise", "~> 5.0"
 gem "pundit", "~> 2.3"
 
 # UI & forms
