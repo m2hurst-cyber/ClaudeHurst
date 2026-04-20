@@ -1,5 +1,6 @@
 class TasksController < ApplicationController
   before_action :set_task, only: %i[show edit update destroy]
+  before_action :set_subject, only: %i[new create]
 
   def index
     scope = Task.kept.by_due
@@ -10,13 +11,13 @@ class TasksController < ApplicationController
   def show; end
 
   def new
-    @task = Task.new(assignee: current_user, priority: "normal")
+    @task = Task.new(subject: @subject, assignee: current_user, priority: "normal")
   end
 
   def create
-    @task = Task.new(task_params)
+    @task = Task.new(task_params.merge(subject: @subject))
     if @task.save
-      redirect_to tasks_path, notice: "Task created."
+      redirect_to(@subject || tasks_path, notice: "Task created.")
     else
       render :new, status: :unprocessable_entity
     end
@@ -45,6 +46,16 @@ class TasksController < ApplicationController
 
   def set_task
     @task = Task.kept.find(params[:id])
+  end
+
+  def set_subject
+    @subject = if params[:company_id]
+                 Company.kept.find(params[:company_id])
+               elsif params[:deal_id]
+                 Deal.kept.find(params[:deal_id])
+               elsif params[:product_id]
+                 Product.kept.find(params[:product_id])
+               end
   end
 
   def task_params
