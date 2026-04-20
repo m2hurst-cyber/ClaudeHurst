@@ -4,7 +4,7 @@
       <%= raw_material.errors.full_messages.to_sentence %>
     </div>
   <% end %>
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div><%= f.label :code %><%= f.text_field :code, class: "border rounded px-2 py-1 w-full font-mono" %></div>
     <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :category %><%= f.select :category, RawMaterial::CATEGORIES, {}, class: "border rounded px-2 py-1 w-full" %></div>

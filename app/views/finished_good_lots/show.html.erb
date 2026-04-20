@@ -12,7 +12,7 @@
   </div>
 </div>
 
-<div class="grid grid-cols-3 gap-4 mb-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Produced</div><div class="text-xl font-semibold"><%= @lot.quantity_produced %></div></div>
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">On hand</div><div class="text-xl font-semibold"><%= @lot.quantity_on_hand %></div></div>
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Shipped</div><div class="text-xl font-semibold"><%= @lot.quantity_produced - @lot.quantity_on_hand %></div></div>

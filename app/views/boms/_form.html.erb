@@ -5,7 +5,7 @@
     </div>
   <% end %>
   <div class="text-sm text-slate-600">Product: <strong><%= bom.product.display_name %></strong></div>
-  <div class="grid grid-cols-3 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
     <div><%= f.label :version %><%= f.number_field :version, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :yield_units, "Yield (units per batch)" %><%= f.number_field :yield_units, class: "border rounded px-2 py-1 w-full" %></div>
     <div class="flex items-center gap-2 pt-5"><%= f.check_box :active %><%= f.label :active, "Active" %></div>

@@ -6,7 +6,7 @@
   <% end %>
   <div><%= f.label :product_id, "Product" %><%= f.collection_select :product_id, Product.active.includes(:company).order(:name), :id, :display_name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :production_line_id, "Line" %><%= f.collection_select :production_line_id, ProductionLine.active.order(:name), :id, :name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div><%= f.label :scheduled_start %><%= f.datetime_local_field :scheduled_start, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :scheduled_end %><%= f.datetime_local_field :scheduled_end, class: "border rounded px-2 py-1 w-full" %></div>
   </div>

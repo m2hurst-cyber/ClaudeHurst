@@ -29,7 +29,7 @@
   </div>
 </div>
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Planned</div><div class="text-xl font-semibold"><%= @run.planned_units %></div></div>
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Actual</div><div class="text-xl font-semibold"><%= @run.actual_units || "—" %></div></div>
   <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Scheduled start</div><div class="text-sm font-semibold"><%= nice_datetime(@run.scheduled_start) %></div></div>

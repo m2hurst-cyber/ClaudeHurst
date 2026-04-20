@@ -11,9 +11,9 @@
   </div>
 </div>
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
   <div class="bg-white border rounded p-4 text-sm">
-    <div class="grid grid-cols-2 gap-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
       <div class="text-slate-500">Sign-ins</div><div><%= @user.sign_in_count %></div>
       <div class="text-slate-500">Last sign-in</div><div><%= @user.current_sign_in_at ? nice_datetime(@user.current_sign_in_at) : "—" %></div>
       <div class="text-slate-500">Owned companies</div><div><%= @user.owned_companies.count %></div>

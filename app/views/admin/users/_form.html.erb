@@ -4,7 +4,7 @@
       <%= user.errors.full_messages.to_sentence %>
     </div>
   <% end %>
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div><%= f.label :first_name %><%= f.text_field :first_name, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :last_name %><%= f.text_field :last_name, class: "border rounded px-2 py-1 w-full" %></div>
   </div>

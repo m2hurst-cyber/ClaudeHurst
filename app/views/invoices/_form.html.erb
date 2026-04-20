@@ -2,12 +2,12 @@
   <% if invoice.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= invoice.errors.full_messages.to_sentence %></div>
   <% end %>
-  <div class="grid grid-cols-3 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
     <div><%= f.label :company_id %><%= f.collection_select :company_id, Company.kept.by_name, :id, :name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :contract_id %><%= f.collection_select :contract_id, Contract.all, :id, :number, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :production_run_id %><%= f.collection_select :production_run_id, ProductionRun.all, :id, :number, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
   </div>
-  <div class="grid grid-cols-3 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
     <div><%= f.label :issued_on %><%= f.date_field :issued_on, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :due_on %><%= f.date_field :due_on, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :currency %><%= f.text_field :currency, class: "border rounded px-2 py-1 w-full" %></div>

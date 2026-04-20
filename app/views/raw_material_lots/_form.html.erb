@@ -5,7 +5,7 @@
     </div>
   <% end %>
   <div class="text-sm text-slate-600">Raw material: <strong><%= lot.raw_material.name %></strong> (<%= lot.raw_material.uom %>)</div>
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div><%= f.label :lot_code %><%= f.text_field :lot_code, class: "border rounded px-2 py-1 w-full font-mono" %></div>
     <div><%= f.label :supplier %><%= f.text_field :supplier, class: "border rounded px-2 py-1 w-full" %></div>
     <div><%= f.label :received_on %><%= f.date_field :received_on, class: "border rounded px-2 py-1 w-full" %></div>
