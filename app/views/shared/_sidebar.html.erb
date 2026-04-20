@@ -10,20 +10,36 @@
         <div class="text-xs text-slate-400">Co-pack CRM · ERP</div>
       </div>
 
-      <nav class="flex-1 space-y-1 p-3 text-sm">
+      <nav class="flex-1 overflow-y-auto p-3 text-sm">
         <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">CRM</div>
         <%= link_to "Dashboard", root_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Companies", companies_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Deals", deals_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Pipeline", pipeline_deals_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Tasks", tasks_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Reminders", reminders_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
 
         <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">Sales</div>
         <%= link_to "Quotes", quotes_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Contracts", contracts_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Invoices", invoices_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
 
         <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">Production</div>
         <%= link_to "Products", products_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Runs", production_runs_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Lines", production_lines_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Raw materials", raw_materials_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+        <%= link_to "Finished goods", finished_good_lots_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+
+        <% if current_user&.admin? %>
+          <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">Admin</div>
+          <%= link_to "Users", admin_users_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+          <%= link_to "Audit log", admin_audit_logs_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+          <%= link_to "Jobs", "/jobs", class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+          <% if Rails.env.development? %>
+            <%= link_to "Mail inbox", "/letter_opener", class: "block rounded px-2 py-2 hover:bg-slate-800" %>
+          <% end %>
+        <% end %>
       </nav>
     </div>
   </aside>

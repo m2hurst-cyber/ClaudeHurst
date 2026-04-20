@@ -1,3 +1,10 @@
+<% advance_action = if @deal.next_stage
+     button_to("Advance to #{@deal.next_stage.humanize}",
+               advance_deal_path(@deal, stage: @deal.next_stage),
+               method: :post,
+               class: "w-full rounded-xl border px-3 py-2 text-sm text-center")
+   end %>
+
 <%= render "shared/operator_cockpit",
   title: @deal.name,
   subtitle: "Move the deal forward or capture activity.",
@@ -5,9 +12,9 @@
   actions: [
     link_to("+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
     link_to("+ Task", new_task_path(deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
-    link_to("Advance stage", advance_deal_path(@deal), data: { turbo_method: :post }, class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    advance_action,
     link_to("View company", @deal.company, class: "rounded-xl border px-3 py-2 text-sm text-center")
-  ] %>
+  ].compact %>
 
 <div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">
   <div><strong>Owner:</strong> <%= @deal.owner&.display_name %></div>

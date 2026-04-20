@@ -42,6 +42,14 @@ class Deal < ApplicationRecord
     !%w[closed_won closed_lost].include?(stage)
   end
 
+  PIPELINE_PROGRESSION = %w[lead qualified proposal negotiation closed_won].freeze
+
+  def next_stage
+    idx = PIPELINE_PROGRESSION.index(stage)
+    return nil if idx.nil? || idx == PIPELINE_PROGRESSION.length - 1
+    PIPELINE_PROGRESSION[idx + 1]
+  end
+
   private
 
   def mark_closed

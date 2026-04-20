@@ -6,7 +6,10 @@ class ProductionLinesController < ApplicationController
   end
 
   def show
-    @upcoming_runs = @line.production_runs.upcoming.limit(20)
+    runs = @line.production_runs.order(:scheduled_start)
+    @active_runs   = runs.where(status: %w[in_progress released])
+    @upcoming_runs = runs.where(status: "planned").limit(20)
+    @recent_runs   = runs.where(status: %w[completed closed]).reorder(scheduled_start: :desc).limit(10)
   end
 
   def new

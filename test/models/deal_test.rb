@@ -44,4 +44,15 @@ class DealTest < ActiveSupport::TestCase
     d.lose!
     assert_not d.open?
   end
+
+  test "next_stage walks the pipeline progression" do
+    d = build_deal
+    d.save!
+    assert_equal "qualified", d.next_stage
+    d.update_column(:stage, "qualified");   assert_equal "proposal",     d.next_stage
+    d.update_column(:stage, "proposal");    assert_equal "negotiation",  d.next_stage
+    d.update_column(:stage, "negotiation"); assert_equal "closed_won",   d.next_stage
+    d.update_column(:stage, "closed_won");  assert_nil d.next_stage
+    d.update_column(:stage, "closed_lost"); assert_nil d.next_stage
+  end
 end

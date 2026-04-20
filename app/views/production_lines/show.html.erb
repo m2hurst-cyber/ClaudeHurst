@@ -12,18 +12,34 @@
   <p class="text-sm text-slate-700 bg-white border rounded p-3 mb-4"><%= simple_format @line.description %></p>
 <% end %>
 
-<div class="bg-white border rounded p-4">
-  <h2 class="font-semibold mb-2">Upcoming runs</h2>
-  <% if @upcoming_runs.any? %>
-    <ul class="text-sm divide-y">
-      <% @upcoming_runs.each do |run| %>
-        <li class="py-1.5 flex justify-between">
-          <span><%= link_to run.number, run, class: "text-sky-700 hover:underline font-mono" %> · <%= run.product.display_name %></span>
-          <span class="text-slate-500"><%= nice_datetime(run.scheduled_start) %> · <%= status_badge run.status %></span>
-        </li>
+<div class="space-y-4">
+  <% [["Active now", @active_runs, "No runs released or in progress."],
+      ["Upcoming",   @upcoming_runs, "Nothing scheduled."],
+      ["Recently completed", @recent_runs, "Nothing closed out yet."]].each do |label, list, empty| %>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-2 flex items-center justify-between">
+        <span><%= label %></span>
+        <span class="text-xs text-slate-500"><%= list.size %></span>
+      </h2>
+      <% if list.any? %>
+        <ul class="text-sm divide-y">
+          <% list.each do |run| %>
+            <li class="py-2 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <%= link_to run.number, run, class: "text-sky-700 hover:underline font-mono" %>
+                · <%= run.product.display_name %>
+                <div class="text-xs text-slate-500">
+                  <%= nice_datetime(run.scheduled_start) %> → <%= nice_datetime(run.scheduled_end) %>
+                  · <%= run.planned_units %> planned<%= " / #{run.actual_units} actual" if run.actual_units %>
+                </div>
+              </div>
+              <%= status_badge run.status %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-slate-500"><%= empty %></p>
       <% end %>
-    </ul>
-  <% else %>
-    <p class="text-sm text-slate-500">No upcoming runs on this line.</p>
+    </div>
   <% end %>
 </div>
