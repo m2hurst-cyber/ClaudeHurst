@@ -14,6 +14,21 @@ module ApplicationHelper
     content_tag :span, status.to_s.humanize, class: "inline-block text-xs font-medium px-2 py-0.5 rounded #{color}"
   end
 
+  def mobile_nav_link(label, path, icon)
+    active = current_page?(path)
+    classes = [
+      "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 transition active:scale-95",
+      active ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-950 hover:shadow-sm"
+    ].join(" ")
+
+    link_to path, class: classes, aria: { label: label } do
+      safe_join([
+        content_tag(:span, icon, class: "grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm", aria: { hidden: true }),
+        content_tag(:span, label)
+      ])
+    end
+  end
+
   def money(cents, currency = "USD")
     Money.new(cents.to_i, currency).format
   end
