@@ -3,9 +3,9 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: hurst
-      POSTGRES_PASSWORD: hurst
-      POSTGRES_DB: claudehurst_development
+      POSTGRES_USER: gsc_user
+      POSTGRES_PASSWORD: gsc_user
+      POSTGRES_DB: great_southern_copacker_development
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
     build: .
     command: bash -lc "bin/rails db:prepare && bin/rails server -b 0.0.0.0 -p 3000"
     environment:
-      DATABASE_URL: postgres://hurst:hurst@db:5432/claudehurst_development
+      DATABASE_URL: postgres://gsc_user:gsc_user@db:5432/great_southern_copacker_development
       RAILS_ENV: development
       BIND: 0.0.0.0
     depends_on:
@@ -30,7 +30,7 @@ services:
     build: .
     command: bash -lc "bundle exec rake solid_queue:start"
     environment:
-      DATABASE_URL: postgres://hurst:hurst@db:5432/claudehurst_development
+      DATABASE_URL: postgres://gsc_user:gsc_user@db:5432/great_southern_copacker_development
       RAILS_ENV: development
     depends_on:
       - db

@@ -1,4 +1,4 @@
-# ClaudeHurst — Beverage Copacker CRM-ERP
+# Great Southern Copacker — Beverage Copacker CRM-ERP
 
 Single-tenant, internally-hosted CRM-ERP for a mid-market beverage copacker.
 Covers customer relationships, sales documents (quotes/contracts/invoices),

@@ -8,14 +8,14 @@ default: &default
 
 development:
   <<: *default
-  database: claudehurst_development
+  database: great_southern_copacker_development
 
 test:
   <<: *default
-  database: claudehurst_test
+  database: great_southern_copacker_test
 
 production:
   <<: *default
-  database: claudehurst_production
-  username: claudehurst
-  password: <%= ENV["CLAUDEHURST_DATABASE_PASSWORD"] %>
+  database: great_southern_copacker_production
+  username: greatsoutherncopacker
+  password: <%= ENV["GREAT_SOUTHERN_COPACKER_DATABASE_PASSWORD"] %>
