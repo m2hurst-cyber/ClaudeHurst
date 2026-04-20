@@ -1,12 +1,30 @@
-<header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-  <div class="text-sm text-slate-500">Signed in as <strong class="text-slate-800"><%= current_user.display_name %></strong> · <span class="capitalize"><%= current_user.role %></span></div>
-  <div class="flex items-center gap-4 text-sm">
-    <%= link_to notifications_path, class: "relative" do %>
-      <span>Notifications</span>
-      <% if current_notifications_count > 0 %>
-        <span class="absolute -top-1 -right-4 bg-red-500 text-white text-xs rounded-full px-1.5"><%= current_notifications_count %></span>
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3">
+  <div class="flex items-center justify-between gap-4">
+    <div class="min-w-0">
+      <div class="lg:hidden font-semibold tracking-tight text-slate-950">Great Southern</div>
+      <div class="hidden lg:block text-sm text-slate-500">
+        Signed in as
+        <strong class="text-slate-800"><%= current_user.display_name %></strong>
+        · <span class="capitalize"><%= current_user.role %></span>
+      </div>
+    </div>
+    <div class="hidden md:block flex-1 max-w-xl">
+      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+        Search companies, deals, runs, invoices...
+      </div>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <%= link_to notifications_path, class: "relative inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50" do %>
+        <span>●</span>
+        <% if current_notifications_count > 0 %>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-1">
+            <%= current_notifications_count %>
+          </span>
+        <% end %>
       <% end %>
-    <% end %>
-    <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-slate-500 hover:text-slate-800" %>
+      <div class="hidden sm:block">
+        <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-slate-500 hover:text-slate-900" %>
+      </div>
+    </div>
   </div>
 </header>

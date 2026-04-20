@@ -1,38 +1,38 @@
-<aside class="w-56 bg-slate-900 text-slate-200 min-h-screen flex flex-col">
-  <div class="px-5 py-4 border-b border-slate-800">
-    <%= link_to root_path, class: "font-bold text-white text-lg" do %>
-      Great Southern Copacker
+<aside class="hidden lg:flex w-64 bg-slate-950 text-slate-200 min-h-screen flex-col border-r border-slate-900">
+  <div class="px-5 py-5 border-b border-slate-800">
+    <%= link_to root_path, class: "block" do %>
+      <div class="text-white font-semibold tracking-tight text-lg">Great Southern</div>
+      <div class="text-slate-400 text-xs mt-0.5">Copacker CRM · ERP</div>
     <% end %>
-    <div class="text-xs text-slate-400">Co-pack CRM · ERP</div>
   </div>
-  <nav class="p-3 space-y-1 text-sm flex-1">
-    <div class="text-xs uppercase text-slate-500 px-2 pt-3 pb-1">CRM</div>
-    <%= link_to "Dashboard", root_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Companies", companies_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Deals", deals_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Pipeline", pipeline_deals_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Tasks", tasks_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Reminders", reminders_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
+  <nav class="p-3 flex-1 overflow-y-auto">
+    <div class="text-[11px] uppercase tracking-wider text-slate-500 px-3 pt-5 pb-2">CRM</div>
+    <%= link_to "Dashboard", root_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Companies", companies_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Deals", deals_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Pipeline", pipeline_deals_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Tasks", tasks_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Reminders", reminders_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
 
-    <div class="text-xs uppercase text-slate-500 px-2 pt-3 pb-1">Sales</div>
-    <%= link_to "Quotes", quotes_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Contracts", contracts_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Invoices", invoices_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
+    <div class="text-[11px] uppercase tracking-wider text-slate-500 px-3 pt-5 pb-2">Sales</div>
+    <%= link_to "Quotes", quotes_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Contracts", contracts_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Invoices", invoices_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
 
-    <div class="text-xs uppercase text-slate-500 px-2 pt-3 pb-1">Production</div>
-    <%= link_to "Products", products_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Production runs", production_runs_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Lines", production_lines_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Raw materials", raw_materials_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-    <%= link_to "Finished goods", finished_good_lots_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
+    <div class="text-[11px] uppercase tracking-wider text-slate-500 px-3 pt-5 pb-2">Production</div>
+    <%= link_to "Products", products_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Production runs", production_runs_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Lines", production_lines_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Raw materials", raw_materials_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+    <%= link_to "Finished goods", finished_good_lots_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
 
     <% if current_user&.admin? %>
-      <div class="text-xs uppercase text-slate-500 px-2 pt-3 pb-1">Admin</div>
-      <%= link_to "Users", admin_users_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-      <%= link_to "Audit log", admin_audit_logs_path, class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
-      <%= link_to "Jobs", "/jobs", class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
+      <div class="text-[11px] uppercase tracking-wider text-slate-500 px-3 pt-5 pb-2">Admin</div>
+      <%= link_to "Users", admin_users_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+      <%= link_to "Audit log", admin_audit_logs_path, class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
+      <%= link_to "Jobs", "/jobs", class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
       <% if Rails.env.development? %>
-        <%= link_to "Mail inbox", "/letter_opener", class: "block px-2 py-1.5 rounded hover:bg-slate-800" %>
+        <%= link_to "Mail inbox", "/letter_opener", class: "flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-900 hover:text-white transition" %>
       <% end %>
     <% end %>
   </nav>
