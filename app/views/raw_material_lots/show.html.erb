@@ -1,0 +1,21 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Lot <%= @lot.lot_code %></h1>
+    <div class="text-sm text-slate-500"><%= link_to @lot.raw_material.name, @lot.raw_material, class: "text-sky-700 hover:underline" %> · Received <%= nice_date(@lot.received_on) %> · Expires <%= nice_date(@lot.expires_on) %></div>
+  </div>
+  <div>
+    <%= link_to "Edit", edit_raw_material_lot_path(@lot), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<div class="bg-white border rounded p-4 mb-4">
+  <div class="grid grid-cols-3 gap-4 text-sm">
+    <div><div class="text-slate-500">Received qty</div><div class="text-xl font-semibold"><%= @lot.quantity_received %> <%= @lot.raw_material.uom %></div></div>
+    <div><div class="text-slate-500">On hand</div><div class="text-xl font-semibold"><%= @lot.quantity_on_hand %> <%= @lot.raw_material.uom %></div></div>
+    <div><div class="text-slate-500">Supplier</div><div class="text-xl font-semibold"><%= @lot.supplier || "—" %></div></div>
+  </div>
+</div>
+
+<% if @lot.notes.present? %>
+  <p class="text-sm text-slate-700 bg-white border rounded p-3"><%= simple_format @lot.notes %></p>
+<% end %>

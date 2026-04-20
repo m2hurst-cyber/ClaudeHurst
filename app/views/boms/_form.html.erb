@@ -1,0 +1,43 @@
+<%= form_with model: bom, url: (bom.persisted? ? bom_path(bom) : product_boms_path(bom.product)), class: "space-y-3 bg-white p-4 rounded shadow-sm border" do |f| %>
+  <% if bom.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm">
+      <%= bom.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+  <div class="text-sm text-slate-600">Product: <strong><%= bom.product.display_name %></strong></div>
+  <div class="grid grid-cols-3 gap-3">
+    <div><%= f.label :version %><%= f.number_field :version, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :yield_units, "Yield (units per batch)" %><%= f.number_field :yield_units, class: "border rounded px-2 py-1 w-full" %></div>
+    <div class="flex items-center gap-2 pt-5"><%= f.check_box :active %><%= f.label :active, "Active" %></div>
+  </div>
+  <div><%= f.label :notes %><%= f.text_area :notes, rows: 2, class: "border rounded px-2 py-1 w-full" %></div>
+
+  <h3 class="font-semibold text-sm mt-3">Items</h3>
+  <table class="w-full text-sm border">
+    <thead class="bg-slate-100">
+      <tr>
+        <th class="px-2 py-1 text-left">Raw material</th>
+        <th class="px-2 py-1 text-right">Qty per unit</th>
+        <th class="px-2 py-1 text-left">UOM</th>
+        <th class="px-2 py-1 text-left">Notes</th>
+        <th class="px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody data-controller="nested-form" data-nested-form-wrapper-selector-value=".bom-item">
+      <%= f.fields_for :items do |item| %>
+        <tr class="bom-item border-t">
+          <td class="px-2 py-1"><%= item.collection_select :raw_material_id, RawMaterial.kept.order(:name), :id, :name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-2 py-1"><%= item.number_field :quantity_per_unit, step: "0.0001", class: "border rounded px-2 py-1 w-full text-right" %></td>
+          <td class="px-2 py-1"><%= item.text_field :uom, class: "border rounded px-2 py-1 w-24", placeholder: "g, ml, ea" %></td>
+          <td class="px-2 py-1"><%= item.text_field :notes, class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-2 py-1 text-right">
+            <%= item.hidden_field :_destroy %>
+            <button type="button" onclick="this.closest('tr').querySelector('input[name*=_destroy]').value='1'; this.closest('tr').style.display='none';" class="text-red-600 text-xs">Remove</button>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

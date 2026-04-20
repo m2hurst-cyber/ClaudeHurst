@@ -1,0 +1,14 @@
+<%= form_with(model: deal, url: (deal.new_record? ? company_deals_path(deal.company) : deal_path(deal)),
+              class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>
+  <% if deal.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= deal.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :amount_cents, "Amount (cents)" %><%= f.number_field :amount_cents, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :stage %><%= f.select :stage, Deal::STAGES, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :expected_close_on %><%= f.date_field :expected_close_on, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :probability %><%= f.number_field :probability, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :owner_id, "Owner" %><%= f.collection_select :owner_id, User.active, :id, :display_name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :notes %><%= f.text_area :notes, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Drop, recreate, migrate, and seed the development DB. Destructive — dev only.
+set -euo pipefail
+bin/rails db:drop db:create db:migrate db:seed
+echo "Dev DB reset complete."

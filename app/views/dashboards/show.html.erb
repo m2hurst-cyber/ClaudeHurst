@@ -1,0 +1,90 @@
+<h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+
+<div class="grid grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded shadow-sm border p-4">
+    <div class="text-xs uppercase text-slate-500">Open deals</div>
+    <div class="text-2xl font-bold"><%= money(@open_deals_amount) %></div>
+    <div class="text-xs text-slate-500"><%= @open_deals_count %> deals</div>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <div class="text-xs uppercase text-slate-500">Overdue invoices</div>
+    <div class="text-2xl font-bold"><%= @overdue_invoices.count %></div>
+    <div class="text-xs text-slate-500">past due</div>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <div class="text-xs uppercase text-slate-500">Upcoming runs</div>
+    <div class="text-2xl font-bold"><%= @upcoming_runs.count %></div>
+    <div class="text-xs text-slate-500">scheduled</div>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <div class="text-xs uppercase text-slate-500">Low stock materials</div>
+    <div class="text-2xl font-bold"><%= @low_stock.count %></div>
+    <div class="text-xs text-slate-500">below reorder point</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-4">
+  <div class="bg-white rounded shadow-sm border p-4">
+    <h2 class="font-semibold mb-2">My tasks</h2>
+    <% if @my_tasks.any? %>
+      <ul class="text-sm divide-y">
+        <% @my_tasks.each do |t| %>
+          <li class="py-1.5 flex justify-between">
+            <%= link_to t.title, t %>
+            <span class="text-slate-500 text-xs"><%= nice_date(t.due_on) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">No open tasks.</p>
+    <% end %>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <h2 class="font-semibold mb-2">Upcoming production runs</h2>
+    <% if @upcoming_runs.any? %>
+      <ul class="text-sm divide-y">
+        <% @upcoming_runs.each do |r| %>
+          <li class="py-1.5 flex justify-between">
+            <span><%= link_to r.number, r %> · <%= r.product.display_name %></span>
+            <span class="text-slate-500 text-xs"><%= nice_datetime(r.scheduled_start) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">No upcoming runs.</p>
+    <% end %>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <h2 class="font-semibold mb-2">Overdue invoices</h2>
+    <% if @overdue_invoices.any? %>
+      <ul class="text-sm divide-y">
+        <% @overdue_invoices.each do |inv| %>
+          <li class="py-1.5 flex justify-between">
+            <span><%= link_to inv.number, inv %> · <%= inv.company.name %></span>
+            <span class="text-orange-600 text-xs"><%= money(inv.balance_cents) %> due <%= nice_date(inv.due_on) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">No overdue invoices.</p>
+    <% end %>
+  </div>
+  <div class="bg-white rounded shadow-sm border p-4">
+    <h2 class="font-semibold mb-2">Recent notifications</h2>
+    <% if @recent_notifications.any? %>
+      <ul class="text-sm divide-y">
+        <% @recent_notifications.each do |n| %>
+          <li class="py-1.5">
+            <div class="flex justify-between">
+              <strong><%= n.title %></strong>
+              <span class="text-slate-400 text-xs"><%= time_ago_in_words(n.created_at) %> ago</span>
+            </div>
+            <div class="text-slate-600"><%= n.body %></div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500">No notifications.</p>
+    <% end %>
+  </div>
+</div>

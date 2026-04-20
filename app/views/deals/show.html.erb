@@ -1,0 +1,27 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @deal.name %></h1>
+    <div class="text-sm text-slate-500"><%= status_badge @deal.stage %> · <%= money(@deal.amount_cents) %> · <%= link_to @deal.company.name, @deal.company %></div>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_deal_path(@deal), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Activity", new_company_activity_path(@deal.company), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+<div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">
+  <div><strong>Owner:</strong> <%= @deal.owner&.display_name %></div>
+  <div><strong>Expected close:</strong> <%= nice_date(@deal.expected_close_on) %></div>
+  <div><strong>Probability:</strong> <%= @deal.probability %>%</div>
+</div>
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Activity</h2>
+  <ul class="text-sm divide-y">
+    <% @activities.each do |a| %>
+      <li class="py-1.5">
+        <div class="flex justify-between"><strong><%= a.kind.humanize %></strong><span class="text-xs text-slate-400"><%= nice_datetime a.occurred_at %></span></div>
+        <div class="text-slate-600"><%= a.body %></div>
+      </li>
+    <% end %>
+  </ul>
+</div>

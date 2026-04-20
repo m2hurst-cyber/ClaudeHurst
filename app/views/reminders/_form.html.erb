@@ -1,0 +1,10 @@
+<%= form_with(model: reminder, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>
+  <% if reminder.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= reminder.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :remind_at %><%= f.datetime_local_field :remind_at, value: (reminder.remind_at || 1.hour.from_now).strftime("%Y-%m-%dT%H:%M"), class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :channel %><%= f.select :channel, Reminder::CHANNELS, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :recurrence %><%= f.select :recurrence, Reminder::RECURRENCES, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :message %><%= f.text_area :message, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

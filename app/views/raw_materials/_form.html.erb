@@ -1,0 +1,18 @@
+<%= form_with model: raw_material, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl" do |f| %>
+  <% if raw_material.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm">
+      <%= raw_material.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+  <div class="grid grid-cols-2 gap-3">
+    <div><%= f.label :code %><%= f.text_field :code, class: "border rounded px-2 py-1 w-full font-mono" %></div>
+    <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :category %><%= f.select :category, RawMaterial::CATEGORIES, {}, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :uom, "Unit of measure" %><%= f.text_field :uom, class: "border rounded px-2 py-1 w-full", placeholder: "kg, L, each" %></div>
+    <div><%= f.label :reorder_point %><%= f.number_field :reorder_point, step: "0.01", class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :owned_by %><%= f.select :owned_by, RawMaterial::OWNERSHIPS, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  </div>
+  <div><%= f.label :owned_by_company_id, "Owner brand (if customer-supplied)" %><%= f.collection_select :owned_by_company_id, Company.kept.order(:name), :id, :name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :description %><%= f.text_area :description, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

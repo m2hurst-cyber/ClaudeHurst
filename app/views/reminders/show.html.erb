@@ -1,0 +1,8 @@
+<h1 class="text-2xl font-bold mb-2">Reminder</h1>
+<div class="bg-white border rounded p-4 text-sm max-w-xl space-y-1">
+  <div>Remind at: <%= nice_datetime(@reminder.remind_at) %></div>
+  <div>Channel: <%= @reminder.channel %></div>
+  <div>Recurrence: <%= @reminder.recurrence %></div>
+  <div>Fired: <%= @reminder.fired? ? nice_datetime(@reminder.fired_at) : "pending" %></div>
+  <div class="pt-2"><%= @reminder.message %></div>
+</div>

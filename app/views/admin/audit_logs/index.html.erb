@@ -1,0 +1,32 @@
+<h1 class="text-2xl font-bold mb-4">Audit log</h1>
+
+<%= form_with url: admin_audit_logs_path, method: :get, class: "mb-4 flex gap-2" do |f| %>
+  <%= text_field_tag :action_filter, params[:action_filter], placeholder: "Filter by action (e.g. user.created)", class: "border rounded px-2 py-1 text-sm w-80" %>
+  <%= f.submit "Filter", class: "border px-3 py-1 rounded text-sm" %>
+<% end %>
+
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-700">
+      <tr>
+        <th class="px-3 py-2 text-left">When</th>
+        <th class="px-3 py-2 text-left">User</th>
+        <th class="px-3 py-2 text-left">Action</th>
+        <th class="px-3 py-2 text-left">Subject</th>
+        <th class="px-3 py-2 text-left">Metadata</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">
+      <% @logs.each do |log| %>
+        <tr>
+          <td class="px-3 py-2 whitespace-nowrap"><%= nice_datetime(log.created_at) %></td>
+          <td class="px-3 py-2"><%= log.user&.display_name || "system" %></td>
+          <td class="px-3 py-2 font-mono text-xs"><%= link_to log.action, admin_audit_log_path(log), class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2 text-slate-500"><%= [log.subject_type, log.subject_id].compact.join("#") %></td>
+          <td class="px-3 py-2 text-slate-500 text-xs truncate max-w-md"><%= log.metadata&.to_json %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="mt-3"><%== pagy_nav(@pagy) %></div>

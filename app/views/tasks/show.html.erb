@@ -1,0 +1,15 @@
+<h1 class="text-2xl font-bold mb-2"><%= @task.title %></h1>
+<div class="bg-white border rounded p-4 text-sm max-w-xl space-y-1">
+  <div>Due: <%= nice_date(@task.due_on) %></div>
+  <div>Priority: <%= @task.priority %></div>
+  <div>Assignee: <%= @task.assignee&.display_name %></div>
+  <% if @task.description.present? %>
+    <div class="pt-2"><%= simple_format @task.description %></div>
+  <% end %>
+</div>
+<div class="mt-3 flex gap-2">
+  <%= link_to "Edit", edit_task_path(@task), class: "border px-3 py-1.5 rounded text-sm" %>
+  <% unless @task.completed? %>
+    <%= button_to "Complete", task_path(@task, task: { complete: 1 }), method: :patch, class: "bg-emerald-600 text-white px-3 py-1.5 rounded text-sm" %>
+  <% end %>
+</div>

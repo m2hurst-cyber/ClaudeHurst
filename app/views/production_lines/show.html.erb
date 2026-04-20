@@ -1,0 +1,29 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @line.name %> <span class="text-slate-500 font-mono text-base">(<%= @line.code %>)</span></h1>
+    <div class="text-sm text-slate-500"><%= @line.hourly_capacity %> units/hr · <%= @line.active? ? "Active" : "Inactive" %></div>
+  </div>
+  <div>
+    <%= link_to "Edit", edit_production_line_path(@line), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<% if @line.description.present? %>
+  <p class="text-sm text-slate-700 bg-white border rounded p-3 mb-4"><%= simple_format @line.description %></p>
+<% end %>
+
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Upcoming runs</h2>
+  <% if @upcoming_runs.any? %>
+    <ul class="text-sm divide-y">
+      <% @upcoming_runs.each do |run| %>
+        <li class="py-1.5 flex justify-between">
+          <span><%= link_to run.number, run, class: "text-sky-700 hover:underline font-mono" %> · <%= run.product.display_name %></span>
+          <span class="text-slate-500"><%= nice_datetime(run.scheduled_start) %> · <%= status_badge run.status %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-sm text-slate-500">No upcoming runs on this line.</p>
+  <% end %>
+</div>

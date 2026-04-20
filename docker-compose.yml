@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hurst
+      POSTGRES_PASSWORD: hurst
+      POSTGRES_DB: claudehurst_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    command: bash -lc "bin/rails db:prepare && bin/rails server -b 0.0.0.0 -p 3000"
+    environment:
+      DATABASE_URL: postgres://hurst:hurst@db:5432/claudehurst_development
+      RAILS_ENV: development
+      BIND: 0.0.0.0
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle:/usr/local/bundle
+
+  worker:
+    build: .
+    command: bash -lc "bundle exec rake solid_queue:start"
+    environment:
+      DATABASE_URL: postgres://hurst:hurst@db:5432/claudehurst_development
+      RAILS_ENV: development
+    depends_on:
+      - db
+      - web
+    volumes:
+      - .:/rails
+      - bundle:/usr/local/bundle
+
+volumes:
+  pg_data:
+  bundle:

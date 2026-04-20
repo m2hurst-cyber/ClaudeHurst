@@ -1,0 +1,11 @@
+<%= form_with(model: task, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>
+  <% if task.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= task.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :title %><%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :description %><%= f.text_area :description, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :due_on %><%= f.date_field :due_on, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :priority %><%= f.select :priority, Task::PRIORITIES, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :assignee_id, "Assignee" %><%= f.collection_select :assignee_id, User.active, :id, :display_name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

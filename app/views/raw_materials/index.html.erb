@@ -1,0 +1,37 @@
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Raw materials</h1>
+  <%= link_to "+ New raw material", new_raw_material_path, class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+</div>
+
+<%= form_with url: raw_materials_path, method: :get, class: "mb-4 flex gap-2" do |f| %>
+  <%= f.select :category, [["All categories", ""]] + RawMaterial::CATEGORIES.map { |c| [c.titleize, c] }, { selected: params[:category] }, class: "border rounded px-2 py-1 text-sm" %>
+  <%= f.submit "Filter", class: "border px-3 py-1 rounded text-sm" %>
+<% end %>
+
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-700">
+      <tr>
+        <th class="px-3 py-2 text-left">Code</th>
+        <th class="px-3 py-2 text-left">Name</th>
+        <th class="px-3 py-2 text-left">Category</th>
+        <th class="px-3 py-2 text-left">Owned by</th>
+        <th class="px-3 py-2 text-right">On hand</th>
+        <th class="px-3 py-2 text-right">Reorder</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">
+      <% @raw_materials.each do |rm| %>
+        <tr class="<%= 'bg-amber-50' if rm.below_reorder? %>">
+          <td class="px-3 py-2 font-mono text-xs"><%= link_to rm.code, rm, class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= rm.name %></td>
+          <td class="px-3 py-2"><%= rm.category %></td>
+          <td class="px-3 py-2"><%= rm.owned_by %><%= " (#{rm.owned_by_company.name})" if rm.owned_by_company %></td>
+          <td class="px-3 py-2 text-right"><%= rm.total_on_hand %> <%= rm.uom %></td>
+          <td class="px-3 py-2 text-right text-slate-500"><%= rm.reorder_point %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="mt-3"><%== pagy_nav(@pagy) %></div>

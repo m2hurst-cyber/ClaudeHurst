@@ -1,0 +1,33 @@
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Products</h1>
+  <% if @company %>
+    <%= link_to "+ New product", new_company_product_path(@company), class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+  <% end %>
+</div>
+
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-700">
+      <tr>
+        <th class="px-3 py-2 text-left">SKU</th>
+        <th class="px-3 py-2 text-left">Name</th>
+        <th class="px-3 py-2 text-left">Brand</th>
+        <th class="px-3 py-2 text-left">Format</th>
+        <th class="px-3 py-2 text-right">Case pack</th>
+        <th class="px-3 py-2 text-left">Active</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">
+      <% @products.each do |p| %>
+        <tr>
+          <td class="px-3 py-2 font-mono text-xs"><%= link_to p.sku, p, class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= p.name %></td>
+          <td class="px-3 py-2"><%= link_to p.company.name, p.company, class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= p.format %></td>
+          <td class="px-3 py-2 text-right"><%= p.case_pack %></td>
+          <td class="px-3 py-2"><%= p.active? ? "Yes" : "No" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,14 @@
+<% form_url = activity.new_record? ?
+     (subject.is_a?(Company) ? company_activities_path(subject) : activity_path(activity)) :
+     activity_path(activity) %>
+<%= form_with(model: activity, url: form_url,
+              class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>
+  <% if activity.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= activity.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :kind %><%= f.select :kind, Activity::KINDS, {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :occurred_at %><%= f.datetime_local_field :occurred_at, value: (activity.occurred_at || Time.current).strftime("%Y-%m-%dT%H:%M"), class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :body %><%= f.text_area :body, rows: 4, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :duration_minutes %><%= f.number_field :duration_minutes, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

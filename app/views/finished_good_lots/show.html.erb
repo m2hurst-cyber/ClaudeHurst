@@ -1,0 +1,49 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Lot <%= @lot.lot_code %></h1>
+    <div class="text-sm text-slate-500">
+      <%= @lot.product.display_name %> · Run <%= link_to @lot.production_run.number, @lot.production_run, class: "text-sky-700 hover:underline font-mono" %> ·
+      Produced <%= nice_date(@lot.produced_on) %> · Best by <%= nice_date(@lot.best_by_on) %>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Trace backward", trace_finished_good_lot_path(@lot), class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Movement", new_finished_good_lot_finished_good_movement_path(@lot), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-4">
+  <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Produced</div><div class="text-xl font-semibold"><%= @lot.quantity_produced %></div></div>
+  <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">On hand</div><div class="text-xl font-semibold"><%= @lot.quantity_on_hand %></div></div>
+  <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500">Shipped</div><div class="text-xl font-semibold"><%= @lot.quantity_produced - @lot.quantity_on_hand %></div></div>
+</div>
+
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Movements</h2>
+  <% if @movements.any? %>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100">
+        <tr>
+          <th class="px-2 py-1 text-left">When</th>
+          <th class="px-2 py-1 text-left">Kind</th>
+          <th class="px-2 py-1 text-right">Qty</th>
+          <th class="px-2 py-1 text-left">User</th>
+          <th class="px-2 py-1 text-left">Notes</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @movements.each do |m| %>
+          <tr>
+            <td class="px-2 py-1"><%= nice_datetime(m.occurred_at) %></td>
+            <td class="px-2 py-1"><%= m.kind %></td>
+            <td class="px-2 py-1 text-right <%= m.quantity < 0 ? 'text-red-600' : 'text-emerald-700' %>"><%= m.quantity %></td>
+            <td class="px-2 py-1"><%= m.user&.display_name %></td>
+            <td class="px-2 py-1 text-slate-500"><%= m.notes %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-sm text-slate-500">No movements recorded.</p>
+  <% end %>
+</div>

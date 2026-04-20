@@ -1,0 +1,47 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @raw_material.name %> <span class="text-slate-500 font-mono text-base">(<%= @raw_material.code %>)</span></h1>
+    <div class="text-sm text-slate-500"><%= @raw_material.category %> · <%= @raw_material.uom %> · <%= @raw_material.owned_by %><%= " (#{@raw_material.owned_by_company.name})" if @raw_material.owned_by_company %></div>
+    <div class="text-sm mt-1">On hand: <strong><%= @raw_material.total_on_hand %></strong> · Reorder point: <%= @raw_material.reorder_point %> <% if @raw_material.below_reorder? %><span class="text-red-600 font-semibold">(below reorder)</span><% end %></div>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_raw_material_path(@raw_material), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "+ Receive lot", new_raw_material_raw_material_lot_path(@raw_material), class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<% if @raw_material.description.present? %>
+  <p class="text-sm text-slate-700 bg-white border rounded p-3 mb-4"><%= simple_format @raw_material.description %></p>
+<% end %>
+
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Lots</h2>
+  <% if @lots.any? %>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100">
+        <tr>
+          <th class="px-2 py-1 text-left">Lot code</th>
+          <th class="px-2 py-1 text-left">Received</th>
+          <th class="px-2 py-1 text-left">Expires</th>
+          <th class="px-2 py-1 text-right">Received qty</th>
+          <th class="px-2 py-1 text-right">On hand</th>
+          <th class="px-2 py-1 text-left">Supplier</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @lots.each do |lot| %>
+          <tr>
+            <td class="px-2 py-1 font-mono text-xs"><%= link_to lot.lot_code, lot, class: "text-sky-700 hover:underline" %></td>
+            <td class="px-2 py-1"><%= nice_date(lot.received_on) %></td>
+            <td class="px-2 py-1"><%= nice_date(lot.expires_on) %></td>
+            <td class="px-2 py-1 text-right"><%= lot.quantity_received %></td>
+            <td class="px-2 py-1 text-right"><%= lot.quantity_on_hand %></td>
+            <td class="px-2 py-1 text-slate-500"><%= lot.supplier %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-sm text-slate-500">No lots received yet.</p>
+  <% end %>
+</div>

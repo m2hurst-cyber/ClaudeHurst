@@ -1,0 +1,35 @@
+<%= form_with(model: invoice, class: "space-y-3 bg-white p-4 rounded shadow-sm border") do |f| %>
+  <% if invoice.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= invoice.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div class="grid grid-cols-3 gap-3">
+    <div><%= f.label :company_id %><%= f.collection_select :company_id, Company.kept.by_name, :id, :name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :contract_id %><%= f.collection_select :contract_id, Contract.all, :id, :number, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :production_run_id %><%= f.collection_select :production_run_id, ProductionRun.all, :id, :number, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
+  </div>
+  <div class="grid grid-cols-3 gap-3">
+    <div><%= f.label :issued_on %><%= f.date_field :issued_on, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :due_on %><%= f.date_field :due_on, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :currency %><%= f.text_field :currency, class: "border rounded px-2 py-1 w-full" %></div>
+  </div>
+
+  <h3 class="font-semibold mt-2">Line items</h3>
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100"><tr><th class="px-2 py-1">Description</th><th class="px-2 py-1">Product</th><th class="px-2 py-1">Qty</th><th class="px-2 py-1">Unit (cents)</th><th class="px-2 py-1">Tax</th><th></th></tr></thead>
+    <tbody>
+      <%= f.fields_for :line_items do |lf| %>
+        <tr>
+          <td class="px-1 py-1"><%= lf.text_field :description, class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-1 py-1"><%= lf.collection_select :product_id, Product.kept, :id, :display_name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-1 py-1"><%= lf.number_field :quantity, step: "any", class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-1 py-1"><%= lf.number_field :unit_price_cents, class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-1 py-1"><%= lf.number_field :tax_rate, step: "0.0001", class: "border rounded px-2 py-1 w-full" %></td>
+          <td class="px-1 py-1"><%= lf.check_box :_destroy %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div><%= f.label :notes %><%= f.text_area :notes, rows: 2, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

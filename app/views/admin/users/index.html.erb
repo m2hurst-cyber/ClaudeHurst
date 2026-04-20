@@ -1,0 +1,33 @@
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Users</h1>
+  <%= link_to "+ New user", new_admin_user_path, class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+</div>
+
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-700">
+      <tr>
+        <th class="px-3 py-2 text-left">Email</th>
+        <th class="px-3 py-2 text-left">Name</th>
+        <th class="px-3 py-2 text-left">Role</th>
+        <th class="px-3 py-2 text-left">Active</th>
+        <th class="px-3 py-2 text-left">Last sign-in</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">
+      <% @users.each do |u| %>
+        <tr>
+          <td class="px-3 py-2"><%= link_to u.email, admin_user_path(u), class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= u.display_name %></td>
+          <td class="px-3 py-2"><%= status_badge u.role %></td>
+          <td class="px-3 py-2"><%= u.active? ? "Yes" : "No" %></td>
+          <td class="px-3 py-2 text-slate-500"><%= u.current_sign_in_at ? nice_datetime(u.current_sign_in_at) : "—" %></td>
+          <td class="px-3 py-2 text-right">
+            <%= link_to "Edit", edit_admin_user_path(u), class: "text-sky-700 text-xs hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

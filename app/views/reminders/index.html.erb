@@ -1,0 +1,34 @@
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Reminders</h1>
+  <%= link_to "+ New reminder", new_reminder_path, class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+</div>
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100"><tr>
+      <th class="px-3 py-2 text-left">Remind at</th>
+      <th class="px-3 py-2 text-left">Message</th>
+      <th class="px-3 py-2 text-left">Channel</th>
+      <th class="px-3 py-2 text-left">Recurrence</th>
+      <th class="px-3 py-2 text-left">Fired</th>
+      <th class="px-3 py-2"></th>
+    </tr></thead>
+    <tbody class="divide-y">
+      <% @reminders.each do |r| %>
+        <tr>
+          <td class="px-3 py-2"><%= nice_datetime(r.remind_at) %></td>
+          <td class="px-3 py-2"><%= r.message %></td>
+          <td class="px-3 py-2"><%= r.channel %></td>
+          <td class="px-3 py-2"><%= r.recurrence %></td>
+          <td class="px-3 py-2"><%= r.fired? ? nice_datetime(r.fired_at) : "—" %></td>
+          <td class="px-3 py-2 text-right space-x-2">
+            <% unless r.fired? %>
+              <%= button_to "Fire now", fire_reminder_path(r), method: :post, class: "text-xs border px-2 py-0.5 rounded" %>
+            <% end %>
+            <%= link_to "Edit", edit_reminder_path(r), class: "text-xs border px-2 py-0.5 rounded" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="mt-3"><%== pagy_nav(@pagy) %></div>

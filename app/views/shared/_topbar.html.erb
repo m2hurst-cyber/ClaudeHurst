@@ -1,0 +1,12 @@
+<header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+  <div class="text-sm text-slate-500">Signed in as <strong class="text-slate-800"><%= current_user.display_name %></strong> · <span class="capitalize"><%= current_user.role %></span></div>
+  <div class="flex items-center gap-4 text-sm">
+    <%= link_to notifications_path, class: "relative" do %>
+      <span>Notifications</span>
+      <% if current_notifications_count > 0 %>
+        <span class="absolute -top-1 -right-4 bg-red-500 text-white text-xs rounded-full px-1.5"><%= current_notifications_count %></span>
+      <% end %>
+    <% end %>
+    <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-slate-500 hover:text-slate-800" %>
+  </div>
+</header>

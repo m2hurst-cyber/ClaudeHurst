@@ -1,0 +1,32 @@
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Companies</h1>
+  <%= link_to "+ New company", new_company_path, class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+</div>
+
+<%= form_with url: companies_path, method: :get, class: "mb-4" do |f| %>
+  <%= f.text_field :q, value: params[:q], placeholder: "Search by name", class: "border rounded px-2 py-1 text-sm w-64" %>
+<% end %>
+
+<div class="bg-white rounded shadow-sm border overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-700">
+      <tr>
+        <th class="px-3 py-2 text-left">Name</th>
+        <th class="px-3 py-2 text-left">Status</th>
+        <th class="px-3 py-2 text-left">Owner</th>
+        <th class="px-3 py-2 text-left">Last engagement</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y">
+      <% @companies.each do |c| %>
+        <tr>
+          <td class="px-3 py-2"><%= link_to c.name, c, class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= status_badge c.status %></td>
+          <td class="px-3 py-2"><%= c.owner&.display_name %></td>
+          <td class="px-3 py-2 text-slate-500"><%= c.last_engagement_at ? time_ago_in_words(c.last_engagement_at) + " ago" : "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="mt-3"><%== pagy_nav(@pagy) %></div>

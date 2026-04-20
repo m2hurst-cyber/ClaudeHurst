@@ -1,0 +1,13 @@
+<%= form_with model: line, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl" do |f| %>
+  <% if line.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm">
+      <%= line.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+  <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :code %><%= f.text_field :code, class: "border rounded px-2 py-1 w-full font-mono" %></div>
+  <div><%= f.label :hourly_capacity, "Hourly capacity (units)" %><%= f.number_field :hourly_capacity, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :description %><%= f.text_area :description, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  <div class="flex items-center gap-2"><%= f.check_box :active %><%= f.label :active, "Active" %></div>
+  <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

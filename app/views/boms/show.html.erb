@@ -1,0 +1,34 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @bom.code %></h1>
+    <div class="text-sm text-slate-500"><%= link_to @bom.product.display_name, @bom.product %> · Yield <%= @bom.yield_units %> · <%= @bom.active? ? "Active" : "Inactive" %></div>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_bom_path(@bom), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<table class="w-full text-sm bg-white border">
+  <thead class="bg-slate-100">
+    <tr>
+      <th class="px-2 py-1 text-left">Raw material</th>
+      <th class="px-2 py-1 text-right">Qty per unit</th>
+      <th class="px-2 py-1 text-left">UOM</th>
+      <th class="px-2 py-1 text-left">Notes</th>
+    </tr>
+  </thead>
+  <tbody class="divide-y">
+    <% @bom.items.includes(:raw_material).each do |item| %>
+      <tr>
+        <td class="px-2 py-1"><%= link_to item.raw_material.name, item.raw_material, class: "text-sky-700 hover:underline" %> <span class="text-slate-500 font-mono text-xs">(<%= item.raw_material.code %>)</span></td>
+        <td class="px-2 py-1 text-right"><%= item.quantity_per_unit %></td>
+        <td class="px-2 py-1"><%= item.uom %></td>
+        <td class="px-2 py-1 text-slate-500"><%= item.notes %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @bom.notes.present? %>
+  <p class="text-sm text-slate-700 mt-3"><%= simple_format @bom.notes %></p>
+<% end %>

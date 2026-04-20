@@ -1,0 +1,58 @@
+<div class="flex justify-between items-start mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Invoice <%= @invoice.number %></h1>
+    <div class="text-sm text-slate-500"><%= status_badge @invoice.status %> · <%= link_to @invoice.company.name, @invoice.company %> · Total <%= money(@invoice.total_cents) %> · Balance <%= money(@invoice.balance_cents) %></div>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_invoice_path(@invoice), class: "border px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "PDF", pdf_invoice_path(@invoice), class: "border px-3 py-1.5 rounded text-sm", target: "_blank" %>
+    <% if @invoice.status == "draft" %>
+      <%= button_to "Send", send_out_invoice_path(@invoice), method: :post, class: "bg-emerald-600 text-white px-3 py-1.5 rounded text-sm" %>
+    <% end %>
+    <% if @invoice.balance_cents > 0 && @invoice.status != "void" %>
+      <%= link_to "+ Payment", new_invoice_payment_path(@invoice), class: "border px-3 py-1.5 rounded text-sm" %>
+    <% end %>
+    <%= button_to "Void", void_it_invoice_path(@invoice), method: :post, class: "bg-red-600 text-white px-3 py-1.5 rounded text-sm" %>
+  </div>
+</div>
+
+<table class="w-full text-sm bg-white border mb-4">
+  <thead class="bg-slate-100"><tr>
+    <th class="px-2 py-1 text-left">Description</th>
+    <th class="px-2 py-1 text-right">Qty</th>
+    <th class="px-2 py-1 text-right">Unit</th>
+    <th class="px-2 py-1 text-right">Line total</th>
+  </tr></thead>
+  <tbody class="divide-y">
+    <% @invoice.line_items.each do |li| %>
+      <tr>
+        <td class="px-2 py-1"><%= li.description %></td>
+        <td class="px-2 py-1 text-right"><%= li.quantity %></td>
+        <td class="px-2 py-1 text-right"><%= money(li.unit_price_cents) %></td>
+        <td class="px-2 py-1 text-right"><%= money(li.line_total_cents) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot class="bg-slate-50 font-semibold">
+    <tr><td colspan="3" class="px-2 py-1 text-right">Subtotal</td><td class="px-2 py-1 text-right"><%= money(@invoice.subtotal_cents) %></td></tr>
+    <tr><td colspan="3" class="px-2 py-1 text-right">Tax</td><td class="px-2 py-1 text-right"><%= money(@invoice.tax_cents) %></td></tr>
+    <tr><td colspan="3" class="px-2 py-1 text-right">Total</td><td class="px-2 py-1 text-right"><%= money(@invoice.total_cents) %></td></tr>
+    <tr><td colspan="3" class="px-2 py-1 text-right">Balance</td><td class="px-2 py-1 text-right"><%= money(@invoice.balance_cents) %></td></tr>
+  </tfoot>
+</table>
+
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Payments</h2>
+  <% if @payments.any? %>
+    <ul class="text-sm divide-y">
+      <% @payments.each do |p| %>
+        <li class="py-1.5 flex justify-between">
+          <span><%= money(p.amount_cents) %> · <%= p.method %> · <%= p.reference %></span>
+          <span class="text-slate-500"><%= nice_date(p.received_on) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-sm text-slate-500">No payments yet.</p>
+  <% end %>
+</div>

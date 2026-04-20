@@ -1,0 +1,48 @@
+<h1 class="text-2xl font-bold mb-2">Traceability report — Lot <%= @trace[:lot].lot_code %></h1>
+<p class="text-sm text-slate-500 mb-4">Backward trace from finished-good lot through production run to raw material lots.</p>
+
+<div class="bg-white border rounded p-4 mb-4">
+  <h2 class="font-semibold mb-2">Finished good</h2>
+  <div class="text-sm"><%= @trace[:lot].product.display_name %> · Lot <span class="font-mono"><%= @trace[:lot].lot_code %></span> · Produced <%= nice_date(@trace[:lot].produced_on) %> · <%= @trace[:lot].quantity_produced %> units</div>
+</div>
+
+<div class="bg-white border rounded p-4 mb-4">
+  <h2 class="font-semibold mb-2">Production run</h2>
+  <div class="text-sm">
+    <%= link_to @trace[:run].number, @trace[:run], class: "text-sky-700 hover:underline font-mono" %> ·
+    Batch <span class="font-mono"><%= @trace[:run].batch_code %></span> ·
+    Line <%= @trace[:run].production_line.name %> ·
+    Started <%= nice_datetime(@trace[:run].actual_start) %> ·
+    Completed <%= nice_datetime(@trace[:run].actual_end) %>
+  </div>
+</div>
+
+<div class="bg-white border rounded p-4">
+  <h2 class="font-semibold mb-2">Raw material lots consumed</h2>
+  <% if @trace[:consumptions].any? %>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100">
+        <tr>
+          <th class="px-2 py-1 text-left">Material</th>
+          <th class="px-2 py-1 text-left">Lot code</th>
+          <th class="px-2 py-1 text-left">Supplier</th>
+          <th class="px-2 py-1 text-left">Received</th>
+          <th class="px-2 py-1 text-right">Consumed qty</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @trace[:consumptions].each do |c| %>
+          <tr>
+            <td class="px-2 py-1"><%= link_to c.raw_material_lot.raw_material.name, c.raw_material_lot.raw_material, class: "text-sky-700 hover:underline" %></td>
+            <td class="px-2 py-1 font-mono text-xs"><%= link_to c.raw_material_lot.lot_code, c.raw_material_lot, class: "text-sky-700 hover:underline" %></td>
+            <td class="px-2 py-1"><%= c.raw_material_lot.supplier %></td>
+            <td class="px-2 py-1"><%= nice_date(c.raw_material_lot.received_on) %></td>
+            <td class="px-2 py-1 text-right"><%= c.quantity_actual || c.quantity_planned %> <%= c.uom %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-sm text-slate-500">No consumption records.</p>
+  <% end %>
+</div>
