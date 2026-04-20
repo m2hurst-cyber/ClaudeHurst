@@ -1,19 +1,19 @@
 <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 lg:hidden">
   <div class="grid grid-cols-4 text-xs">
-    <%= link_to root_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950" do %>
-      <span class="text-base">⌂</span>
+    <%= link_to root_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950", aria: { label: "Home" } do %>
+      <span class="text-base" aria-hidden="true">⌂</span>
       <span>Home</span>
     <% end %>
-    <%= link_to deals_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950" do %>
-      <span class="text-base">◇</span>
+    <%= link_to deals_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950", aria: { label: "Deals" } do %>
+      <span class="text-base" aria-hidden="true">◇</span>
       <span>Deals</span>
     <% end %>
-    <%= link_to production_runs_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950" do %>
-      <span class="text-base">▣</span>
+    <%= link_to production_runs_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950", aria: { label: "Production Runs" } do %>
+      <span class="text-base" aria-hidden="true">▣</span>
       <span>Runs</span>
     <% end %>
-    <%= link_to invoices_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950" do %>
-      <span class="text-base">$</span>
+    <%= link_to invoices_path, class: "flex flex-col items-center gap-1 py-2.5 text-slate-600 hover:text-slate-950", aria: { label: "Invoices" } do %>
+      <span class="text-base" aria-hidden="true">$</span>
       <span>Invoices</span>
     <% end %>
   </div>

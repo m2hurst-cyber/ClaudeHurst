@@ -14,8 +14,8 @@
       </div>
     </div>
     <div class="flex items-center gap-3 text-sm">
-      <%= link_to notifications_path, class: "relative inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50" do %>
-        <span>●</span>
+      <%= link_to notifications_path, class: "relative inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-200 bg-white hover:bg-slate-50", aria: { label: "Notifications" } do %>
+        <span aria-hidden="true">●</span>
         <% if current_notifications_count > 0 %>
           <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-1">
             <%= current_notifications_count %>
