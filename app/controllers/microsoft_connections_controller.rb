@@ -10,16 +10,17 @@ class MicrosoftConnectionsController < ApplicationController
   end
 
   def callback
-    unless ActiveSupport::SecurityUtils.secure_compare(params[:state].to_s, session.delete(:microsoft_oauth_state).to_s)
+    expected_state = session.delete(:microsoft_oauth_state).to_s
+    unless expected_state.present? && ActiveSupport::SecurityUtils.secure_compare(params[:state].to_s, expected_state)
       redirect_to microsoft_connection_path, alert: "Microsoft connection could not be verified. Please try again."
       return
     end
 
     oauth_payload = MicrosoftGraph::Client.exchange_code(params.require(:code))
     profile = MicrosoftGraph::Client.new(connection: transient_connection(oauth_payload)).me
+    connection = current_user.microsoft_connection || current_user.build_microsoft_connection
 
-    current_user.create_microsoft_connection! unless current_user.microsoft_connection
-    current_user.microsoft_connection.update!(
+    connection.update!(
       tenant_id: profile["tenantId"].presence || ENV.fetch("MICROSOFT_TENANT_ID", "common"),
       microsoft_user_id: profile.fetch("id"),
       email: profile["mail"].presence || profile.fetch("userPrincipalName"),
