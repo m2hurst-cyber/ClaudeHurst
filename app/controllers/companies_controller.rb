@@ -8,8 +8,15 @@ class CompaniesController < ApplicationController
   end
 
   def show
-    @contacts = @company.contacts.kept.by_name
-    @deals = @company.deals.kept
+    @primary_contacts = @company.contacts.kept.where(primary: true).by_name
+    @secondary_contacts = @company.contacts.kept.where(primary: false).by_name
+    @current_deals = @company.deals.kept.open.includes(:owner)
+                             .order(Arel.sql("expected_close_on IS NULL, expected_close_on ASC")).limit(6)
+    @current_tasks = current_tasks_scope.includes(:assignee).by_due.limit(6)
+    @upcoming_runs = ProductionRun.upcoming.joins(:product)
+                                  .where(products: { company_id: @company.id })
+                                  .includes(:product, :production_line).limit(6)
+    @tagged_reminders = Reminder.where(subject: @company).includes(:user).order(:remind_at).limit(6)
     @activities = @company.activities.recent.limit(25)
     @products = @company.products.kept
   end
@@ -45,6 +52,14 @@ class CompaniesController < ApplicationController
   end
 
   private
+
+  def current_tasks_scope
+    company_tasks = Task.open.where(subject: @company)
+    deal_tasks = Task.open.where(subject_type: "Deal", subject_id: @company.deals.kept.select(:id))
+    product_tasks = Task.open.where(subject_type: "Product", subject_id: @company.products.kept.select(:id))
+
+    company_tasks.or(deal_tasks).or(product_tasks)
+  end
 
   def set_company
     @company = Company.kept.find_by!(slug: params[:id]) || Company.kept.find(params[:id])

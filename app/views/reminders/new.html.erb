@@ -1,2 +1,5 @@
 <h1 class="text-2xl font-bold mb-4">New reminder</h1>
+<% if @reminder.subject.present? %>
+	<p class="mb-4 text-sm text-slate-500">Tagged to <%= @reminder.subject.respond_to?(:name) ? @reminder.subject.name : @reminder.subject.respond_to?(:display_name) ? @reminder.subject.display_name : @reminder.subject.class.name %>.</p>
+<% end %>
 <%= render "form", reminder: @reminder %>
