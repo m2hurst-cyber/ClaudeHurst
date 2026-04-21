@@ -13,6 +13,8 @@
     link_to("+ Quote", new_quote_path(company_id: @deal.company_id, deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
     link_to("+ Task", new_task_path(deal_id: @deal.id), class: "rounded-xl border px-3 py-2 text-sm text-center"),
     advance_action,
+    link_to("Edit", edit_deal_path(@deal), class: "rounded-xl border px-3 py-2 text-sm text-center"),
+    button_to("Delete", deal_path(@deal), method: :delete, class: "w-full rounded-xl border border-red-200 px-3 py-2 text-sm text-center text-red-700", form_class: "w-full", data: { confirm: "Delete this deal?" }),
     link_to("View company", @deal.company, class: "rounded-xl border px-3 py-2 text-sm text-center")
   ].compact %>
 <div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">

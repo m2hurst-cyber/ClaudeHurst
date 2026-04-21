@@ -42,8 +42,12 @@ module Admin
         redirect_to admin_users_path, alert: "Cannot remove yourself."
         return
       end
-      @user.discard
-      redirect_to admin_users_path, notice: "User archived."
+
+      if @user.destroy
+        redirect_to admin_users_path, notice: "User deleted."
+      else
+        redirect_to admin_users_path, alert: @user.errors.full_messages.to_sentence.presence || "User could not be deleted."
+      end
     end
 
     private

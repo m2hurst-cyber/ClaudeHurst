@@ -14,6 +14,10 @@ class ApplicationController < ActionController::Base
     current_user.notifications.unread.count
   end
 
+  def after_sign_out_path_for(_resource_or_scope)
+    unauthenticated_root_path
+  end
+
   private
 
   def touch_last_seen

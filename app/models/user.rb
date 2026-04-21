@@ -7,7 +7,9 @@ class User < ApplicationRecord
 
   has_many :owned_companies, class_name: "Company", foreign_key: :owner_id, dependent: :nullify
   has_many :owned_deals, class_name: "Deal", foreign_key: :owner_id, dependent: :nullify
+  has_many :owned_production_runs, class_name: "ProductionRun", foreign_key: :owner_id, dependent: :nullify
   has_many :activities, dependent: :destroy
+  has_many :finished_good_movements, dependent: :nullify
   has_many :assigned_tasks, class_name: "Task", foreign_key: :assignee_id, dependent: :nullify
   has_many :reminders, dependent: :destroy
   has_many :notifications, dependent: :destroy

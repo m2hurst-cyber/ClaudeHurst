@@ -3,6 +3,10 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
+  unauthenticated do
+    root to: "home#show", as: :unauthenticated_root
+  end
+
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
   mount MissionControl::Jobs::Engine, at: "/jobs"
 

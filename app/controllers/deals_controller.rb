@@ -45,8 +45,11 @@ class DealsController < ApplicationController
   end
 
   def destroy
-    @deal.discard
-    redirect_to deals_path, notice: "Deal archived."
+    if @deal.destroy
+      redirect_to deals_path, notice: "Deal deleted."
+    else
+      redirect_to @deal, alert: @deal.errors.full_messages.to_sentence.presence || "Deal could not be deleted."
+    end
   end
 
   def advance

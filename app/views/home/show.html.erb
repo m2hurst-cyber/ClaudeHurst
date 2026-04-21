@@ -1,0 +1,52 @@
+<% content_for :full_bleed_public, true %>
+
+<section class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 text-white shadow-2xl shadow-slate-950/40">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.18),_transparent_30%)]"></div>
+  <div class="relative grid gap-10 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-12 lg:py-14">
+    <div>
+      <div class="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">
+        <%= Branding.tagline %>
+      </div>
+
+      <div class="mt-6 max-w-2xl">
+        <%= render "shared/brand_lockup",
+          stacked: true,
+          link_path: unauthenticated_root_path,
+          image_class: "h-14 w-14",
+          wrapper_class: "items-start",
+          title_class: "text-3xl font-black tracking-tight text-white sm:text-4xl",
+          tagline_class: "mt-2 text-sm uppercase tracking-[0.3em] text-slate-300" %>
+
+        <h1 class="mt-8 text-4xl font-black tracking-tight text-white sm:text-5xl">Run your pipeline, production, and billing from one cockpit.</h1>
+        <p class="mt-4 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">Keep customer deals, production schedules, quotes, contracts, and invoices in one operating system built for teams that need both CRM discipline and ERP follow-through.</p>
+      </div>
+
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <%= link_to "Sign in", new_user_session_path, class: "inline-flex items-center justify-center rounded-2xl bg-sky-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-500/20 transition hover:bg-sky-300" %>
+      </div>
+    </div>
+
+    <div class="grid gap-4 self-end">
+      <div class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+        <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Control tower</div>
+        <div class="mt-3 text-2xl font-bold text-white">See deals, runs, and invoices without jumping systems.</div>
+        <p class="mt-3 text-sm leading-6 text-slate-300">A single workspace for sales, operations, and finance reduces handoff gaps and makes status changes visible immediately.</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div class="text-2xl font-black text-white">CRM</div>
+          <div class="mt-2 text-sm text-slate-300">Accounts, contacts, deals, and activity history.</div>
+        </div>
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div class="text-2xl font-black text-white">ERP</div>
+          <div class="mt-2 text-sm text-slate-300">Production runs, inventory flow, and fulfillment traceability.</div>
+        </div>
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div class="text-2xl font-black text-white">Finance</div>
+          <div class="mt-2 text-sm text-slate-300">Quotes, contracts, invoices, and payment status in one chain.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

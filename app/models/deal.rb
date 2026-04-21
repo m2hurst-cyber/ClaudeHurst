@@ -8,6 +8,7 @@ class Deal < ApplicationRecord
   belongs_to :company
   belongs_to :owner, class_name: "User", optional: true
   has_many :activities, as: :subject, dependent: :destroy
+  has_many :quotes, dependent: :nullify
 
   STAGES = %w[lead qualified proposal negotiation closed_won closed_lost].freeze
 

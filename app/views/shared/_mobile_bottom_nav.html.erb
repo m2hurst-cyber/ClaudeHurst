@@ -3,6 +3,9 @@
     <%= mobile_nav_link("Home", root_path, "⌂") %>
     <%= mobile_nav_link("Deals", deals_path, "◇") %>
     <%= mobile_nav_link("Runs", production_runs_path, "▣") %>
-    <%= mobile_nav_link("Invoices", invoices_path, "$") %>
+    <%= button_to destroy_user_session_path, method: :delete, class: "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-slate-500 transition active:scale-95 hover:bg-white hover:text-slate-950 hover:shadow-sm" do %>
+      <span class="grid h-6 w-6 place-items-center rounded-lg bg-white text-sm shadow-sm" aria-hidden="true">⇥</span>
+      <span>Log out</span>
+    <% end %>
   </div>
 </nav>
