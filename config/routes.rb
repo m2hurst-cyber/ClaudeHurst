@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   authenticate :user do
     root to: "dashboards#show"
 
+    resource :microsoft_connection, only: %i[show create destroy]
+    get "microsoft_connection/callback", to: "microsoft_connections#callback", as: :microsoft_connection_callback
+
     resources :companies do
       resources :contacts, shallow: true
       resources :deals, shallow: true, only: %i[index new create]
