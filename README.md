@@ -6,14 +6,14 @@ production with BOMs/runs/lot traceability, reminders, and admin/audit.
 
 ## Stack
 
-- Ruby on Rails 7.1, PostgreSQL 16, Hotwire (Turbo + Stimulus), Tailwind
+- Ruby on Rails 7.2.3.1, PostgreSQL 16, Hotwire (Turbo + Stimulus), Tailwind
 - Devise (auth), Pundit (roles), AASM (state machines), PaperTrail (audit), Discard (soft delete)
 - Solid Queue (Postgres-backed jobs + recurring), letter_opener_web (dev mail), Prawn (PDFs)
 - Pagy, Ransack, money-rails, FactoryBot
 
 ## Quick start (local)
 
-Prereqs: Ruby 3.3.6, Postgres 16 running locally with a `hurst` user (see `config/database.yml`).
+Prereqs: Ruby 3.4.7, Postgres 16 running locally with a `hurst` user (see `config/database.yml`).
 
 ```bash
 bundle install
