@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.3.6"
+ruby "3.4.7"
 
 gem "rails", ">= 7.2.3.1", "< 7.3"
 gem "sprockets-rails"
@@ -17,6 +17,9 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # Auth & authorization
 gem "devise", "~> 5.0"
 gem "pundit", "~> 2.3"
+
+# Microsoft Graph / communication push
+gem "faraday", "~> 2.12"
 
 # UI & forms
 gem "simple_form", "~> 5.3"
