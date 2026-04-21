@@ -1,4 +1,6 @@
-<%= form_with(model: [company, deal],
+<% form_model = deal.persisted? ? deal : [company, deal] %>
+
+<%= form_with(model: form_model,
               class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl", local: true) do |f| %>
   <% if deal.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= deal.errors.full_messages.to_sentence %></div>
