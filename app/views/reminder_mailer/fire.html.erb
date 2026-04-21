@@ -1,6 +1,9 @@
 <h2>Reminder</h2>
-<p>Hello <%= @reminder.user.display_name %>,</p>
+<p>Hello <%= @reminder.target_user.display_name %>,</p>
 <p><%= @reminder.message %></p>
+<% if @reminder.target_user != @reminder.user %>
+  <p>From: <%= @reminder.user.display_name %></p>
+<% end %>
 <% if @reminder.subject %>
   <p>Re: <%= @reminder.subject_type %> #<%= @reminder.subject_id %></p>
 <% end %>

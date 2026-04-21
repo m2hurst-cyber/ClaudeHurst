@@ -12,6 +12,7 @@ class User < ApplicationRecord
   has_many :finished_good_movements, dependent: :nullify
   has_many :assigned_tasks, class_name: "Task", foreign_key: :assignee_id, dependent: :nullify
   has_many :reminders, dependent: :destroy
+  has_many :received_reminders, class_name: "Reminder", foreign_key: :recipient_id, dependent: :nullify
   has_many :notifications, dependent: :destroy
   has_many :audit_logs, dependent: :nullify
 

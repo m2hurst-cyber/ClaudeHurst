@@ -1,8 +1,13 @@
 Reminder
 --------
 
-Hello <%= @reminder.user.display_name %>,
+Hello <%= @reminder.target_user.display_name %>,
 
 <%= @reminder.message %>
+
+<% if @reminder.target_user != @reminder.user %>
+From: <%= @reminder.user.display_name %>
+
+<% end %>
 
 — <%= Branding.company_name %>

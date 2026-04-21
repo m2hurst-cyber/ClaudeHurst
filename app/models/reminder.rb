@@ -4,6 +4,7 @@ class Reminder < ApplicationRecord
 
   belongs_to :subject, polymorphic: true, optional: true
   belongs_to :user
+  belongs_to :recipient, class_name: "User", optional: true
 
   validates :remind_at, presence: true
   validates :message, presence: true
@@ -12,6 +13,11 @@ class Reminder < ApplicationRecord
 
   scope :pending, -> { where(fired_at: nil) }
   scope :due, -> { pending.where("remind_at <= ?", Time.current) }
+  scope :visible_to, ->(user) { where(user: user).or(where(recipient: user)) }
+
+  def target_user
+    recipient || user
+  end
 
   def fired?
     fired_at.present?

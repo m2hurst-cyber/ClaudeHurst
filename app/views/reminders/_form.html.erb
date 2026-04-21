@@ -2,10 +2,26 @@
   <% if reminder.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= reminder.errors.full_messages.to_sentence %></div>
   <% end %>
-  <% if reminder.subject.present? %>
+
+  <% if reminder.subject_type.in?([nil, "Company"]) %>
+    <%= f.hidden_field :subject_type, value: "Company" %>
+    <div>
+      <%= f.label :subject_id, "Tagged company" %>
+      <%= f.collection_select :subject_id, Company.kept.by_name, :id, :name, { include_blank: "No company tag" }, class: "border rounded px-2 py-1 w-full" %>
+    </div>
+  <% elsif reminder.subject.present? %>
     <%= f.hidden_field :subject_type, value: reminder.subject_type %>
     <%= f.hidden_field :subject_id, value: reminder.subject_id %>
+    <div class="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+      Tagged to <%= reminder.subject.respond_to?(:name) ? reminder.subject.name : reminder.subject.respond_to?(:display_name) ? reminder.subject.display_name : reminder.subject.class.name %>.
+    </div>
   <% end %>
+
+  <div>
+    <%= f.label :recipient_id, "Tagged person" %>
+    <%= f.collection_select :recipient_id, User.kept.order(:first_name, :last_name, :email), :id, :display_name, { include_blank: false }, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
   <div><%= f.label :remind_at %><%= f.datetime_local_field :remind_at, value: (reminder.remind_at || 1.hour.from_now).strftime("%Y-%m-%dT%H:%M"), class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :channel %><%= f.select :channel, Reminder::CHANNELS, {}, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :recurrence %><%= f.select :recurrence, Reminder::RECURRENCES, {}, class: "border rounded px-2 py-1 w-full" %></div>

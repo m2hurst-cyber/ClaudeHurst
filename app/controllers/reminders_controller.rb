@@ -1,16 +1,16 @@
 class RemindersController < ApplicationController
   before_action :set_reminder, only: %i[show edit update destroy fire]
-  before_action :set_subject, only: %i[new create]
+  before_action :set_subject, only: %i[new create edit update]
 
   def index
-    scope = Reminder.where(user: current_user).order(remind_at: :asc)
+    scope = Reminder.visible_to(current_user).includes(:user, :recipient, :subject).order(remind_at: :asc)
     @pagy, @reminders = pagy(scope)
   end
 
   def show; end
 
   def new
-    @reminder = Reminder.new(user: current_user, subject: @subject, remind_at: 1.hour.from_now, channel: "both", recurrence: "none")
+    @reminder = Reminder.new(user: current_user, recipient: current_user, subject: @subject, remind_at: 1.hour.from_now, channel: "both", recurrence: "none")
   end
 
   def create
@@ -25,7 +25,7 @@ class RemindersController < ApplicationController
   def edit; end
 
   def update
-    if @reminder.update(reminder_params)
+    if @reminder.update(reminder_params.merge(subject: @subject))
       redirect_to reminders_path, notice: "Reminder updated."
     else
       render :edit, status: :unprocessable_entity
@@ -76,6 +76,6 @@ class RemindersController < ApplicationController
   end
 
   def reminder_params
-    params.require(:reminder).permit(:remind_at, :channel, :recurrence, :message)
+    params.require(:reminder).permit(:remind_at, :channel, :recurrence, :message, :recipient_id)
   end
 end

@@ -6,6 +6,8 @@
   <table class="w-full text-sm">
     <thead class="bg-slate-100"><tr>
       <th class="px-3 py-2 text-left">Remind at</th>
+      <th class="px-3 py-2 text-left">Company</th>
+      <th class="px-3 py-2 text-left">Tagged person</th>
       <th class="px-3 py-2 text-left">Message</th>
       <th class="px-3 py-2 text-left">Channel</th>
       <th class="px-3 py-2 text-left">Recurrence</th>
@@ -16,6 +18,8 @@
       <% @reminders.each do |r| %>
         <tr>
           <td class="px-3 py-2"><%= nice_datetime(r.remind_at) %></td>
+          <td class="px-3 py-2"><%= r.subject_type == "Company" ? r.subject&.name || "—" : "—" %></td>
+          <td class="px-3 py-2"><%= r.target_user.display_name %></td>
           <td class="px-3 py-2"><%= r.message %></td>
           <td class="px-3 py-2"><%= r.channel %></td>
           <td class="px-3 py-2"><%= r.recurrence %></td>

@@ -7,6 +7,9 @@
 </div>
 <div class="bg-white border rounded p-4 text-sm max-w-xl space-y-1">
   <div>Remind at: <%= nice_datetime(@reminder.remind_at) %></div>
+  <div>Tagged company: <%= @reminder.subject_type == "Company" ? @reminder.subject&.name || "—" : "—" %></div>
+  <div>Created by: <%= @reminder.user.display_name %></div>
+  <div>Tagged person: <%= @reminder.target_user.display_name %></div>
   <div>Channel: <%= @reminder.channel %></div>
   <div>Recurrence: <%= @reminder.recurrence %></div>
   <div>Fired: <%= @reminder.fired? ? nice_datetime(@reminder.fired_at) : "pending" %></div>

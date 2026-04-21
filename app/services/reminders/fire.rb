@@ -23,10 +23,10 @@ module Reminders
 
     def notify_in_app
       Notification.create!(
-        user: @reminder.user,
+        user: @reminder.target_user,
         subject: @reminder.subject,
         kind: "reminder",
-        title: "Reminder",
+        title: reminder_title,
         body: @reminder.message,
         url: subject_url
       )
@@ -46,11 +46,18 @@ module Reminders
       Reminder.create!(
         subject: @reminder.subject,
         user: @reminder.user,
+        recipient: @reminder.recipient,
         remind_at: @reminder.next_occurrence_at,
         channel: @reminder.channel,
         recurrence: @reminder.recurrence,
         message: @reminder.message
       )
+    end
+
+    def reminder_title
+      return "Reminder" if @reminder.target_user == @reminder.user
+
+      "Reminder from #{@reminder.user.display_name}"
     end
   end
 end
