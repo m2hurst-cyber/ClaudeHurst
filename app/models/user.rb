@@ -5,6 +5,8 @@ class User < ApplicationRecord
 
   ROLES = %w[admin sales ops finance].freeze
 
+  has_one :microsoft_connection, dependent: :destroy
+  has_many :communication_push_events, dependent: :nullify
   has_many :owned_companies, class_name: "Company", foreign_key: :owner_id, dependent: :nullify
   has_many :owned_deals, class_name: "Deal", foreign_key: :owner_id, dependent: :nullify
   has_many :activities, dependent: :destroy
