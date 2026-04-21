@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "noreply@greatsoutherncopacker.local"
+  default from: Branding.mailer_sender
   layout "mailer"
 end

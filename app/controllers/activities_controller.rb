@@ -42,7 +42,7 @@ class ActivitiesController < ApplicationController
 
   def set_subject
     if params[:company_id]
-      @subject = Company.kept.find(params[:company_id])
+      @subject = Company.kept.find_by!(slug: params[:company_id])
     elsif params[:deal_id]
       @subject = Deal.kept.find(params[:deal_id])
     end

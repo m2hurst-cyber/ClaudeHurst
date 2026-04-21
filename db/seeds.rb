@@ -6,27 +6,43 @@ require "securerandom"
 puts "Seeding ClaudeHurst..."
 
 # ----- Users -----
-admin = User.find_or_create_by!(email: "admin@greatsoutherncopacker.test") do |u|
-  u.first_name = "Ada"
-  u.last_name = "Hurst"
-  u.role = "admin"
-  u.active = true
-  u.password = "password123"
-  u.password_confirmation = "password123"
-end
+admin = User.find_or_initialize_by(email: "admin@greatsouthernbeverages.test")
+admin.assign_attributes(
+  first_name: "Ada",
+  last_name: "Hurst",
+  role: "admin",
+  active: true,
+  password: "password123",
+  password_confirmation: "password123"
+)
+admin.save!
+
+User.where(email: "admin@greatsoutherncopacker.test").where.not(id: admin.id).delete_all
 
 staff_specs = [
-  { email: "sally.sales@greatsoutherncopacker.test",   first: "Sally",  last: "Sales",   role: "sales" },
-  { email: "omar.ops@greatsoutherncopacker.test",      first: "Omar",   last: "Ops",     role: "ops" },
-  { email: "fred.finance@greatsoutherncopacker.test",  first: "Fred",   last: "Finance", role: "finance" },
-  { email: "sam.sales@greatsoutherncopacker.test",     first: "Sam",    last: "Sales",   role: "sales" },
-  { email: "olive.ops@greatsoutherncopacker.test",     first: "Olive",  last: "Ops",     role: "ops" }
+  { email: "sally.sales@greatsouthernbeverages.test",   legacy_email: "sally.sales@greatsoutherncopacker.test",  first: "Sally",  last: "Sales",   role: "sales" },
+  { email: "omar.ops@greatsouthernbeverages.test",      legacy_email: "omar.ops@greatsoutherncopacker.test",     first: "Omar",   last: "Ops",     role: "ops" },
+  { email: "fred.finance@greatsouthernbeverages.test",  legacy_email: "fred.finance@greatsoutherncopacker.test", first: "Fred",   last: "Finance", role: "finance" },
+  { email: "sam.sales@greatsouthernbeverages.test",     legacy_email: "sam.sales@greatsoutherncopacker.test",    first: "Sam",    last: "Sales",   role: "sales" },
+  { email: "olive.ops@greatsouthernbeverages.test",     legacy_email: "olive.ops@greatsoutherncopacker.test",    first: "Olive",  last: "Ops",     role: "ops" }
 ]
+
+staff_specs.each do |spec|
+  User.where(email: spec[:legacy_email]).update_all(email: spec[:email])
+end
+
 staff = staff_specs.map do |spec|
-  User.find_or_create_by!(email: spec[:email]) do |u|
-    u.first_name = spec[:first]; u.last_name = spec[:last]; u.role = spec[:role]
-    u.active = true; u.password = "password123"; u.password_confirmation = "password123"
-  end
+  user = User.find_or_initialize_by(email: spec[:email])
+  user.assign_attributes(
+    first_name: spec[:first],
+    last_name: spec[:last],
+    role: spec[:role],
+    active: true,
+    password: "password123",
+    password_confirmation: "password123"
+  )
+  user.save!
+  user
 end
 sally, omar, fred, sam, olive = staff
 puts "  users: #{User.count}"
@@ -283,4 +299,4 @@ puts "  reminders: #{Reminder.count}"
 AuditLogger.record(user: admin, action: "seeds.loaded", subject: admin,
                    metadata: { at: Time.current.iso8601 })
 
-puts "Done. Sign in as admin@greatsoutherncopacker.test / password123"
+puts "Done. Sign in as admin@greatsouthernbeverages.test / password123"

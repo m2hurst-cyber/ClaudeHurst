@@ -1,0 +1,18 @@
+<%
+  stacked = local_assigns.fetch(:stacked, false)
+  link_path = local_assigns.fetch(:link_path, root_path)
+  wrapper_class = local_assigns.fetch(:wrapper_class, "")
+  title_class = local_assigns.fetch(:title_class, "")
+  tagline_class = local_assigns.fetch(:tagline_class, "")
+  image_class = local_assigns.fetch(:image_class, "h-12 w-12")
+  content_class = stacked ? "flex flex-col gap-3" : "flex items-center gap-3"
+%>
+<%= link_to link_path, class: "#{content_class} #{wrapper_class}".strip do %>
+  <span class="shrink-0" aria-label="<%= Branding.company_name %>">
+    <%= render "shared/brand_mark", class_name: image_class %>
+  </span>
+  <div>
+    <div class="<%= title_class.presence || "font-bold text-white text-lg leading-tight" %>"><%= Branding.company_name %></div>
+    <div class="<%= tagline_class.presence || "text-xs text-slate-400" %>"><%= Branding.tagline %></div>
+  </div>
+<% end %>

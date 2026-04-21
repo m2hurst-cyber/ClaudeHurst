@@ -21,7 +21,7 @@ module Pdf
     private
 
     def draw_header
-      @doc.text "Great Southern Copacker", size: 18, style: :bold
+      @doc.text Branding.company_name, size: 18, style: :bold
       @doc.text "Beverage Contract Manufacturing", size: 10, color: "666666"
       @doc.move_down 12
       @doc.stroke_horizontal_rule

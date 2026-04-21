@@ -21,7 +21,9 @@ class ContactsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @company = @contact.company
+  end
 
   def update
     if @contact.update(contact_params)
@@ -39,7 +41,7 @@ class ContactsController < ApplicationController
   private
 
   def set_company
-    @company = Company.kept.find(params[:company_id])
+    @company = Company.kept.find_by!(slug: params[:company_id])
   end
 
   def set_contact

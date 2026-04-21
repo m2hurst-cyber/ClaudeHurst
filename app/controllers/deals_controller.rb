@@ -32,7 +32,9 @@ class DealsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @company = @deal.company
+  end
 
   def update
     if @deal.update(deal_params)
@@ -66,7 +68,7 @@ class DealsController < ApplicationController
   private
 
   def set_company
-    @company = Company.kept.find(params[:company_id])
+    @company = Company.kept.find_by!(slug: params[:company_id])
   end
 
   def set_deal

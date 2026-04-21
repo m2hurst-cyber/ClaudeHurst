@@ -5,7 +5,7 @@ class DocumentMailer < ApplicationMailer
     type = @document.class.name
     attachments["#{@document.number}.pdf"] = pdf_for(@document)
     to = @document.company.contacts.where(primary: true).pluck(:email).compact.first || @user&.email
-    mail(to: to, subject: "[Great Southern Copacker] #{type} #{@document.number}")
+    mail(to: to, subject: "[#{Branding.company_name}] #{type} #{@document.number}")
   end
 
   private

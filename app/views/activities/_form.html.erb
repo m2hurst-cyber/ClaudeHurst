@@ -1,5 +1,5 @@
 <% form_url = activity.new_record? ?
-     (subject.is_a?(Company) ? company_activities_path(subject) : activity_path(activity)) :
+     (subject.is_a?(Company) ? company_activities_path(subject) : deal_activities_path(subject)) :
      activity_path(activity) %>
 <%= form_with(model: activity, url: form_url,
               class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>

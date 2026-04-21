@@ -1,10 +1,11 @@
-<%= form_with(model: deal, url: (deal.new_record? ? company_deals_path(deal.company) : deal_path(deal)),
-              class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl") do |f| %>
+<%= form_with(model: [company, deal],
+              class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl", local: true) do |f| %>
   <% if deal.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= deal.errors.full_messages.to_sentence %></div>
   <% end %>
   <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :amount_cents, "Amount (cents)" %><%= f.number_field :amount_cents, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :currency %><%= f.text_field :currency, value: (deal.currency || "USD"), class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :stage %><%= f.select :stage, Deal::STAGES, {}, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :expected_close_on %><%= f.date_field :expected_close_on, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :probability %><%= f.number_field :probability, class: "border rounded px-2 py-1 w-full" %></div>

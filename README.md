@@ -1,4 +1,4 @@
-# Great Southern Copacker — Beverage Copacker CRM-ERP
+# Great Southern Beverages — Beverage Copacker CRM-ERP
 
 Single-tenant, internally-hosted CRM-ERP for a mid-market beverage copacker.
 Covers customer relationships, sales documents (quotes/contracts/invoices),
@@ -25,10 +25,10 @@ Sign in at <http://localhost:3000>:
 
 | Email                                  | Password      | Role    |
 | -------------------------------------- | ------------- | ------- |
-| admin@greatsoutherncopacker.test                 | password123   | admin   |
-| sally.sales@greatsoutherncopacker.test           | password123   | sales   |
-| omar.ops@greatsoutherncopacker.test              | password123   | ops     |
-| fred.finance@greatsoutherncopacker.test          | password123   | finance |
+| admin@greatsouthernbeverages.test                | password123   | admin   |
+| sally.sales@greatsouthernbeverages.test          | password123   | sales   |
+| omar.ops@greatsouthernbeverages.test             | password123   | ops     |
+| fred.finance@greatsouthernbeverages.test         | password123   | finance |
 
 Mail preview: <http://localhost:3000/letter_opener>
 Job console (admin only): <http://localhost:3000/jobs>

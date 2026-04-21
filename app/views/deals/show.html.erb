@@ -15,7 +15,6 @@
     advance_action,
     link_to("View company", @deal.company, class: "rounded-xl border px-3 py-2 text-sm text-center")
   ].compact %>
-
 <div class="bg-white border rounded p-4 mb-4 text-sm grid grid-cols-3 gap-2">
   <div><strong>Owner:</strong> <%= @deal.owner&.display_name %></div>
   <div><strong>Expected close:</strong> <%= nice_date(@deal.expected_close_on) %></div>

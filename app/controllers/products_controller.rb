@@ -24,7 +24,9 @@ class ProductsController < ApplicationController
     end
   end
 
-  def edit; end
+  def edit
+    @company = @product.company
+  end
 
   def update
     if @product.update(product_params)
@@ -42,7 +44,7 @@ class ProductsController < ApplicationController
   private
 
   def set_company
-    @company = Company.kept.find(params[:company_id]) if params[:company_id]
+    @company = Company.kept.find_by!(slug: params[:company_id]) if params[:company_id]
   end
 
   def set_product
