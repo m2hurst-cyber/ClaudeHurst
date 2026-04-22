@@ -79,6 +79,6 @@ class DealsController < ApplicationController
   end
 
   def deal_params
-    params.require(:deal).permit(:name, :amount_cents, :currency, :stage, :expected_close_on, :probability, :notes, :owner_id)
+    params.require(:deal).permit(:name, :amount, :currency, :stage, :expected_close_on, :probability, :notes, :owner_id)
   end
 end
