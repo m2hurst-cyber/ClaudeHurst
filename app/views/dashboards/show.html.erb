@@ -1,58 +1,71 @@
 <h1 class="mb-4 text-xl font-semibold sm:text-2xl">Dashboard</h1>
 
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6">
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+  <%= link_to deals_path, class: "block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-400" do %>
     <div class="text-xs uppercase tracking-wide text-slate-500">Open deals</div>
-    <div class="mt-1 text-2xl font-semibold"><%= money(@open_deals_amount) %></div>
+    <div class="mt-1 text-2xl font-semibold text-slate-950"><%= money(@open_deals_amount) %></div>
     <div class="text-xs text-slate-400"><%= @open_deals_count %> deals</div>
-  </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+  <% end %>
+
+  <%= link_to invoices_path, class: "block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-400" do %>
     <div class="text-xs uppercase tracking-wide text-slate-500">Overdue invoices</div>
     <div class="mt-1 text-2xl font-semibold text-red-600"><%= @overdue_invoices.count %></div>
     <div class="text-xs text-slate-400">past due</div>
-  </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+  <% end %>
+
+  <%= link_to production_runs_path, class: "block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-400" do %>
     <div class="text-xs uppercase tracking-wide text-slate-500">Upcoming runs</div>
-    <div class="mt-1 text-2xl font-semibold"><%= @upcoming_runs.count %></div>
+    <div class="mt-1 text-2xl font-semibold text-slate-950"><%= @upcoming_runs.count %></div>
     <div class="text-xs text-slate-400">scheduled</div>
-  </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+  <% end %>
+
+  <%= link_to raw_materials_path, class: "block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-400" do %>
     <div class="text-xs uppercase tracking-wide text-slate-500">Low stock</div>
     <div class="mt-1 text-2xl font-semibold text-orange-500"><%= @low_stock.count %></div>
     <div class="text-xs text-slate-400">materials</div>
-  </div>
+  <% end %>
 </div>
 
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <h2 class="mb-2 text-sm font-semibold">My tasks</h2>
+  <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="mb-2 flex items-center justify-between gap-3">
+      <h2 class="text-sm font-semibold">My tasks</h2>
+      <%= link_to "View all", tasks_path, class: "text-xs font-medium text-slate-500 hover:text-slate-900" %>
+    </div>
     <% if @my_tasks.any? %>
       <ul class="divide-y text-sm">
         <% @my_tasks.each do |t| %>
-          <li class="flex items-center justify-between py-2">
-            <%= link_to t.title, t, class: "font-medium" %>
-            <span class="text-xs text-slate-400"><%= nice_date(t.due_on) %></span>
+          <li>
+            <%= link_to t, class: "flex items-center justify-between py-2 hover:text-slate-900" do %>
+              <span class="font-medium"><%= t.title %></span>
+              <span class="text-xs text-slate-400"><%= nice_date(t.due_on) %></span>
+            <% end %>
           </li>
         <% end %>
       </ul>
     <% else %>
-      <p class="text-sm text-slate-400">No open tasks</p>
+      <%= link_to "No open tasks", tasks_path, class: "block rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-400 hover:border-slate-300 hover:text-slate-600" %>
     <% end %>
-  </div>
+  </section>
 
-  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <h2 class="mb-2 text-sm font-semibold">Upcoming runs</h2>
+  <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="mb-2 flex items-center justify-between gap-3">
+      <h2 class="text-sm font-semibold">Upcoming runs</h2>
+      <%= link_to "View all", production_runs_path, class: "text-xs font-medium text-slate-500 hover:text-slate-900" %>
+    </div>
     <% if @upcoming_runs.any? %>
       <ul class="divide-y text-sm">
         <% @upcoming_runs.each do |r| %>
-          <li class="flex items-center justify-between py-2">
-            <span><%= link_to r.number, r %></span>
-            <span class="text-xs text-slate-400"><%= nice_datetime(r.scheduled_start) %></span>
+          <li>
+            <%= link_to r, class: "flex items-center justify-between py-2 hover:text-slate-900" do %>
+              <span class="font-medium"><%= r.number %></span>
+              <span class="text-xs text-slate-400"><%= nice_datetime(r.scheduled_start) %></span>
+            <% end %>
           </li>
         <% end %>
       </ul>
     <% else %>
-      <p class="text-sm text-slate-400">No runs</p>
+      <%= link_to "No runs", production_runs_path, class: "block rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-400 hover:border-slate-300 hover:text-slate-600" %>
     <% end %>
-  </div>
+  </section>
 </div>
