@@ -1,4 +1,6 @@
-<%= form_with model: [company, product], class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl", local: true do |f| %>
+<% form_model = product.persisted? ? product : [company, product] %>
+
+<%= form_with model: form_model, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl", local: true do |f| %>
   <% if product.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm">
       <%= product.errors.full_messages.to_sentence %>

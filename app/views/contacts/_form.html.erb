@@ -1,4 +1,6 @@
-<%= form_with(model: [company, contact],
+<% form_model = contact.persisted? ? contact : [company, contact] %>
+
+<%= form_with(model: form_model,
               class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-xl", local: true) do |f| %>
   <% if contact.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= contact.errors.full_messages.to_sentence %></div>
@@ -10,6 +12,6 @@
   <div><%= f.label :title %><%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :email %><%= f.email_field :email, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :phone %><%= f.text_field :phone, class: "border rounded px-2 py-1 w-full" %></div>
-  <div><%= f.check_box :primary %> <%= f.label :primary, "Primary contact" %></div>
+  <div><%= f.check_box :primary %> <%= f.label :primary, "Main contact" %></div>
   <div><%= f.submit class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
 <% end %>
