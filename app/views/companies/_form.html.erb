@@ -7,6 +7,7 @@
   <div><%= f.label :name %><%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :website %><%= f.text_field :website, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :industry %><%= f.text_field :industry, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :lead_source, "Lead source" %><%= f.text_field :lead_source, placeholder: "Referral, website, LinkedIn, trade show, cold outreach", class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :status %><%= f.select :status, Company::STATUSES, {}, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :owner_id, "Owner" %><%= f.collection_select :owner_id, User.active, :id, :display_name, { include_blank: true }, class: "border rounded px-2 py-1 w-full" %></div>
   <div><%= f.label :notes %><%= f.text_area :notes, rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
