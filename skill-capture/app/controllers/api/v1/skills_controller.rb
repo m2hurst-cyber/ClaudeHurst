@@ -5,6 +5,7 @@ module Api
       def index
         scope = Skill.published.shared.search(params[:q]).recent
         scope = scope.where(stage: params[:stage]) if Skill::SHARED_STAGES.include?(params[:stage])
+        scope = scope.classified_as(app: params[:app].presence_in(SkillClassification::APPS), field: params[:field].presence)
         scope = scope.where(domain: params[:domain]) if params[:domain].present?
         render json: scope.limit(500).map { |s| summary(s) }
       end
@@ -25,11 +26,19 @@ module Api
         }
       end
 
+      # GET /api/v1/fields: the field taxonomy
+      def fields
+        render json: Field.tree.map { |f, depth| { path: f.path, name: f.name, label: f.label, depth: depth } }
+      end
+
       private
 
       def summary(s)
         m = SkillMetric.for(s.name)
+        c = SkillClassification.includes(:field).find_by(skill_name: s.name)
         s.slice(:name, :version, :title, :description, :domain, :tags, :license, :published_at, :stage)
+         .merge(field: c&.field&.path, field_label: c&.field&.label, apps: c&.apps || [],
+                classified_by: c && (c.confirmed ? "person" : c.source))
          .merge(traffic: m&.priced? ? { tier: m.tier, congestion_index: m.congestion_index, price: m.price.to_f,
                                         currency: PricingSchedule.current.currency, bounty_pool: Bounty.active_for(s.name)&.pool&.to_f } : nil)
       end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000008) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,6 +85,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000008) do
     t.datetime "created_at", null: false
     t.index ["bounty_id"], name: "index_credit_entries_on_bounty_id"
     t.index ["user_id"], name: "index_credit_entries_on_user_id"
+  end
+
+  create_table "fields", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "path", null: false
+    t.bigint "parent_id"
+    t.integer "position", default: 0, null: false
+    t.string "keywords", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_fields_on_parent_id"
+    t.index ["path"], name: "index_fields_on_path", unique: true
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -183,6 +196,23 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000008) do
     t.index ["signature"], name: "index_skill_candidates_on_signature", unique: true
     t.index ["skill_id"], name: "index_skill_candidates_on_skill_id"
     t.index ["status"], name: "index_skill_candidates_on_status"
+  end
+
+  create_table "skill_classifications", force: :cascade do |t|
+    t.string "skill_name", null: false
+    t.bigint "field_id"
+    t.string "apps", default: [], null: false, array: true
+    t.string "source", default: "rules", null: false
+    t.float "confidence"
+    t.text "rationale"
+    t.boolean "confirmed", default: false, null: false
+    t.bigint "updated_by_id"
+    t.datetime "inferred_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["field_id"], name: "index_skill_classifications_on_field_id"
+    t.index ["skill_name"], name: "index_skill_classifications_on_skill_name", unique: true
+    t.index ["updated_by_id"], name: "index_skill_classifications_on_updated_by_id"
   end
 
   create_table "skill_links", force: :cascade do |t|
@@ -490,12 +520,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000008) do
   add_foreign_key "bounties", "users", column: "solver_id"
   add_foreign_key "credit_entries", "bounties"
   add_foreign_key "credit_entries", "users"
+  add_foreign_key "fields", "fields", column: "parent_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "promotions", "users", column: "decided_by_id"
   add_foreign_key "promotions", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "users", column: "reviewer_id"
+  add_foreign_key "skill_classifications", "fields"
+  add_foreign_key "skill_classifications", "users", column: "updated_by_id"
   add_foreign_key "skill_links", "users", column: "created_by_id"
   add_foreign_key "skill_votes", "users"
   add_foreign_key "skills", "skills", column: "parent_skill_id"

@@ -9,6 +9,9 @@ class CaptureSweepJob < ApplicationJob
     result.created.each { |c| SkillDraftJob.perform_later(c.id) }
     Capture::ChainDetector.call
     Capture::Bounties.sweep(Capture::Congestion.call)
+    # Classify anything published without a classification yet (e.g. after taxonomy changes).
+    classified = SkillClassification.pluck(:skill_name)
+    Skill.published.where.not(name: classified).find_each { |s| ClassifySkillJob.perform_later(s.name) }
     Rails.logger.info("Capture sweep: #{result.patterns.size} patterns, #{result.created.size} new, #{result.updated.size} updated")
   end
 end

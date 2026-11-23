@@ -1,0 +1,35 @@
+<% content_for :title, "Fields" %>
+<h1 class="text-2xl font-bold mb-1">Field taxonomy</h1>
+<p class="text-sm text-slate-500 mb-4">The hierarchy skills are classified into (what kind of work). AI picks from this list; keywords drive the fallback when AI isn't configured. Renaming or moving a field keeps every skill classified under it.</p>
+
+<div class="grid lg:grid-cols-[1fr_20rem] gap-4">
+  <div class="bg-white border rounded divide-y text-sm">
+    <% @tree.each do |f, depth| %>
+      <details class="group">
+        <summary class="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-slate-50" style="padding-left: <%= 12 + depth * 20 %>px">
+          <span class="<%= depth.zero? ? 'font-semibold' : '' %>"><%= depth.positive? ? "› " : "" %><%= f.name %></span>
+          <span class="text-xs text-slate-400 font-mono"><%= f.path %></span>
+          <span class="ml-auto text-xs text-slate-500"><%= pluralize(@counts[f.id].to_i, "skill") %></span>
+        </summary>
+        <%= form_with model: [:admin, f], method: :patch, class: "grid sm:grid-cols-4 gap-2 px-3 pb-3 items-end", style: "padding-left: #{12 + depth * 20}px" do |ff| %>
+          <div><%= ff.label :name %><%= ff.text_field :name, class: input_css %></div>
+          <div><%= ff.label :parent_id, "Under" %><%= ff.select :parent_id, Field.tree.reject { |x, _| x.path == f.path || x.path.start_with?("#{f.path}/") }.map { |x, d| ["#{"  " * d * 2}#{x.name}", x.id] }, { include_blank: "(top level)" }, class: input_css %></div>
+          <div class="sm:col-span-2"><%= ff.label :keywords, "Keywords (comma separated)" %><%= ff.text_field :keywords, value: f.keywords.join(", "), class: input_css %></div>
+          <div class="sm:col-span-4"><%= ff.submit "Save", class: btn_primary %></div>
+        <% end %>
+        <div class="px-3 pb-3" style="padding-left: <%= 12 + depth * 20 %>px">
+          <%= button_to "Remove #{f.name}", admin_field_path(f), method: :delete, class: "text-xs text-red-700 hover:underline", data: { turbo_confirm: "Remove #{f.name}?" } %>
+        </div>
+      </details>
+    <% end %>
+  </div>
+  <aside class="bg-white border rounded p-4 text-sm h-fit">
+    <h2 class="font-semibold mb-2">Add a field</h2>
+    <%= form_with model: [:admin, @field], class: "space-y-2" do |f| %>
+      <div><%= f.label :name %><%= f.text_field :name, required: true, class: input_css, placeholder: "e.g. Statistics" %></div>
+      <div><%= f.label :parent_id, "Under" %><%= f.select :parent_id, Field.tree.map { |x, d| ["#{"  " * d * 2}#{x.name}", x.id] }, { include_blank: "(top level)" }, class: input_css %></div>
+      <div><%= f.label :keywords, "Keywords" %><%= f.text_field :keywords, class: input_css, placeholder: "regression, sample, variance" %></div>
+      <%= f.submit "Add field", class: btn_primary %>
+    <% end %>
+  </aside>
+</div>

@@ -46,6 +46,7 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 | `app/services/capture/trip_matcher.rb` | Finds trips (a person doing a whole skill) with timing and the previous trip. Shared by chain detection and congestion |
 | `app/services/capture/congestion.rb`, `bounties.rb`; `app/models/pricing_schedule.rb`, `skill_metric.rb`, `bounty.rb`, `credit_entry.rb` | Congestion pricing: travel time vs free-flow, the demand schedule, bounty lifecycle, credits ledger |
 | `app/views/bounties/*`, `app/views/admin/pricing/*` | Bounties page; admin demand-schedule editor and chart |
+| `app/models/field.rb`, `skill_classification.rb`; `app/services/capture/taxonomy.rb`, `classifier.rb`; `app/views/skill_maps/fields.html.erb` | Classification: field hierarchy and apps per skill (AI or rules, people confirm); By field view; filters |
 | `app/models/promotion.rb`, `promotion_policy.rb`, `skill_vote.rb`; `app/services/capture/gates.rb`, `promotions.rb`, `voting.rb` | Gatekeeping: stages (local, firm, market), promotion gates and approvals, internal voting and Compare |
 | `app/models/waypoint.rb`, `app/services/capture/directions.rb`, `map_search.rb`, `app/controllers/places_controller.rb` | Places on the map (`road:`, `junction:`, `handoff:` keys) with versioned agent directions, generated scaffolds, and search |
 | `app/javascript/route_map/layout.js`, `app/javascript/controllers/route_map_controller.js` | Map layout (pure, tested) and SVG renderer (console `/map`) |
@@ -56,7 +57,7 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 
 ```bash
 bundle install && bin/rails db:prepare
-bin/rails test                      # expected: 79 runs, 0 failures
+bin/rails test                      # expected: 88 runs, 0 failures
 npm install && npm test             # expected: 18 pass, 0 fail
 bin/rails users:create EMAIL=a@example.org NAME="A" ROLE=admin   # prints a one-time password; no accounts are seeded
 bin/addin-dev                       # https://localhost:3000 with Office dev cert (web + Tailwind + jobs)
@@ -87,8 +88,9 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 9. **What Claude receives.** The model request contains only step keys and labels, counts, dates and requester or reviewer notes. No actor ids or names, resource refs or context. The default model is `claude-opus-5-5`, with structured JSON output and the server-side refusal fallback. Any failure falls back to the template drafter.
 10. **Manifest correctness.** HTTPS URLs on one origin, every `resid` resolves, icons exist, three hosts, a long-lived runtime per host. See `office_addin_test.rb`.
 11. **Sandbox isolation.** Local skills never reach agents or people outside their area, contributors and admins. Every query that returns skills goes through `Skill.visible_to(user)`; `nil` means agents (firm and market only). New code that lists skills, places or links must do the same.
-12. **Promotion integrity.** No one approves their own request. A non-admin reviewer can't approve a skill they published. Only admins waive gates, and only with a written reason. Promotion is one stage at a time.
-13. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+12. **People win over AI.** A classification a person set or confirmed (`confirmed: true`) is never overwritten by inference, except through an explicit "Re-infer".
+13. **Promotion integrity.** No one approves their own request. A non-admin reviewer can't approve a skill they published. Only admins waive gates, and only with a written reason. Promotion is one stage at a time.
+14. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -106,6 +108,7 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | Tagging and categorization | ✅ | Tags and area (domain) |
 | Linking to related documentation | ⛔ | Not modeled |
 | Visual map of how skills connect (journeys, branches, improvements) | ✅ | Console **Map → Routes** (`/map`, `/map.json`, `/map/route`), skill-page "On the map" panel, add-in "people usually continue with". `route_map_test.rb`, `route_map.test.mjs` |
+| Filterable hierarchy by app and by field (Finance › Accounting …), set by people and inferred by AI | ✅ | `Field`, `SkillClassification`, `Classifier`; library, map filters, **By field** view, add-in host filter, `?app=&field=` and `/api/v1/fields`. `classification_test.rb` |
 | Gatekeeping (sandbox → firm → market) | ✅ | `skills.stage`, `Skill.visible_to`, `Promotion`, `Gates`, Promotions queue, Admin → Gates, `/api/v1/market`. `gatekeeping_test.rb` |
 | Internal voting on which process is better | ✅ | `SkillVote`, `Voting.comparison`, `/skills/:id/compare`, add-in vote. `gatekeeping_test.rb` |
 | Searchable roads and intersections with their own agent Markdown directions | ✅ | `Waypoint`, `Directions`, `MapSearch`; map search and intersection nodes, `/map/places/<key>`, `/api/v1/search`, `/api/v1/places/<key>.md`, route directions. `directions_test.rb` |
@@ -199,14 +202,18 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
     - Chain detection, like workflow detection, runs in memory.
     - The layout is built for tens of skills per network. Hundreds will need clustering by area, or zoom levels.
 11. **Template drafts are generic.** For real use, Claude or a human edit is expected.
-12. **Gatekeeping assumptions.**
+12. **Classification limits.**
+    - Rule-based inference is keyword matching and makes plausible mistakes. In the demo it put "Prepare the customer contract" under Sales, and a person corrected it to Legal › Contracts.
+    - Claude inference is tested only with a stub.
+    - Each skill has one field; there's no multi-field tagging, so use tags for that.
+13. **Gatekeeping assumptions.**
     - The thresholds are first-pass defaults.
     - The sandbox usage gate counts trips over retained activity (90 days).
     - Votes are per skill name, so a heavily revised skill keeps its old votes.
     - Alternatives are defined by lineage (forks). Unrelated skills that do the same job won't appear in Compare unless one is branched from the other.
     - "Market" is a stage and an API or export; there's no external marketplace integration yet.
-13. **Directions are only as good as what people write.** Generated scaffolds give structure and live numbers, but intersections need human decision rules before an agent can choose exits reliably. Search is keyword and full-text (Postgres), not semantic.
-14. **Congestion pricing assumptions.**
+14. **Directions are only as good as what people write.** Generated scaffolds give structure and live numbers, but intersections need human decision rules before an agent can choose exits reliably. Search is keyword and full-text (Postgres), not semantic.
+15. **Congestion pricing assumptions.**
     - Free-flow is each skill's own 20th-percentile travel time over 90 days, so a skill that has always been slow reads as free-flowing.
     - The index needs at least 5 trips in the 7-day window.
     - Credits are internal points; nothing converts them to money.
@@ -218,6 +225,7 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - **Manifest format.** Stay on the XML manifest, or move to the unified JSON manifest (needed for Outlook, Teams and Copilot surfaces).
 - **Distribution.** Centralized deployment only, or also AppSource.
 - **Background capture default.** Is per-person opt-in enough, or should admins be able to turn it on for everyone (with notice)?
+- **Taxonomy ownership.** Who curates the field tree, and should it align with an existing enterprise taxonomy (HR job families, process classification frameworks like APQC PCF)? Should a skill be allowed several fields?
 - **What "market" means.** Another business unit, partners, a public marketplace, or selling skills? It decides the license gate, the review (legal or IP), and where `/api/v1/market` publishes.
 - **Voting weight.** One person, one vote today. Should reviewers', frequent users' or bounty solvers' votes count more, and should votes expire when a skill changes materially?
 - **Who owns directions.** Should every intersection with more than one exit require written decision rules before agents may drive it unattended, and who signs off on them (the area reviewer, or the owners of both ends)?

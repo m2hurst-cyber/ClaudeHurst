@@ -34,6 +34,7 @@ Rails.application.routes.draw do
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
       get :route, to: "routes#show"
       get :market, to: "skills#market"
+      get :fields, to: "skills#fields"
       get :search, to: "places#search"
       get "places/:key", to: "places#show", as: :place, constraints: { key: /[^\/]+?/ }, format: /json|md/
     end
@@ -44,6 +45,7 @@ Rails.application.routes.draw do
     get "map", to: "skill_maps#show", as: :skill_map
     get "map/route", to: "skill_maps#route", as: :skill_map_route
     get "map/areas", to: "skill_maps#areas", as: :skill_map_areas
+    get "map/fields", to: "skill_maps#fields", as: :skill_map_fields
     get "map/search", to: "places#search", as: :map_search
     scope "map/places", constraints: { key: /[^\/]+?/ }, format: /html|json|md/ do
       get ":key", to: "places#show", as: :place
@@ -62,6 +64,10 @@ Rails.application.routes.draw do
     resources :skills, only: %i[index show edit update] do
       resources :links, only: %i[create destroy], controller: :skill_links, constraints: { id: /[^\/]+/ }
       resource :vote, only: :update, controller: :skill_votes
+      resource :classification, only: :update, controller: :skill_classifications do
+        post :confirm
+        post :reinfer
+      end
       resources :promotions, only: :create
       member do
         get :compare
@@ -98,6 +104,7 @@ Rails.application.routes.draw do
       get :deploy, to: "deploy#show"
       resource :pricing, only: %i[show update], controller: :pricing
       resource :gates, only: %i[show update]
+      resources :fields, only: %i[index create update destroy]
     end
   end
 end

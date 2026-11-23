@@ -20,6 +20,7 @@
           <%= nav_link "Promotions", promotions_path %>
           <%= nav_link "Bounties", bounties_path %>
           <% if current_user.admin? %>
+            <%= nav_link "Fields", admin_fields_path %>
             <%= nav_link "Gates", admin_gates_path %>
             <%= nav_link "Pricing", admin_pricing_path %>
             <%= nav_link "Add-in", admin_deploy_path %>

@@ -18,12 +18,17 @@ const areaName = (a) => (!a ? "No area" : a.length <= 3 ? a.toUpperCase() : a.sp
 // The route map: skills as road segments, journeys as roads between them,
 // branches as side roads, unpublished workflows as unpaved roads.
 export default class extends Controller {
-  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend", "search", "results"]
+  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend", "search", "results",
+                    "appChip", "stageChip", "fieldButton", "fieldTree", "hideOthers", "filterCount"]
   static values = { routeUrl: String, colors: Object, tiers: Object, currency: String, searchUrl: String, placeUrl: String }
 
   connect() {
     this.map = JSON.parse(this.dataTarget.textContent)
+    this.allNodes = this.map.nodes
+    this.allEdges = this.map.edges
     this.byId = new Map(this.map.nodes.map((n) => [n.id, n]))
+    this.filters = this.readFiltersFromUrl()
+    this.syncFilterControls()
     this.geo = layout(this.map.nodes, this.map.edges)
     this.maxTraffic = Math.max(1, ...this.map.edges.map((e) => e.traffic || 0))
     this.focus = null
@@ -31,6 +36,114 @@ export default class extends Controller {
     this.draw()
     this.sizeViewport()
     this.fit()
+    this.applyFilters({ initial: true })
+  }
+
+  // ---------- filters (apps, field hierarchy, stage) ----------
+  readFiltersFromUrl() {
+    const q = new URLSearchParams(location.search)
+    return { apps: new Set(q.getAll("app")), field: q.get("field") || null, stages: new Set(q.getAll("stage")), hide: q.get("hide") === "1" }
+  }
+
+  writeFiltersToUrl() {
+    const q = new URLSearchParams()
+    this.filters.apps.forEach((a) => q.append("app", a))
+    if (this.filters.field) q.set("field", this.filters.field)
+    this.filters.stages.forEach((s) => q.append("stage", s))
+    if (this.filters.hide) q.set("hide", "1")
+    history.replaceState(null, "", `${location.pathname}${q.toString() ? `?${q}` : ""}`)
+  }
+
+  matches(n) {
+    const f = this.filters
+    if (f.apps.size && !(n.apps || []).some((a) => f.apps.has(a))) return false
+    if (f.field && !(n.field && (n.field === f.field || n.field.startsWith(`${f.field}/`)))) return false
+    if (f.stages.size && !(n.kind === "skill" && f.stages.has(n.stage))) return false
+    return true
+  }
+
+  get filtering() { return this.filters.apps.size || this.filters.field || this.filters.stages.size }
+
+  toggleApp(e) { const a = e.currentTarget.dataset.app; this.filters.apps.has(a) ? this.filters.apps.delete(a) : this.filters.apps.add(a); this.applyFilters() }
+  toggleStage(e) { const s = e.currentTarget.dataset.stage; this.filters.stages.has(s) ? this.filters.stages.delete(s) : this.filters.stages.add(s); this.applyFilters() }
+  setField(path) { this.filters.field = path; this.fieldTreeTarget.hidden = true; this.fieldButtonTarget.setAttribute("aria-expanded", "false"); this.applyFilters() }
+  clearFilters() { this.filters = { apps: new Set(), field: null, stages: new Set(), hide: false }; this.hideOthersTarget.checked = false; this.applyFilters() }
+
+  toggleFieldTree() {
+    const open = this.fieldTreeTarget.hidden
+    this.renderFieldTree()
+    this.fieldTreeTarget.hidden = !open
+    this.fieldButtonTarget.setAttribute("aria-expanded", String(open))
+  }
+
+  // The hierarchy with how many roads sit in each branch (counting everything below it).
+  renderFieldTree() {
+    const box = this.fieldTreeTarget
+    box.replaceChildren()
+    const fields = this.map.fields || []
+    const kids = new Map()
+    fields.forEach((f) => { const k = f.parent || ""; (kids.get(k) || kids.set(k, []).get(k)).push(f) })
+    const skills = this.allNodes.filter((n) => n.kind === "skill")
+    const count = (path) => skills.filter((n) => n.field && (n.field === path || n.field.startsWith(`${path}/`))).length
+    const row = (label, path, depth, n) => {
+      const b = this.append(box, "button", `w-full text-left flex items-center gap-2 rounded px-2 py-1 hover:bg-slate-50 ${this.filters.field === path ? "bg-slate-900 text-white hover:bg-slate-800" : ""}`)
+      b.type = "button"; b.setAttribute("role", "treeitem"); b.setAttribute("aria-level", String(depth + 1))
+      b.setAttribute("aria-selected", String(this.filters.field === path))
+      b.style.paddingLeft = `${8 + depth * 16}px`
+      this.append(b, "span", "flex-1", `${depth ? "› " : ""}${label}`)
+      this.append(b, "span", "text-xs tabular-nums opacity-70", String(n))
+      b.addEventListener("click", () => this.setField(path))
+    }
+    row("All fields", null, 0, skills.length)
+    const walk = (parent, depth) => (kids.get(parent) || []).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)).forEach((f) => {
+      const n = count(f.path)
+      if (n || this.filters.field === f.path) row(f.name, f.path, depth, n)
+      walk(f.path, depth + 1)
+    })
+    walk("", 0)
+    const un = skills.filter((n) => !n.field).length
+    if (un) this.append(box, "p", "text-xs text-slate-500 px-2 pt-1 border-t mt-1", `${un} not classified yet`)
+  }
+
+  syncFilterControls() {
+    if (!this.hasAppChipTarget) return
+    const on = (b, v) => { b.setAttribute("aria-pressed", String(v)); b.classList.toggle("bg-slate-900", v); b.classList.toggle("text-white", v); b.classList.toggle("bg-white", !v) }
+    this.appChipTargets.forEach((b) => on(b, this.filters.apps.has(b.dataset.app)))
+    this.stageChipTargets.forEach((b) => on(b, this.filters.stages.has(b.dataset.stage)))
+    this.hideOthersTarget.checked = this.filters.hide
+    const f = (this.map.fields || []).find((x) => x.path === this.filters.field)
+    const label = f ? (this.map.nodes.find((n) => n.field === f.path)?.field_label || f.name) : "All fields"
+    this.fieldButtonTarget.textContent = `Field: ${f ? (this.fieldLabel(f.path) || label) : label} ▾`
+  }
+
+  fieldLabel(path) {
+    const byPath = new Map((this.map.fields || []).map((f) => [f.path, f]))
+    const parts = []
+    let p = path
+    while (p && byPath.has(p)) { parts.unshift(byPath.get(p).name); p = byPath.get(p).parent }
+    return parts.join(" › ")
+  }
+
+  applyFilters(opts = {}) {
+    if (!opts.initial) this.filters.hide = this.hideOthersTarget.checked
+    this.syncFilterControls()
+    if (!opts.initial) this.writeFiltersToUrl()
+    const keep = new Set(this.allNodes.filter((n) => this.matches(n)).map((n) => n.id))
+    const total = this.allNodes.filter((n) => n.kind === "skill").length
+    const shown = this.allNodes.filter((n) => n.kind === "skill" && keep.has(n.id)).length
+    this.filterCountTarget.textContent = this.filtering ? `Showing ${shown} of ${total} skills` : `${total} skills`
+
+    const hide = Boolean(this.filters.hide && this.filtering)
+    if (hide || this.hidden) { // re-lay out only the matching roads (or restore the full map)
+      this.hidden = hide
+      this.map.nodes = hide ? this.allNodes.filter((n) => keep.has(n.id)) : this.allNodes
+      this.map.edges = hide ? this.allEdges.filter((e) => keep.has(e.from) && keep.has(e.to)) : this.allEdges
+      this.byId = new Map(this.map.nodes.map((n) => [n.id, n]))
+      this.geo = layout(this.map.nodes, this.map.edges)
+      this.draw(); this.sizeViewport(); this.fit()
+    }
+    this.filterKeep = this.filtering ? keep : null
+    this.highlight(this.focus ? [...this.focus.nodes] : null, this.focus ? [...this.focus.edges] : null)
   }
 
   color(node) {
@@ -165,10 +278,13 @@ export default class extends Controller {
   // ---------- highlight ----------
   highlight(nodeIds, edgePairs) {
     this.focus = nodeIds ? { nodes: new Set(nodeIds), edges: new Set(edgePairs || []) } : null
-    for (const [id, g] of this.nodeEls) g.style.opacity = !this.focus || this.focus.nodes.has(id) ? 1 : 0.18
-    for (const [id, g] of this.junctionEls || []) g.style.opacity = !this.focus || this.focus.nodes.has(id) ? 1 : 0.18
+    const keep = this.filterKeep
+    const nodeOp = (id) => (keep && !keep.has(id) ? 0.12 : 1) * (!this.focus || this.focus.nodes.has(id) ? 1 : 0.18)
+    for (const [id, g] of this.nodeEls) g.style.opacity = nodeOp(id)
+    for (const [id, g] of this.junctionEls || []) g.style.opacity = nodeOp(id)
     for (const { e, g } of this.edgeEls) {
-      g.style.opacity = !this.focus || this.focus.edges.has(`${e.from}>${e.to}`) ? 1 : 0.12
+      const filtered = keep && !(keep.has(e.from) && keep.has(e.to)) ? 0.1 : 1
+      g.style.opacity = filtered * (!this.focus || this.focus.edges.has(`${e.from}>${e.to}`) ? 1 : 0.12)
     }
   }
 
@@ -201,6 +317,7 @@ export default class extends Controller {
     h.href = n.url
     this.append(panel, "div", "text-xs text-slate-500 mb-2",
       [areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, n.improvements ? `improved ×${n.improvements}` : null, n.apps?.join(", ")].filter(Boolean).join(" · "))
+    if (n.field_label) this.append(panel, "div", "text-xs text-slate-700 mb-2", `Field: ${n.field_label} ${n.classified_by === "person" ? "(✓ confirmed)" : "(✨ inferred)"}`)
     if (n.tier) {
       const box = this.append(panel, "div", "border rounded p-2 mb-2 text-xs space-y-0.5")
       this.append(box, "div", "font-semibold text-sm", this.trafficText(n))
@@ -405,6 +522,7 @@ export default class extends Controller {
   nodeTip(ev, n) {
     const stage = { local: "Local (sandbox)", firm: "Firm", market: "Market" }[n.stage]
     const lines = [[n.title, "font-semibold"], [[areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, stage].filter(Boolean).join(" · "), "text-slate-600"],
+      ...(n.field_label ? [[`Field: ${n.field_label}${n.classified_by === "person" ? " ✓" : " ✨"}`, "text-slate-700"]] : []),
       ...(n.tier ? [[this.trafficText(n), "text-slate-900"]] : []),
       ...(n.bounty ? [[`💰 Bounty ${this.money(n.bounty.pool)}`, "text-slate-900"]] : []),
       [[n.apps?.join(", "), `${n.steps} steps`, n.improvements ? `improved ×${n.improvements}` : null, n.contributors ? `${n.contributors} contributors` : null].filter(Boolean).join(" · "), "text-slate-600"]]

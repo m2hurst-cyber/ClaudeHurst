@@ -31,6 +31,29 @@ module ApplicationHelper
     end
   end
 
+  APP_STYLE = {
+    "Excel" => ["X", "#107c41"], "Word" => ["W", "#185abd"], "PowerPoint" => ["P", "#c43e1c"], "Outlook" => ["O", "#0f6cbd"],
+    "Teams" => ["T", "#5b5fc7"], "Power BI" => ["BI", "#b48a00"], "SharePoint" => ["S", "#036c70"]
+  }.freeze
+
+  # An app chip: a small letter tile (product-colored) + the app's name. The name carries the meaning.
+  def app_chip(app)
+    letter, color = APP_STYLE.fetch(app, ["?", "#52514e"])
+    tag.span(class: "inline-flex items-center gap-1 text-xs text-slate-800 border rounded px-1.5 py-0.5 bg-white") do
+      safe_join([tag.span(letter, class: "inline-grid place-items-center w-4 h-4 rounded-sm text-[9px] font-bold text-white", style: "background: #{color}", "aria-hidden": true), app])
+    end
+  end
+
+  def classification_source(c)
+    return tag.span("Unclassified", class: "text-xs text-slate-400") unless c
+    if c.confirmed
+      tag.span("✓ #{c.source == 'user' ? 'Set' : 'Confirmed'} by #{c.updated_by&.name || 'a person'}", class: "text-xs text-slate-700", title: "A person set or confirmed this")
+    else
+      label = c.source == "ai" ? "✨ AI" : "✨ Inferred"
+      tag.span("#{label}#{" · #{(c.confidence * 100).round}%" if c.confidence}", class: "text-xs text-violet-800 bg-violet-50 rounded px-1", title: c.rationale)
+    end
+  end
+
   def nice_time(t) = t ? t.in_time_zone.strftime("%Y-%m-%d %H:%M") : "—"
   def nice_date(t) = t ? t.to_date.iso8601 : "—"
 

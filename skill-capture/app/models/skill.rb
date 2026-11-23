@@ -35,6 +35,21 @@ class Skill < ApplicationRecord
     shared.or(local)
   end
 
+  # Filters by classification: an app ("Excel") and/or a field path including its subfields.
+  def self.classified_as(app: nil, field: nil)
+    scope = all
+    if app.present?
+      scope = scope.where(name: SkillClassification.where(":app = ANY(apps)", app: app).select(:skill_name))
+    end
+    if field.present?
+      ids = Field.where("path = :p OR path LIKE :c", p: field, c: "#{sanitize_sql_like(field)}/%").select(:id)
+      scope = scope.where(name: SkillClassification.where(field_id: ids).select(:skill_name))
+    end
+    scope
+  end
+
+  def classification = SkillClassification.for(name)
+
   def visible_to?(user) = Skill.visible_to(user).exists?(id: id)
   def shared? = SHARED_STAGES.include?(stage)
   def stage_label = STAGE_LABELS[stage]

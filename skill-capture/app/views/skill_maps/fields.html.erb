@@ -1,0 +1,36 @@
+<% content_for :title, "Skills by field" %>
+<%= render "tabs", subtitle: "The field hierarchy: what kind of work each skill is, from broad fields down to specialties. Filter by app and stage; open any branch on the routes map." %>
+
+<div class="bg-white border rounded p-3 mb-3 text-sm flex flex-wrap items-center gap-x-3 gap-y-2">
+  <span class="font-semibold">Filter</span>
+  <div class="flex flex-wrap gap-1" role="group" aria-label="Apps">
+    <% SkillClassification::APPS.each do |a| %>
+      <% on = @apps.include?(a) %>
+      <%= link_to skill_map_fields_path(app: (on ? @apps - [a] : @apps + [a]), stage: @stages), class: "inline-flex items-center gap-1 px-2 py-1 rounded border text-xs #{on ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { pressed: on } do %>
+        <span class="inline-grid place-items-center w-4 h-4 rounded-sm text-[9px] font-bold text-white" style="background: <%= ApplicationHelper::APP_STYLE[a][1] %>" aria-hidden="true"><%= ApplicationHelper::APP_STYLE[a][0] %></span><%= a %>
+      <% end %>
+    <% end %>
+  </div>
+  <div class="flex flex-wrap gap-1" role="group" aria-label="Stage">
+    <% [["local", "🧪 Local"], ["firm", "🏢 Firm"], ["market", "🌐 Market"]].each do |st, label| %>
+      <% on = @stages.include?(st) %>
+      <%= link_to label, skill_map_fields_path(app: @apps, stage: (on ? @stages - [st] : @stages + [st])), class: "px-2 py-1 rounded border text-xs #{on ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { pressed: on } %>
+    <% end %>
+  </div>
+  <% if @apps.any? || @stages.any? %><%= link_to "Clear", skill_map_fields_path, class: "text-xs text-sky-700 hover:underline" %><% end %>
+  <span class="ml-auto text-xs text-slate-500"><%= pluralize(@skills.size, "skill") %></span>
+</div>
+
+<div class="space-y-3">
+  <% Array(@children[nil]).sort_by { |f| [f.position, f.name] }.select { |f| @counts[f.id].positive? }.each do |root| %>
+    <%= render "field_branch", field: root, depth: 0 %>
+  <% end %>
+  <% unclassified = Array(@by_field[nil]) %>
+  <% if unclassified.any? %>
+    <details class="bg-white border rounded" open>
+      <summary class="cursor-pointer px-3 py-2 font-semibold text-base flex"><span class="flex-1">Not classified yet</span><span class="text-xs text-slate-500"><%= pluralize(unclassified.size, "skill") %></span></summary>
+      <div class="px-3 pb-2 space-y-2"><% unclassified.each do |s| %><div><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></div><% end %></div>
+    </details>
+  <% end %>
+  <% if @skills.empty? %><p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No skills match these filters.</p><% end %>
+</div>

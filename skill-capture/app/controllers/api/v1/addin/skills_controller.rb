@@ -4,6 +4,7 @@ module Api
       class SkillsController < BaseController
         def index
           scope = Skill.published.visible_to(current_user).search(params[:q]).recent
+                       .classified_as(app: params[:app].presence_in(SkillClassification::APPS), field: params[:field].presence)
           scope = scope.where(domain: params[:domain]) if params[:domain].present?
           render json: scope.limit(100).map { |s| summary(s) }
         end
@@ -35,7 +36,12 @@ module Api
 
         private
 
-        def summary(s) = s.slice(:name, :version, :title, :description, :domain, :tags, :published_at, :stage)
+        def summary(s)
+          c = SkillClassification.includes(:field).find_by(skill_name: s.name)
+          s.slice(:name, :version, :title, :description, :domain, :tags, :published_at, :stage)
+           .merge(field: c&.field&.path, field_label: c&.field&.label, apps: c&.apps || Capture::Classifier.observed_apps(s),
+                  classified_by: c && (c.confirmed ? "person" : c.source))
+        end
 
         def place(key)
           pl = Capture::Directions.find(key, viewer: current_user)

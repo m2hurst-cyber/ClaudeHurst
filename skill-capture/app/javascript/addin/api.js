@@ -30,7 +30,7 @@ export function createApi(base = location.origin) {
     me: () => request("GET", "/api/v1/addin/me"),
     disconnect: async () => { try { await request("DELETE", "/api/v1/addin/me"); } finally { setToken(null); } },
     sendEvents: (payload) => request("POST", "/api/v1/addin/events", payload),
-    skills: (q = "", domain = "") => request("GET", `/api/v1/addin/skills?q=${encodeURIComponent(q)}&domain=${encodeURIComponent(domain)}`),
+    skills: (q = "", domain = "", app = "") => request("GET", `/api/v1/addin/skills?q=${encodeURIComponent(q)}&domain=${encodeURIComponent(domain)}&app=${encodeURIComponent(app)}`),
     areas: () => request("GET", "/api/v1/addin/areas"),
     vote: (name, value, comment) => request("PUT", `/api/v1/addin/skills/${encodeURIComponent(name)}/vote`, { value, comment }),
     skill: (name) => request("GET", `/api/v1/addin/skills/${encodeURIComponent(name)}`),

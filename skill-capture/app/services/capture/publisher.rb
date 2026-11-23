@@ -102,7 +102,15 @@ module Capture
       }.compact
     end
 
+    # Rules are instant; a Claude classification runs in the background.
+    def classify(skill)
+      Config.llm_enabled? ? ClassifySkillJob.perform_later(skill.name) : Classifier.apply!(skill)
+    rescue => e
+      Rails.logger.warn("Classification skipped for #{skill.name}: #{e.class}: #{e.message}")
+    end
+
     def after_publish(skill, action, **meta)
+      classify(skill)
       AuditLog.record(action, user: @user, subject: skill, name: skill.name, version: skill.version, **meta)
       SkillFile.export(skill) if skill.shared? # sandbox skills stay out of the skill repository
       check_publish_rate!

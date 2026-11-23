@@ -112,6 +112,40 @@ How it works:
 - **Add-in:** a skill shows its road directions (if written) and "At the end of this road: which way next" (the intersection).
 - **Export:** `capture:export` writes `<skill>/ROAD.md`, `<skill>/INTERSECTION.md` and `handoffs/<from>--<to>.md` next to each `SKILL.md`.
 
+## Classification: field hierarchy and apps
+
+**Taxonomy.** `Field` is a tree with `path` (slugs joined by `/`, re-computed for the whole branch on rename or move), `keywords` and `position`. It ships with Finance, Data analysis, Design, Legal, Sales and Operations, each with subfields (`Capture::Taxonomy`). Admins edit it at **Admin → Fields**: add, rename, move, keywords, remove. A field with subfields can't be removed; removing a field un-sets the classifications that weren't confirmed by a person.
+
+**Classification** (`SkillClassification`, by skill name, so it carries across versions):
+
+| Column | Meaning |
+|---|---|
+| `field` | The field in the taxonomy |
+| `apps` | The apps the skill uses |
+| `source` | `ai`, `rules` or `user` |
+| `confidence`, `rationale` | How sure the inference was, and why |
+| `confirmed` | Whether a person set or confirmed it |
+
+**Inference** (`Capture::Classifier`):
+- **Apps:** apps seen in the workflow's step keys (`excel.*`, `word.*`, `powerpoint.*`, `outlook.*`, …), plus apps named in the text.
+- **Field with Claude:** Claude gets the skill's title, description, area and step labels plus the taxonomy, and must answer with structured output whose `field_path` is an enum of the taxonomy's paths (or `none`), with apps, confidence and rationale. It uses effort low and the server-side refusal fallback.
+- **Field with rules:** keyword hits (title weighted ×2), plus the ancestors' evidence, plus a bonus when the skill's area matches a top-level field. Confidence is 0.35 + 0.08 × score, capped at 0.85.
+- **When it runs:** on every publish (rules inline; Claude through `ClassifySkillJob`) and in the hourly sweep for unclassified skills.
+- **People win:** inference never overwrites a confirmed classification (it only merges in newly observed apps). "Re-infer" unlocks it explicitly.
+
+**Who can change it:** the skill's area reviewers, its publisher, its contributors and admins (`SkillPolicy#classify?`). They can set the field and apps (`source: user`), confirm an inference, or re-infer. Every change is audited.
+
+**Where it's used:**
+- **Skill cards:** the library, the By field view and Compare show the field breadcrumb, app chips and the source badge (✨ Inferred · confidence, or ✓ Set or Confirmed by a name).
+- **Filters:**
+  - `Skill.classified_as(app:, field:)`, where a field includes its subfields
+  - library (`?app=&field=&stage=&domain=`)
+  - routes map (app chips, a field tree with counts, stage chips, dim or "Hide non-matching" which redraws the map; state lives in the URL)
+  - **Map → By field** (`/map/fields`): the hierarchy with skills at each node, filters for app and stage, and "Routes" links into the filtered map
+  - add-in (`?app=`; defaults to the host app)
+  - integration API (`?app=&field=`)
+- **API:** `GET /api/v1/fields` returns the taxonomy. Skills in every API carry `field`, `field_label`, `apps` and `classified_by`.
+
 ## Gatekeeping: stages, promotions and voting
 
 **Stages** (`skills.stage`):
@@ -336,6 +370,7 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
 - `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
 - `test/integration/route_map_test.rb`: observed roads (traffic, minimum, gap), recomputation keeping manual links, branches, improvements, unpaved visibility, the planner (busier road wins, gaps), the agent route API, reviewer-drawn links and the add-in "next up".
+- `test/integration/classification_test.rb`: taxonomy paths and re-pathing a branch, auto-classification on publish (field from text, apps from steps), Claude restricted to the taxonomy enum (stubbed), people win over inference (set, re-infer, confirm), editing permissions, library and map and By field filters, the agent and add-in filters and taxonomy API, and admin taxonomy editing.
 - `test/integration/gatekeeping_test.rb`: starting stages and inheritance, local visibility (people, library, search, the agent API), the Local → Firm gates and approver rules, admin-only waivers with a reason, the Firm → Market gates (days, votes, traffic, license, directions), the market API, voting rules (own skill, visibility, change and clear), the comparison's preferred choice and replacing the incumbent, and the pages (stage panel, queue, decline needs a reason, admin gates, add-in voting).
 - `test/integration/directions_test.rb`: generated scaffolds (exits and their share, the default exit, reviewers, predecessors, done-when), not-found keys, reviewer-only versioned writing, empty bodies refused, raw Markdown, search (roads, intersections, handoffs, full text inside directions), the agent search, place and route-with-directions APIs, map data and the add-in intersection.
 - `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.

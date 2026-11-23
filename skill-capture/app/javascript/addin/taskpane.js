@@ -11,7 +11,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const CAPTURE_KEY = "skillcapture.capturing";
 const areaName = (n) => n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
-const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok" };
+const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok",
+                hostOnly: settings.get("skillcapture.hostOnly") !== "0" }; // default: show skills for the app you're in
 let flushTimer = null;
 
 const btn = "inline-flex items-center justify-center px-3 py-1.5 rounded border bg-white hover:bg-slate-50";
@@ -132,6 +133,7 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
       <input name="q" value="${esc(q)}" placeholder="Search skills" class="${input}" aria-label="Search skills">
       <button class="${btn}">Search</button>
     </form>
+    ${state.host ? `<label class="flex items-center gap-1.5 text-xs mb-2"><input type="checkbox" data-action="host-only" ${state.hostOnly ? "checked" : ""}> Only ${esc(state.host)} skills</label>` : ""}
     <div id="areas" class="flex flex-wrap gap-1 mb-3" aria-label="Filter by area"></div>
     <div id="results" class="space-y-2"><p class="text-slate-500">Loading…</p></div>`;
   api.areas().then((areas) => {
@@ -143,11 +145,12 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
       areas.map((a) => chip(a.name, `${areaName(a.name)} · ${a.published}`, a.name === area)).join("");
   }).catch(() => {});
   try {
-    const skills = await api.skills(q, area);
+    const skills = await api.skills(q, area, state.host && state.hostOnly ? state.host : "");
     document.getElementById("results").innerHTML = skills.length ? skills.map((s) => `
       <button data-skill="${esc(s.name)}" class="block w-full text-left border rounded p-2 hover:bg-slate-50">
         <div class="font-medium">${esc(s.title)}</div>
         <div class="text-xs text-slate-500">${stageLabel(s.stage)} · ${esc(s.domain || "")}${s.domain ? " · " : ""}v${s.version}</div>
+        ${s.field_label || s.apps?.length ? `<div class="text-xs text-slate-700 mt-0.5">${esc(s.field_label || "")}${s.field_label && s.apps?.length ? " · " : ""}${esc((s.apps || []).join(", "))}</div>` : ""}
         <div class="text-slate-600 mt-1">${esc(s.description.slice(0, 160))}${s.description.length > 160 ? "…" : ""}</div>
       </button>`).join("") : '<p class="text-slate-500">No skills match.</p>';
   } catch (e) { document.getElementById("results").innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
@@ -162,6 +165,7 @@ async function renderSkill(name) {
       <button data-action="back-library" class="text-sky-700 mb-2">← Library</button>
       <h2 class="text-base font-semibold">${esc(s.title)}</h2>
       <div class="text-xs text-slate-500 mb-2">${stageLabel(s.stage)} · ${esc(s.name)} · v${s.version}${s.contributors.length ? ` · from ${esc(s.contributors.join(", "))}` : ""}</div>
+      ${s.field_label || s.apps?.length ? `<div class="text-xs mb-2"><span class="text-slate-500">Field</span> ${esc(s.field_label || "—")} ${s.classified_by === "person" ? "✓" : "✨"} · <span class="text-slate-500">Apps</span> ${esc((s.apps || []).join(", ") || "—")}</div>` : ""}
       <div id="vote-box" class="flex items-center gap-2 mb-2">${voteHtml(s)}</div>
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
@@ -333,6 +337,7 @@ document.addEventListener("click", async (ev) => {
 });
 
 document.addEventListener("change", async (ev) => {
+  if (ev.target.dataset.action === "host-only") { state.hostOnly = ev.target.checked; settings.set("skillcapture.hostOnly", state.hostOnly ? "1" : "0"); return renderLibrary(); }
   if (ev.target.dataset.action !== "toggle-capture") return;
   const on = ev.target.checked;
   settings.set(CAPTURE_KEY, on ? "on" : "off");

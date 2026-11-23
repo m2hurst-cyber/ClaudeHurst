@@ -5,6 +5,7 @@
   </div>
   <nav class="flex text-sm border rounded overflow-hidden" aria-label="Map views">
     <%= link_to "Routes", skill_map_path, class: "px-3 py-1.5 #{current_page?(skill_map_path) ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { current: (current_page?(skill_map_path) ? "page" : nil) } %>
+    <%= link_to "By field", skill_map_fields_path, class: "px-3 py-1.5 border-l #{current_page?(skill_map_fields_path) ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { current: (current_page?(skill_map_fields_path) ? "page" : nil) } %>
     <%= link_to "By area", skill_map_areas_path, class: "px-3 py-1.5 border-l #{current_page?(skill_map_areas_path) ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { current: (current_page?(skill_map_areas_path) ? "page" : nil) } %>
   </nav>
 </div>

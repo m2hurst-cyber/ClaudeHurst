@@ -20,6 +20,21 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
   - each **handoff** (the connector between two skills): what to pass on and who to notify
 
   Until a reviewer writes them, directions are generated from live data. Search covers titles and the full text of written directions. Agents read any place as Markdown (`GET /api/v1/places/<key>.md`), and routes come back with the full sequence of directions.
+- **Classification and filterable hierarchy.** Every skill card shows:
+  - **Field:** a place in an admin-editable hierarchy, for example *Finance › Accounting › Reconciliation*, *Data analysis › Statistics*, *Design › Presentation design*.
+  - **Apps:** Excel, Word, PowerPoint, Outlook, Teams, Power BI, SharePoint.
+
+  **How they're set:**
+  - Inferred automatically on publish: by Claude choosing from the taxonomy as a closed list, or by keyword rules when Claude isn't configured. Shown as ✨ Inferred with a confidence and a reason.
+  - Set or confirmed by the skill's area reviewers, publisher or contributors (shown as ✓). AI never overwrites a person's choice.
+  - Apps seen in the skill's steps are always included.
+
+  **Where you can filter by app, field (including subfields) and stage:**
+  - the library
+  - the routes map (with a field tree and counts, and hide-or-dim for non-matching roads; filters live in the URL)
+  - a new **Map → By field** hierarchy view
+  - the agent API
+  - the Office add-in, which by default shows skills for the app it's running in
 - **Gatekeeping: sandbox → firm → market.** Every skill has a stage:
   - **Local** (sandbox): visible to its authors, contributors, its area's people and admins; never to agents.
   - **Firm:** everyone in the firm, and agents through the API.

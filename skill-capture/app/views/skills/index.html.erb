@@ -4,28 +4,48 @@
   <p class="text-sm text-slate-500">Procedures captured from how people actually work. Each one downloads as an Agent Skills <code>SKILL.md</code>.</p>
 </div>
 
-<%= form_with url: skills_path, method: :get, class: "mb-4 flex flex-wrap gap-2 items-center" do |f| %>
-  <%= search_field_tag :q, params[:q], placeholder: "Search skills", class: "border rounded px-2 py-1.5 text-sm w-full sm:w-72" %>
-  <%= select_tag :domain, options_for_select([["All areas", ""]] + @domains, params[:domain]), class: "border rounded px-2 py-1.5 text-sm" %>
-  <%= select_tag :stage, options_for_select([["All stages", ""], ["🧪 Local (sandbox)", "local"], ["🏢 Firm", "firm"], ["🌐 Market", "market"]], params[:stage]), class: "border rounded px-2 py-1.5 text-sm", "aria-label": "Stage" %>
-  <label class="text-sm flex items-center gap-1"><%= check_box_tag :all, "1", params[:all] == "1" %> include old versions</label>
-  <%= f.submit "Search", class: btn %>
+<%= form_with url: skills_path, method: :get, class: "bg-white border rounded p-3 mb-3 flex flex-wrap gap-2 items-end text-sm" do |f| %>
+  <label class="flex flex-col gap-1 flex-1 min-w-48">Search<%= search_field_tag :q, params[:q], placeholder: "Title, description, tag", class: "border rounded px-2 py-1.5" %></label>
+  <label class="flex flex-col gap-1">Field
+    <%= select_tag :field, options_for_select(Field.tree.map { |fld, d| ["#{"  " * d * 2}#{d.positive? ? '› ' : ''}#{fld.name}", fld.path] }, params[:field]), include_blank: "All fields", class: "border rounded px-2 py-1.5" %>
+  </label>
+  <label class="flex flex-col gap-1">Stage
+    <%= select_tag :stage, options_for_select([["All stages", ""], ["🧪 Local (sandbox)", "local"], ["🏢 Firm", "firm"], ["🌐 Market", "market"]], params[:stage]), class: "border rounded px-2 py-1.5" %>
+  </label>
+  <label class="flex flex-col gap-1">Area
+    <%= select_tag :domain, options_for_select([["All areas", ""]] + @domains.map { |d| [area_name(d), d] }, params[:domain]), class: "border rounded px-2 py-1.5" %>
+  </label>
+  <%= hidden_field_tag :app, params[:app] if params[:app].present? %>
+  <%= f.submit "Filter", class: btn %>
 <% end %>
 
-<div class="grid md:grid-cols-2 gap-3">
-  <% @skills.each do |s| %>
-    <%= link_to skill_path(s), class: "block bg-white border rounded p-4 hover:shadow-sm" do %>
-      <div class="flex justify-between gap-2">
-        <div class="font-semibold"><%= s.title %></div>
-        <span class="flex gap-1 shrink-0"><%= stage_badge(s.stage) %><% unless s.status == "published" %><%= status_badge(s.status) %><% end %></span>
-      </div>
-      <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{s.domain}" if s.domain %></div>
-      <p class="text-sm text-slate-700 mt-2"><%= s.description.truncate(220) %></p>
-      <div class="mt-2 flex flex-wrap gap-1"><% s.tags.each do |t| %><span class="text-xs bg-slate-100 rounded px-1.5 py-0.5"><%= t %></span><% end %></div>
+<div class="flex flex-wrap items-center gap-1.5 mb-3 text-sm" aria-label="Filter by app">
+  <span class="text-xs text-slate-500 mr-1">App</span>
+  <%= link_to "All apps", skills_path(request.query_parameters.except("app", "page")), class: "px-2 py-1 rounded border text-xs #{params[:app].blank? ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { current: params[:app].blank? ? "true" : nil } %>
+  <% SkillClassification::APPS.each do |a| %>
+    <% on = params[:app] == a %>
+    <%= link_to skills_path(request.query_parameters.except("page").merge("app" => (on ? nil : a)).compact), class: "inline-flex items-center gap-1 px-2 py-1 rounded border text-xs #{on ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { pressed: on } do %>
+      <span class="inline-grid place-items-center w-4 h-4 rounded-sm text-[9px] font-bold text-white" style="background: <%= ApplicationHelper::APP_STYLE[a][1] %>" aria-hidden="true"><%= ApplicationHelper::APP_STYLE[a][0] %></span><%= a %>
     <% end %>
   <% end %>
 </div>
+<% if @field %><p class="text-sm text-slate-600 mb-3">Showing <strong><%= @field.label %></strong> and everything under it.</p><% end %>
+
+<div class="grid md:grid-cols-2 gap-3">
+  <% @skills.each do |s| %>
+    <article class="bg-white border rounded p-4 flex flex-col gap-2">
+      <div class="flex justify-between gap-2">
+        <%= link_to s.title, skill_path(s), class: "font-semibold text-sky-700 hover:underline" %>
+        <span class="flex gap-1 shrink-0"><%= stage_badge(s.stage) %><% unless s.status == "published" %><%= status_badge(s.status) %><% end %></span>
+      </div>
+      <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{area_name(s.domain)}" if s.domain %></div>
+      <p class="text-sm text-slate-700"><%= s.description.truncate(200) %></p>
+      <div class="border-t pt-2"><%= render "skills/classification", c: @classifications[s.name], compact: true %></div>
+      <% if s.tags.any? %><div class="flex flex-wrap gap-1"><% s.tags.each do |t| %><span class="text-xs bg-slate-100 rounded px-1.5 py-0.5"><%= t %></span><% end %></div><% end %>
+    </article>
+  <% end %>
+</div>
 <% if @skills.empty? %>
-  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No skills yet. Approved workflows from Review appear here.</p>
+  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No skills match these filters.</p>
 <% end %>
 <div class="mt-3"><%== pagy_nav(@pagy) if @pagy.pages > 1 %></div>

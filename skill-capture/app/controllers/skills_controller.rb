@@ -6,8 +6,11 @@ class SkillsController < ApplicationController
     scope = (params[:all] == "1" ? Skill.all : Skill.published).visible_to(current_user)
     scope = scope.where(domain: params[:domain]) if params[:domain].present?
     scope = scope.where(stage: params[:stage]) if Skill::STAGES.include?(params[:stage])
+    scope = scope.classified_as(app: params[:app].presence_in(SkillClassification::APPS), field: params[:field].presence)
+    @field = Field.find_by(path: params[:field]) if params[:field].present?
     @domains = Skill.published.distinct.where.not(domain: nil).order(:domain).pluck(:domain)
     @pagy, @skills = pagy(scope.search(params[:q]).recent)
+    @classifications = SkillClassification.includes(:field, :updated_by).where(skill_name: @skills.map(&:name)).index_by(&:skill_name)
   end
 
   def show; end

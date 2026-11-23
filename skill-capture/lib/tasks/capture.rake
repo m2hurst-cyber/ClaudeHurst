@@ -65,7 +65,9 @@ namespace :capture do
       "prepare-contract" => ["sales", "Prepare the customer contract", [step.("word", "Generate the contract from the template"), step.("word", "Fill in commercial terms")]],
       "redline-contract" => ["legal", "Redline a customer contract", [step.("word", "Compare against the clause library"), step.("word", "Mark up deviations")]],
       "legal-sign-off" => ["legal", "Get legal sign-off", [step.("word", "Summarize deviations for counsel"), step.("word", "Record the approval")]],
-      "review-nda" => ["legal", "Review an NDA", [step.("word", "Check the NDA against the standard"), step.("word", "Flag non-standard terms")]]
+      "review-nda" => ["legal", "Review an NDA", [step.("word", "Check the NDA against the standard"), step.("word", "Flag non-standard terms")]],
+      "variance-analysis" => ["finance", "Run the monthly variance analysis", [step.("excel", "Compute variance by cost centre"), step.("excel", "Run a regression on cost drivers"), step.("excel", "Chart the top variances")]],
+      "board-deck-design" => ["finance", "Design the board deck", [step.("powerpoint", "Apply the board slide template"), step.("powerpoint", "Lay out charts and brand colours")]]
     }
     created = {}
     skills.each do |name, (area, title, steps)|
@@ -103,6 +105,7 @@ namespace :capture do
     src = Source.find_by(name: "Demo journeys") || Source.issue!(name: "Demo journeys", kind: "integration").first
     journeys = [
       [%w[export-trial-balance reconcile-bank-statement post-month-end-accruals month-end-close-pack], 7],
+      [%w[post-month-end-accruals variance-analysis month-end-close-pack board-deck-design], 5],
       [%w[export-trial-balance reconcile-multi-currency-bank post-month-end-accruals], 3],
       [%w[build-quote-deck write-proposal prepare-contract redline-contract legal-sign-off], 6],
       [%w[build-quote-deck write-proposal prepare-contract], 2],
@@ -130,6 +133,13 @@ namespace :capture do
     n = Capture::ChainDetector.call.size
     result = Capture::Congestion.call
     Capture::Bounties.sweep(result)
+    # Classify everything (rules, or Claude if configured), then show two classifications a person confirmed.
+    Capture::Taxonomy.ensure_defaults!
+    Skill.published.find_each { |s| Capture::Classifier.apply!(s) }
+    { "prepare-contract" => "legal/contracts", "month-end-close-pack" => "data-analysis/reporting" }.each do |name, path|
+      SkillClassification.for(name)&.update!(field: Field.find_by(path: path), source: "user", confirmed: true, confidence: nil, rationale: nil, updated_by: admin)
+    end
+
     # Written agent directions for a few places (the rest stay generated)
     {
       "junction:export-trial-balance" => <<~MD,
