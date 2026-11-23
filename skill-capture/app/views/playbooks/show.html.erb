@@ -1,0 +1,82 @@
+<% pb = @playbook %>
+<% content_for :title, pb.title %>
+<div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+  <div class="max-w-3xl">
+    <div class="text-xs text-slate-500 mb-1"><%= link_to "Playbooks", playbooks_path, class: "hover:underline" %></div>
+    <h1 class="text-2xl font-bold"><%= pb.title %></h1>
+    <p class="text-sm text-slate-600 mt-1"><%= pb.description %></p>
+    <% if pb.disclaimer %><p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2"><%= pb.disclaimer %></p><% end %>
+  </div>
+  <div class="flex flex-wrap gap-2 items-start">
+    <% if current_user.admin? %>
+      <% label = @status.values.all?(:current) ? "Reinstall (no changes)" : (@status.values.none?(:missing) ? "Update to v#{pb.version}" : "Install") %>
+      <%= button_to label, install_playbook_path(pb.key), class: @status.values.all?(:current) ? btn : btn_primary %>
+    <% end %>
+  </div>
+</div>
+
+<% if pb.installed? %>
+  <div class="bg-white border rounded p-4 mb-4 text-sm">
+    <h2 class="font-semibold mb-2">Start a return</h2>
+    <%= form_with url: playbook_runs_path, method: :post, class: "flex flex-wrap gap-2 items-end" do %>
+      <%= hidden_field_tag :playbook_key, pb.key %>
+      <label class="flex-1 min-w-[14rem]"><span class="text-xs text-slate-500">Client reference (not a name or SSN)</span>
+        <input name="reference" required maxlength="60" placeholder="e.g. 2026-0142" class="<%= input_css %>"></label>
+      <button class="<%= btn_primary %>">Start</button>
+    <% end %>
+    <% if @runs.any? %>
+      <div class="text-xs text-slate-500 mt-3">Your returns: <%= safe_join(@runs.map { |r| link_to(r.reference, playbook_run_path(r), class: "text-sky-700 hover:underline") }, ", ") %></div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="grid lg:grid-cols-[1fr_22rem] gap-4">
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-3">The route</h2>
+    <ol class="relative">
+      <% pb.mainline_names.each_with_index do |name, i| %>
+        <% spec = pb.skill_spec(name); skill = Skill.current(name); sits = @situations.select { |s| s.after_skill == name } %>
+        <li class="relative pl-10 pb-5">
+          <% unless i == pb.mainline_names.size - 1 %><span class="absolute left-[15px] top-8 bottom-0 w-1.5 rounded bg-sky-600" aria-hidden="true"></span><% end %>
+          <span class="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border-4 border-sky-600 grid place-items-center text-sm font-bold"><%= i + 1 %></span>
+          <div class="flex flex-wrap items-baseline gap-2">
+            <% if skill %><%= link_to spec["title"], skill_path(skill), class: "font-semibold text-sky-700 hover:underline" %><% else %><span class="font-semibold"><%= spec["title"] %></span><% end %>
+            <% case @status[name] when :changed %><span class="text-xs text-amber-700">update available</span><% when :missing %><span class="text-xs text-slate-400">not installed</span><% end %>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5"><%= spec["description"].split(" Use when").first %></p>
+          <% if sits.any? %>
+            <ul class="mt-2 space-y-1">
+              <% sits.each do |s| %>
+                <li class="ml-2 pl-3 border-l-2 border-dashed border-slate-400 text-xs">
+                  <span class="text-slate-500">⑂ If</span> <%= s.question.sub(/\A(Did|Will|Does|Is) the client /) { "the client " }.sub(/\?\z/, "") %>:
+                  <% if (b = s.branch) %><%= link_to b.title, skill_path(b), class: "text-sky-700 hover:underline" %><% else %><span class="text-amber-700">branch in review</span><% end %>
+                  <% if s.forms.any? %><span class="text-slate-400">· <%= s.forms.join(", ") %></span><% end %>
+                  <% if s.status == "proposed" %><span class="text-amber-700">· proposed by <%= s.proposed_by&.name %></span><% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+  <div class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">Situations (<%= @situations.size %>)</h2>
+      <p class="text-xs text-slate-500 mb-2">Asked at intake. A yes adds the branch after its step. New ones are proposed from returns in progress and go live when their branch is published.</p>
+      <ul class="space-y-1 text-xs">
+        <% @situations.each do |s| %><li><%= s.status == "proposed" ? "🟡" : "⑂" %> <%= s.question %></li><% end %>
+      </ul>
+    </div>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">Resources</h2>
+      <ul class="space-y-1">
+        <% Array(pb.data.dig("resources", "items")).each do |item| %>
+          <% r = ResourceFolder.find_by(path: pb.data.dig("resources", "folder").split("/").map(&:parameterize).join("/"))&.resources&.find_by(slug: item["name"].parameterize) %>
+          <li><%= r ? link_to(item["name"], resource_path(r), class: "text-sky-700 hover:underline") : item["name"] %> <span class="text-xs text-slate-400"><%= item["file"].split(".").last.upcase %></span></li>
+        <% end %>
+      </ul>
+    </div>
+    <%= link_to "See it on the map →", skill_map_path(field: pb.data.dig("fields", 0, "path"), hide: 1), class: "text-sky-700 hover:underline text-xs" if pb.installed? %>
+  </div>
+</div>

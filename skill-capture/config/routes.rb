@@ -98,6 +98,17 @@ Rails.application.routes.draw do
     resources :prompts, only: :index do
       member { post :respond }
     end
+    resources :playbooks, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
+      member { post :install }
+    end
+    resources :playbook_runs, path: "returns", only: %i[create show update] do
+      member do
+        post :step
+        post :situation
+        post :send_route
+        post :complete
+      end
+    end
     resources :connected_apps, only: %i[index destroy]
     resources :resources, only: %i[index show create update destroy] do
       member { get :download }

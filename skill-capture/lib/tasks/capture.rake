@@ -49,6 +49,27 @@ namespace :capture do
     end
   end
 
+  namespace :playbooks do
+    desc "List playbooks and whether they're installed"
+    task list: :environment do
+      Capture::Playbook.all.each do |pb|
+        st = pb.status.values.tally
+        puts format("%-28s v%-3s %s", pb.key, pb.version, st.map { |k, v| "#{v} #{k}" }.join(", "))
+        pb.problems.each { |e| puts "  ! #{e}" }
+      end
+    end
+
+    desc "Install or update a playbook as skills: bin/rails capture:playbooks:install[individual-income-tax] (ADMIN=email optional)"
+    task :install, [:key] => :environment do |_, args|
+      admin = ENV["ADMIN"].present? ? User.find_by!(email: ENV["ADMIN"], role: "admin") : User.find_by!(role: "admin")
+      keys = args[:key].present? ? [args[:key]] : Capture::Playbook.all.map(&:key)
+      keys.each do |k|
+        r = Capture::Playbook.find(k).install!(user: admin)
+        puts "#{k}: #{r.created.size} created, #{r.updated.size} updated, #{r.unchanged.size} unchanged, #{r.resources} resource files, #{r.situations} situations"
+      end
+    end
+  end
+
   namespace :rest_stops do
     desc "Check every rest stop against its checksum and its disk mirror; repair what's missing (DRY_RUN=1 to only report)"
     task verify: :environment do
@@ -286,6 +307,22 @@ namespace :capture do
     { "reconcile-multi-currency-bank" => [1, 1, 1, 1], "reconcile-bank-statement" => [1, -1, 1, -1], "post-month-end-accruals" => [1, 1, -1] }.each do |name, values|
       values.each_with_index { |v, i| SkillVote.find_or_create_by!(user: voters[i], skill_name: name) { |sv| sv.value = v; sv.comment = ("Handles FX without a separate sheet" if name.include?("multi") && i.zero?) } }
     end
+    # Playbooks: the individual income tax return, installed as a linear route with situation branches.
+    Capture::Playbook.all.each { |pb| pb.install!(user: admin) }
+    # A sample return per admin and reviewer: a self-employed client with investment sales, a Marketplace
+    # policy, and one thing the questionnaire didn't ask about (proposed as a new branch).
+    User.active.where(role: %w[admin reviewer]).find_each do |u|
+      next if u.playbook_runs.exists?
+      run = u.playbook_runs.create!(playbook_key: "individual-income-tax", reference: "2026-0142",
+                                    answers: { "self-employment" => "yes", "investment-sales" => "yes", "marketplace-insurance" => "yes",
+                                               "rental-property" => "no", "k1-income" => "no", "hsa" => "no", "education" => "no",
+                                               "multi-state" => "no", "foreign" => "no", "extension" => "no", "payment-plan" => "no" },
+                                    done: %w[engage-the-tax-client collect-tax-documents organize-tax-financial-information report-individual-income])
+      unless Situation.exists?(playbook_key: "individual-income-tax", status: "proposed")
+        Capture::Situations.describe!(run, "Client sold their main home this year after living in it for six years", user: u)
+      end
+    end
+
     # Rest stops: a first snapshot of every skill, plus a hand-made one before a rebrand.
     Capture::RestStops.sweep!
     deck = Skill.current("board-deck-design")

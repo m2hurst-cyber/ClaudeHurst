@@ -97,7 +97,8 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 18. **Skills meet the Agent Skills format.** `Publisher` refuses names, descriptions or instructions that break `SkillStandard`'s required rules; drafts go through `SkillStandard.normalize`. `SKILL.md` metadata stays a flat map of strings.
 19. **Prompts are judged before they're shown.** Triggers run at most every `evaluation.interval_minutes` per person in `PromptCheckJob`; nothing reaches a person until the evaluator opens it.
 20. **Prompts only read a person's own events** (`actor_key = user:<id>`), never other people's, and only propose: every accepted prompt goes through review. A dismissed prompt is never raised again.
-21. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+21. **Playbooks are files.** Content changes go in `playbooks/<key>/` and reach the app through `install!` (new versions, never edits); never hand-edit installed playbook skills in code. Returns (`PlaybookRun`) store only a reference, answers and steps done: no taxpayer names, identifiers, documents or amounts; descriptions sent to the AI are redacted.
+22. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -304,4 +305,10 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 
 - Triggers run in the background at most every 10 minutes per person (`PromptCheckJob`, Protocol `evaluation`); Claude judges each pattern (worthwhile, kind, title, description, confidence) before it is shown; rules without an AI key.
 - `Capture::SkillStandard`: Anthropic Agent Skills rules enforced at publish/revise, drafts normalized, checklist in review, badge on skills; `SKILL.md` metadata is a flat string map.
-- Tests: 109 Rails runs, 22 JavaScript tests.
+
+## Changelog: playbooks and the individual income tax return
+
+- `Capture::Playbook` installs curated linear workflows from `playbooks/`; `Situation`, `PlaybookRun`, `Capture::SituationAdvisor`, `Capture::Situations`.
+- The individual income tax playbook (10 mainline skills, 11 situation branches, 5 resource files); `/playbooks`, `/returns/:id`; `capture:playbooks:install|list`.
+- Map layout: branches without their own inbound road sit beside their parent.
+- Tests: 115 Rails runs, 23 JavaScript tests.

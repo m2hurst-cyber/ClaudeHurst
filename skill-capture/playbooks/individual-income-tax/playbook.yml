@@ -1,0 +1,239 @@
+# A curated, linear workflow installed as skills (bin/rails capture:playbooks:install[individual-income-tax]).
+# Each skill's instructions are in skills/<name>.md (Anthropic Agent Skills SKILL.md format).
+# Situations are branches: extra work that leaves the mainline after a step and rejoins at the next one.
+key: individual-income-tax
+version: 1
+title: Individual income tax return
+area: tax
+stage: firm
+description: >-
+  A CPA's end-to-end workflow for an individual (Form 1040) client: engage, collect the financial
+  information, prepare, review, file and pay, then plan next year. New tax situations become branches.
+disclaimer: >-
+  Procedural guidance for preparers. Limits, thresholds and dates change every year: confirm them in the
+  current IRS forms and instructions (and the state's) before relying on them.
+
+fields:
+  - path: tax
+    name: Tax
+    keywords: [tax, irs, 1040]
+  - path: tax/individual-income-tax
+    name: Individual income tax
+    keywords: [1040, return, taxpayer, w-2, refund]
+  - path: tax/individual-income-tax/intake-documents
+    name: Intake & documents
+    keywords: [organizer, engagement, document, intake]
+  - path: tax/individual-income-tax/income
+    name: Income
+    keywords: [income, wages, 1099, schedule]
+  - path: tax/individual-income-tax/deductions-credits
+    name: Deductions & credits
+    keywords: [deduction, credit, itemize, schedule a]
+  - path: tax/individual-income-tax/filing-payment
+    name: Filing & payment
+    keywords: [e-file, payment, extension, estimated]
+
+resources:
+  folder: Tax/Individual
+  items:
+    - name: Engagement letter (individual return)
+      file: engagement-letter-individual.docx
+      description: Scope, responsibilities, fees and timeline for preparing a client's individual income tax return.
+    - name: Individual tax organizer
+      file: individual-tax-organizer.xlsx
+      description: "Questionnaire and workpaper tabs for the client's year: personal details, situations, income, deductions, payments."
+    - name: Document request checklist
+      file: document-request-checklist.xlsx
+      description: Every source document to request, who issues it, and whether it has arrived.
+    - name: Return review checklist
+      file: return-review-checklist.docx
+      description: Second-preparer review points before the client signs Form 8879.
+    - name: Estimated tax worksheet
+      file: estimated-tax-worksheet.xlsx
+      description: Next year's quarterly estimated payments and W-4 check.
+
+# The mainline, in order. steps: [app, label] pairs (what the work looks like in Office).
+mainline:
+  - name: engage-the-tax-client
+    fields: [tax/individual-income-tax/intake-documents]
+    resources: [Engagement letter (individual return), Individual tax organizer]
+    steps:
+      - [word, Prepare the engagement letter]
+      - [outlook, Send the engagement letter and organizer]
+      - [excel, Record filing status, dependents and situations]
+  - name: collect-tax-documents
+    fields: [tax/individual-income-tax/intake-documents]
+    resources: [Document request checklist]
+    steps:
+      - [excel, Build the document request list]
+      - [outlook, Request documents through the secure portal]
+      - [excel, Track documents received]
+  - name: organize-tax-financial-information
+    fields: [tax/individual-income-tax/intake-documents]
+    resources: [Individual tax organizer]
+    steps:
+      - [excel, Enter source documents in the organizer]
+      - [excel, Tie totals to source documents]
+      - [excel, Compare to the prior year]
+  - name: report-individual-income
+    fields: [tax/individual-income-tax/income]
+    resources: [Individual tax organizer]
+    steps:
+      - [excel, Summarize wages and withholding]
+      - [excel, Summarize interest dividends and distributions]
+      - [excel, Summarize other income]
+  - name: claim-deductions-and-credits
+    fields: [tax/individual-income-tax/deductions-credits]
+    resources: [Individual tax organizer]
+    steps:
+      - [excel, Compare standard and itemized deductions]
+      - [excel, Record adjustments to income]
+      - [excel, Check credit eligibility]
+  - name: prepare-the-individual-return
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Enter the return in tax software]
+      - [excel, Clear software diagnostics]
+      - [excel, Reconcile the return to the workpapers]
+  - name: review-the-individual-return
+    fields: [tax/individual-income-tax/filing-payment]
+    resources: [Return review checklist]
+    steps:
+      - [word, Complete the review checklist]
+      - [outlook, Walk the client through the return]
+      - [outlook, Collect the signed Form 8879]
+  - name: e-file-the-individual-return
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Transmit the federal and state returns]
+      - [outlook, Confirm the e-file acknowledgments]
+  - name: pay-individual-income-tax
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Confirm the balance due and due date]
+      - [outlook, Schedule the payment]
+      - [excel, Record the payment confirmation]
+  - name: plan-next-tax-year
+    fields: [tax/individual-income-tax/filing-payment]
+    resources: [Estimated tax worksheet]
+    steps:
+      - [excel, Calculate next year's estimated payments]
+      - [outlook, Send the client the payment schedule and copies]
+      - [excel, Close and archive the engagement]
+
+# Situations: a question asked at intake; "yes" adds the branch after the step it hangs off.
+situations:
+  - key: self-employment
+    question: Did the client have self-employment, freelance, gig or 1099-NEC / 1099-K income?
+    forms: [Schedule C, Schedule SE, Form 8829, Form 4562]
+    keywords: [self-employed, freelance, contractor, gig, 1099-nec, 1099-k, business, side hustle, sole proprietor]
+    after: report-individual-income
+    branch: report-self-employment-income
+    fields: [tax/individual-income-tax/income]
+    steps:
+      - [excel, Build the business profit and loss]
+      - [excel, Review business expenses and home office]
+      - [excel, Compute self-employment tax]
+  - key: investment-sales
+    question: Did the client sell stocks, funds, crypto or other investments?
+    forms: [Form 8949, Schedule D]
+    keywords: [stock, shares, brokerage, 1099-b, crypto, bitcoin, capital gain, sold investments, mutual fund]
+    after: report-individual-income
+    branch: report-investment-sales
+    fields: [tax/individual-income-tax/income]
+    steps:
+      - [excel, Import 1099-B transactions]
+      - [excel, Verify cost basis and holding periods]
+      - [excel, Summarize gains and losses]
+  - key: rental-property
+    question: Did the client own rental property (including short-term rentals)?
+    forms: [Schedule E, Form 4562]
+    keywords: [rental, landlord, tenant, airbnb, short-term rental, property income]
+    after: report-individual-income
+    branch: report-rental-property-income
+    fields: [tax/individual-income-tax/income]
+    steps:
+      - [excel, Summarize rents and rental expenses]
+      - [excel, Update the depreciation schedule]
+      - [excel, Determine personal use and passive loss limits]
+  - key: k1-income
+    question: Did the client receive a Schedule K-1 from a partnership, S corporation, estate or trust?
+    forms: [Schedule E (Part II/III), Form 8582]
+    keywords: [k-1, k1, partnership, s corporation, s corp, trust, estate, pass-through]
+    after: report-individual-income
+    branch: report-k1-pass-through-income
+    fields: [tax/individual-income-tax/income]
+    steps:
+      - [excel, Enter each K-1 line by line]
+      - [excel, Track basis and at-risk amounts]
+  - key: hsa
+    question: Did the client (or their employer) contribute to, or did they spend from, a Health Savings Account?
+    forms: [Form 8889]
+    keywords: [hsa, health savings account, 5498-sa, 1099-sa, high deductible]
+    after: claim-deductions-and-credits
+    branch: claim-health-savings-account
+    fields: [tax/individual-income-tax/deductions-credits]
+    steps:
+      - [excel, Reconcile HSA contributions to the limit]
+      - [excel, Confirm distributions were for medical expenses]
+  - key: education
+    question: Did the client pay college or other post-secondary tuition (Form 1098-T)?
+    forms: [Form 8863]
+    keywords: [tuition, college, university, 1098-t, education credit, student]
+    after: claim-deductions-and-credits
+    branch: claim-education-credits
+    fields: [tax/individual-income-tax/deductions-credits]
+    steps:
+      - [excel, Collect 1098-T and qualified expenses]
+      - [excel, Choose the education credit]
+  - key: marketplace-insurance
+    question: Did the client buy health insurance through the Marketplace (Form 1095-A)?
+    forms: [Form 8962]
+    keywords: [marketplace, 1095-a, healthcare.gov, premium tax credit, obamacare, aca]
+    after: claim-deductions-and-credits
+    branch: reconcile-premium-tax-credit
+    fields: [tax/individual-income-tax/deductions-credits]
+    steps:
+      - [excel, Enter the 1095-A monthly amounts]
+      - [excel, Reconcile advance payments of the premium tax credit]
+  - key: multi-state
+    question: Did the client live in, or earn income from, more than one state?
+    forms: [State resident, part-year and nonresident returns]
+    keywords: [moved, relocate, another state, multi-state, nonresident, part-year, remote work]
+    after: prepare-the-individual-return
+    branch: prepare-multi-state-returns
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Allocate income by state]
+      - [excel, Claim credits for taxes paid to other states]
+  - key: foreign
+    question: Did the client have foreign income, pay foreign taxes, or hold foreign financial accounts?
+    forms: [Form 1116, Form 2555, FinCEN 114 (FBAR), Form 8938]
+    keywords: [foreign, overseas, abroad, fbar, offshore, expat, foreign tax]
+    after: prepare-the-individual-return
+    branch: report-foreign-income-and-accounts
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Convert foreign income and taxes to US dollars]
+      - [excel, Choose the foreign tax credit or exclusion]
+      - [excel, Check FBAR and Form 8938 filing]
+  - key: extension
+    question: Will the return not be ready (or signed) by the filing deadline?
+    forms: [Form 4868]
+    keywords: [extension, extend, late, missing k-1, not ready, 4868]
+    after: e-file-the-individual-return
+    branch: file-individual-extension
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Estimate the tax due]
+      - [excel, File the extension and pay the estimate]
+  - key: payment-plan
+    question: Will the client be unable to pay the full balance by the due date?
+    forms: [Form 9465, Online Payment Agreement]
+    keywords: [can't pay, cannot pay, installment, payment plan, owe, balance due]
+    after: pay-individual-income-tax
+    branch: set-up-irs-payment-plan
+    fields: [tax/individual-income-tax/filing-payment]
+    steps:
+      - [excel, Pay what the client can by the due date]
+      - [excel, Request the payment plan]

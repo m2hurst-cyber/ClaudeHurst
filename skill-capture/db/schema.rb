@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000012) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -136,6 +136,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000012) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "playbook_runs", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "playbook_key", null: false
+    t.string "reference", null: false
+    t.jsonb "answers", default: {}, null: false
+    t.string "done", default: [], null: false, array: true
+    t.string "status", default: "open", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "status"], name: "index_playbook_runs_on_user_id_and_status"
+    t.index ["user_id"], name: "index_playbook_runs_on_user_id"
+  end
+
   create_table "pricing_schedules", force: :cascade do |t|
     t.string "currency", default: "credits", null: false
     t.decimal "base_price", precision: 12, scale: 2, default: "10.0", null: false
@@ -245,6 +259,25 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000012) do
     t.index ["created_by_id"], name: "index_rest_stops_on_created_by_id"
     t.index ["skill_id"], name: "index_rest_stops_on_skill_id"
     t.index ["skill_name", "created_at"], name: "index_rest_stops_on_skill_name_and_created_at"
+  end
+
+  create_table "situations", force: :cascade do |t|
+    t.string "playbook_key", null: false
+    t.string "key", null: false
+    t.text "question", null: false
+    t.string "after_skill", null: false
+    t.string "branch_skill"
+    t.string "forms", default: [], null: false, array: true
+    t.string "keywords", default: [], null: false, array: true
+    t.string "status", default: "active", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "candidate_id"
+    t.bigint "proposed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["candidate_id"], name: "index_situations_on_candidate_id"
+    t.index ["playbook_key", "key"], name: "index_situations_on_playbook_key_and_key", unique: true
+    t.index ["proposed_by_id"], name: "index_situations_on_proposed_by_id"
   end
 
   create_table "skill_candidates", force: :cascade do |t|
@@ -660,6 +693,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000012) do
   add_foreign_key "fields", "fields", column: "parent_id"
   add_foreign_key "fields", "users", column: "created_by_id"
   add_foreign_key "notifications", "users"
+  add_foreign_key "playbook_runs", "users"
   add_foreign_key "promotions", "users", column: "decided_by_id"
   add_foreign_key "promotions", "users", column: "requested_by_id"
   add_foreign_key "resource_folders", "resource_folders", column: "parent_id"
@@ -668,6 +702,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000012) do
   add_foreign_key "resources", "users", column: "uploaded_by_id"
   add_foreign_key "rest_stops", "skills"
   add_foreign_key "rest_stops", "users", column: "created_by_id"
+  add_foreign_key "situations", "skill_candidates", column: "candidate_id"
+  add_foreign_key "situations", "users", column: "proposed_by_id"
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "skills", column: "base_skill_id"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"

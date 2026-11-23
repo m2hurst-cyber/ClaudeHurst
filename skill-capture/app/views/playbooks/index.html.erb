@@ -1,0 +1,34 @@
+<% content_for :title, "Playbooks" %>
+<h1 class="text-2xl font-bold mb-1">Playbooks</h1>
+<p class="text-sm text-slate-500 mb-4">Curated, linear workflows installed as skills: a mainline from start to finish, with a branch for each situation that needs extra work. New situations found while working become new branches.</p>
+<div class="grid md:grid-cols-2 gap-4">
+  <% @playbooks.each do |pb| %>
+    <% st = pb.status %>
+    <div class="bg-white border rounded p-4 text-sm">
+      <div class="flex items-baseline justify-between gap-2">
+        <%= link_to pb.title, playbook_path(pb.key), class: "font-semibold text-base text-sky-700 hover:underline" %>
+        <span class="text-xs text-slate-500">v<%= pb.version %></span>
+      </div>
+      <p class="text-slate-600 mt-1"><%= pb.description %></p>
+      <div class="text-xs text-slate-500 mt-2">
+        <%= pluralize(pb.mainline.size, "step") %> · <%= pluralize(Situation.for_playbook(pb.key).count.nonzero? || pb.situation_specs.size, "situation") %> ·
+        <% if st.values.all?(:current) %><span class="text-emerald-700">✓ Installed</span>
+        <% elsif st.values.none?(:missing) %><span class="text-amber-700">Update available</span>
+        <% else %><span class="text-slate-500">Not installed</span><% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+<% if @runs.any? %>
+  <h2 class="font-semibold mt-6 mb-2">Your returns</h2>
+  <div class="bg-white border rounded divide-y text-sm">
+    <% @runs.each do |r| %>
+      <% done, total = r.progress %>
+      <%= link_to playbook_run_path(r), class: "flex items-center gap-3 px-4 py-2 hover:bg-slate-50" do %>
+        <span class="font-medium flex-1"><%= r.reference %></span>
+        <span class="text-xs text-slate-500"><%= r.playbook.title %></span>
+        <span class="text-xs <%= r.status == 'completed' ? 'text-emerald-700' : 'text-slate-600' %>"><%= r.status == "completed" ? "✓ Completed" : "#{done}/#{total} steps" %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

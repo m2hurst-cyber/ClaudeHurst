@@ -56,3 +56,12 @@ test("road geometry and traffic widths", () => {
   assert.equal(trafficWidth(10, 10), 12);
   assert.ok(trafficWidth(2, 10) < trafficWidth(8, 10));
 });
+
+test("a branch with no road in of its own sits in its parent's column and rejoins to the right", () => {
+  const nodes = ["a", "b", "c", "x"].map((id) => ({ id, title: id }));
+  const edges = [{ from: "a", to: "b", kind: "next" }, { from: "b", to: "c", kind: "next" },
+                 { from: "b", to: "x", kind: "branch" }, { from: "x", to: "c", kind: "next" }];
+  const { positions } = layout(nodes, edges);
+  assert.equal(positions.get("x").x, positions.get("b").x);
+  assert.ok(positions.get("c").x > positions.get("x").x);
+});

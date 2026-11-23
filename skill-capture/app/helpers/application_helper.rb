@@ -73,4 +73,36 @@ module ApplicationHelper
   def btn = "inline-flex items-center px-3 py-1.5 rounded text-sm border bg-white hover:bg-slate-50"
   def btn_primary = "inline-flex items-center px-3 py-1.5 rounded text-sm bg-slate-900 text-white hover:bg-slate-700"
   def input_css = "border rounded px-2 py-1.5 w-full"
+
+  # Minimal Markdown for skill instructions: headings, lists, quotes, bold, code. Escapes everything first.
+  def skill_markdown(text)
+    inline = ->(t) { ERB::Util.h(t).gsub(/\*\*(.+?)\*\*/, '<strong>\\1</strong>').gsub(/`([^`]+)`/, '<code class="text-xs bg-slate-100 px-1 rounded">\\1</code>') }
+    html = []
+    list = nil
+    close = -> { html << "</#{list}>" if list; list = nil }
+    text.to_s.each_line(chomp: true) do |line|
+      case line
+      when /\A(#+)\s+(.*)/
+        close.()
+        level = [$1.size + 1, 4].min
+        html << %(<h#{level} class="font-semibold #{level == 2 ? 'text-base' : 'text-sm'} mt-3 mb-1">#{inline.($2)}</h#{level}>)
+      when /\A\s*\d+\.\s+(.*)/
+        (close.(); html << '<ol class="list-decimal ml-5 space-y-0.5">'; list = "ol") unless list == "ol"
+        html << "<li>#{inline.($1)}</li>"
+      when /\A\s*[-*]\s+(.*)/
+        (close.(); html << '<ul class="list-disc ml-5 space-y-0.5">'; list = "ul") unless list == "ul"
+        html << "<li>#{inline.($1)}</li>"
+      when /\A>\s?(.*)/
+        close.()
+        html << %(<blockquote class="border-l-4 pl-2 text-slate-500 text-xs my-2">#{inline.($1)}</blockquote>)
+      when /\A\s*\z/
+        close.()
+      else
+        close.()
+        html << %(<p class="my-1">#{inline.(line)}</p>)
+      end
+    end
+    close.()
+    safe_join([html.join.html_safe])
+  end
 end

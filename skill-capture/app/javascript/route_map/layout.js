@@ -32,6 +32,14 @@ export function layout(nodes, edges, opts = {}) {
     const back = backEdges(net, out, set);
     const forward = (a) => out.get(a).filter((b) => set.has(b) && !back.has(`${a}>${b}`));
     const col = longestPathColumns(net, forward, set);
+    // A branch with no road in of its own sits beside its parent (same column), not at the start;
+    // then roads out of it still go strictly left to right.
+    const branchEdges = es.filter((e) => e.kind === "branch" && set.has(e.from) && set.has(e.to));
+    for (let pass = 0, changed = true; changed && pass < net.length; pass++) {
+      changed = false;
+      branchEdges.forEach((e) => { if (col.get(e.to) < col.get(e.from)) { col.set(e.to, col.get(e.from)); changed = true; } });
+      net.forEach((a) => forward(a).forEach((b) => { if (col.get(b) < col.get(a) + 1) { col.set(b, col.get(a) + 1); changed = true; } }));
+    }
     const columns = [];
     net.forEach((id) => { (columns[col.get(id)] ||= []).push(id); });
     columns.forEach((c) => c.sort((a, b) => sortKey(byId.get(a)).localeCompare(sortKey(byId.get(b)))));

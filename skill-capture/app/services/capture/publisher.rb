@@ -6,14 +6,14 @@ module Capture
 
     DRAFT_KEYS = %i[draft_name draft_title draft_description draft_body draft_tags draft_inputs draft_outputs review_notes].freeze
 
-    def self.publish!(candidate, reviewer:, attrs: {}) = new(reviewer).publish!(candidate, attrs)
+    def self.publish!(candidate, reviewer:, attrs: {}, source_extra: {}) = new(reviewer).publish!(candidate, attrs, source_extra)
     def self.revise!(skill, editor:, attrs:) = new(editor).revise!(skill, attrs)
 
     def initialize(user)
       @user = user
     end
 
-    def publish!(candidate, attrs = {})
+    def publish!(candidate, attrs = {}, source_extra = {})
       raise Error, "You don't review the #{candidate.domain.presence || 'unassigned'} area" unless candidate.reviewable_by?(@user)
       raise Error, "Candidate is already #{candidate.status}" unless candidate.open?
       candidate.assign_attributes(attrs.slice(*DRAFT_KEYS)) if attrs.present?
@@ -32,7 +32,7 @@ module Capture
           domain: candidate.domain, tags: candidate.draft_tags,
           inputs: candidate.draft_inputs, outputs: candidate.draft_outputs,
           parent_skill: previous || branch_of, published_by: @user, published_at: Time.current,
-          source: provenance(candidate),
+          source: provenance(candidate).merge(source_extra.to_h.stringify_keys),
           stage: previous&.stage || PromotionPolicy.current.initial_stage, stage_changed_at: previous&.stage_changed_at || Time.current
         )
         previous&.update!(status: "superseded")
@@ -43,6 +43,11 @@ module Capture
       Bounties.new.register_fix(skill, solver: candidate.requested_by || @user) if skill.version > 1
       Bounties.new.register_fix(skill, solver: candidate.requested_by || @user, branch_of: branch_of.name) if branch_of
       rest_stops_after(skill, branch_of: branch_of, reason: previous ? "revised" : "published")
+      # A proposed playbook situation goes live when its branch is published.
+      Situation.where(candidate_id: candidate.id, status: "proposed").find_each do |sit|
+        sit.update!(status: "active", branch_skill: skill.name)
+        Situations.activated!(sit, user: @user)
+      end
       skill
     end
 
