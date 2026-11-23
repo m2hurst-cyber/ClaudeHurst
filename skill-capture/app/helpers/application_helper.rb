@@ -12,6 +12,12 @@ module ApplicationHelper
     tag.span(status.to_s.humanize, class: "inline-block text-xs font-medium px-2 py-0.5 rounded #{BADGE.fetch(status.to_s, 'bg-slate-100 text-slate-700')}")
   end
 
+  # "finance" → "Finance", "hr" → "HR", "sales-ops" → "Sales Ops"
+  def area_name(name)
+    return "No area" if name.blank? || name == Capture::SkillMap::UNASSIGNED
+    name.length <= 3 ? name.upcase : name.tr("-_", "  ").titleize
+  end
+
   def nice_time(t) = t ? t.in_time_zone.strftime("%Y-%m-%d %H:%M") : "—"
   def nice_date(t) = t ? t.to_date.iso8601 : "—"
 

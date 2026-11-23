@@ -9,6 +9,7 @@ const view = document.getElementById("view");
 const api = createApi();
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const CAPTURE_KEY = "skillcapture.capturing";
+const areaName = (n) => n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
 const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok" };
 let flushTimer = null;
@@ -101,15 +102,25 @@ function renderConnect() {
 
 const panel = () => document.getElementById("panel");
 
-async function renderLibrary(q = "") {
+async function renderLibrary(q = state.query || "", area = state.area || "") {
+  state.query = q; state.area = area;
   panel().innerHTML = `
-    <form data-form="search" class="flex gap-1 mb-3">
+    <form data-form="search" class="flex gap-1 mb-2">
       <input name="q" value="${esc(q)}" placeholder="Search skills" class="${input}" aria-label="Search skills">
       <button class="${btn}">Search</button>
     </form>
+    <div id="areas" class="flex flex-wrap gap-1 mb-3" aria-label="Filter by area"></div>
     <div id="results" class="space-y-2"><p class="text-slate-500">Loading…</p></div>`;
+  api.areas().then((areas) => {
+    const el = document.getElementById("areas");
+    if (!el || !areas.length) return;
+    const chip = (name, label, on) => `<button data-area="${esc(name)}" aria-pressed="${on}"
+      class="px-2 py-0.5 rounded-full border text-xs ${on ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700"}">${esc(label)}</button>`;
+    el.innerHTML = chip("", "All areas", !area) +
+      areas.map((a) => chip(a.name, `${areaName(a.name)} · ${a.published}`, a.name === area)).join("");
+  }).catch(() => {});
   try {
-    const skills = await api.skills(q);
+    const skills = await api.skills(q, area);
     document.getElementById("results").innerHTML = skills.length ? skills.map((s) => `
       <button data-skill="${esc(s.name)}" class="block w-full text-left border rounded p-2 hover:bg-slate-50">
         <div class="font-medium">${esc(s.title)}</div>
@@ -239,8 +250,9 @@ function renderSettings() {
 
 // ---------- actions ----------
 document.addEventListener("click", async (ev) => {
-  const t = ev.target.closest("[data-tab],[data-action],[data-skill],[data-candidate]");
+  const t = ev.target.closest("[data-tab],[data-action],[data-skill],[data-candidate],[data-area]");
   if (!t) return;
+  if (t.dataset.area !== undefined && !t.dataset.action) return renderLibrary(state.query, t.dataset.area);
   if (t.dataset.tab) { state.tab = t.dataset.tab; return render(); }
   if (t.dataset.skill) return renderSkill(t.dataset.skill);
   if (t.dataset.candidate) return renderCandidate(t.dataset.candidate);
@@ -298,7 +310,7 @@ document.addEventListener("submit", async (ev) => {
   const f = ev.target;
   const data = Object.fromEntries(new FormData(f));
   try {
-    if (f.dataset.form === "search") return renderLibrary(data.q);
+    if (f.dataset.form === "search") return renderLibrary(data.q, state.area);
     if (f.dataset.form === "note") {
       if (data.note.trim()) state.capture.addNote(manualStep(state.host, data.note));
       f.reset(); f.note.focus();

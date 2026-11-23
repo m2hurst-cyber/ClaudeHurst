@@ -10,7 +10,7 @@ Brief for planning and coding agents. It records what this project is, what is b
 ## 1. Product in one paragraph
 
 An **Office add-in for Excel, Word and PowerPoint** that turns how a team works into reviewed, reusable procedures ("skills"). From a **Skills** button on the Home tab, people open a task pane where they can:
-- browse the skill library and insert a skill's steps into the document
+- browse the skill library, filtered by area, and insert a skill's steps into the document
 - **record a procedure** (steps Office reports, plus steps they type)
 - opt in to **passive capture** of step *types*
 - as reviewers, approve or reject drafts
@@ -41,13 +41,14 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 | `app/policies/*` | SkillCandidatePolicy, SkillPolicy |
 | `db/migrate/*` | Four migrations: Solid Queue tables, core tables, skill tables, add-in tokens |
 | `lib/tasks/capture.rake` | `users:create`, `capture:sweep`, `capture:export`, `capture:demo` |
+| `app/services/capture/skill_map.rb`, `app/views/skill_maps/show.html.erb` | Skill map: where skills live, per area, with gaps (console `/map`) |
 | `docs/design.md` | Full design: architecture, data model, detection, privacy, tests |
 
 ## 3. Commands (run from `skill-capture/`)
 
 ```bash
 bundle install && bin/rails db:prepare
-bin/rails test                      # expected: 43 runs, 0 failures
+bin/rails test                      # expected: 46 runs, 0 failures
 npm install && npm test             # expected: 10 pass, 0 fail
 bin/rails users:create EMAIL=a@example.org NAME="A" ROLE=admin   # prints a one-time password; no accounts are seeded
 bin/addin-dev                       # https://localhost:3000 with Office dev cert (web + Tailwind + jobs)
@@ -94,6 +95,7 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | User review workflow and notifications | ✅ | Console Review page plus the pane's Review tab; in-app notifications to area reviewers |
 | Tagging and categorization | ✅ | Tags and area (domain) |
 | Linking to related documentation | ⛔ | Not modeled |
+| Visual of where skills live (by area) | ✅ | Console **Map** page (`/map`, `/map.json`) and add-in area chips. `skill_map_test.rb` |
 | Institutional memory (discoverable, origin preserved) | ✅ | Library (console and pane), `GET /api/v1/skills`, provenance, contributors notified when published |
 | Data storage | ✅ | PostgreSQL. No knowledge graph (not needed at MVP scale) |
 | Version control and forks | ✅ | Versions, forks, lineage view |
@@ -118,7 +120,8 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | `GET /api/v1/addin/me` | `{name, role, domains, reviewer, capture_enabled, console_url, open_reviews}` |
 | `DELETE /api/v1/addin/me` | Revoke this token |
 | `POST /api/v1/addin/events` | Body `{host: "Excel" \| "Word" \| "PowerPoint", events: [{action, label, session, occurred_at, domain?, context?}]}`. Returns 202 with `{accepted, rejected[], dropped_fields}` |
-| `GET /api/v1/addin/skills?q=` and `GET /api/v1/addin/skills/:name` | Library search; current published version with its body |
+| `GET /api/v1/addin/skills?q=&domain=` and `GET /api/v1/addin/skills/:name` | Library search, optionally filtered by area; current published version with its body |
+| `GET /api/v1/addin/areas` | Areas that have published skills: `[{name, published}]` |
 | `GET /api/v1/addin/candidates` and `GET /api/v1/addin/candidates/:id` | Open review items for the caller |
 | `POST /api/v1/addin/candidates/:id/approve` and `/reject` | Review actions |
 | `POST /api/v1/addin/procedures` | Body `{host, title, domain?, description?, steps: [{action, label}]}` (at most 40 steps). Creates a manual candidate |
@@ -175,6 +178,7 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - **Manifest format.** Stay on the XML manifest, or move to the unified JSON manifest (needed for Outlook, Teams and Copilot surfaces).
 - **Distribution.** Centralized deployment only, or also AppSource.
 - **Background capture default.** Is per-person opt-in enough, or should admins be able to turn it on for everyone (with notice)?
+- **Area taxonomy.** Areas are free text today (set on reviewers, events and requests). Should they become a managed list, a hierarchy (for example Finance → AP / AR), or come from Entra groups?
 - **Governance.** Is there a knowledge-council review on top of per-area reviewers? What is the licensing or contributor agreement for published skills?
 - **Hand-off to Step 2.** How does the routing engine consume skills (`GET /api/v1/skills`, the exported `SKILL.md` directory, or something else)?
 - **Hosting.** Where it runs, the HTTPS domain, and the backup and retention policy.
@@ -194,6 +198,7 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Work only inside `skill-capture/`. Don't touch the repository-root application.
 - Keep every invariant in §4. If a change affects one, update its test in the same change.
 - Run `bin/rails test` and `npm test` before committing. Both must pass.
+- Rails URL helpers treat a `domain:` option as a hostname. To filter by area, pass `params: { domain: … }` (see `skill_maps/show.html.erb`).
 - New add-in step keys go in `vocabulary.js` with a human label, and must match the action-key format.
 - Gate any new Office.js API with `Office.context.requirements.isSetSupported` and degrade gracefully.
 - Never add seeded users, default passwords or committed secrets (`config/master.key` and `.env*` are git-ignored; credentials files are not used).

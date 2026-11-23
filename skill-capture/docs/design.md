@@ -60,6 +60,24 @@ Events carry only:
 
 Add-in events are always attributed server-side to the connected person; any actor in the payload is ignored. Typed steps in a recorded procedure are sent as written, because the person submits them deliberately.
 
+## Skill map (where skills live)
+
+Skills, candidates and reviewers all carry an **area** (`domain`). `Capture::SkillMap` rolls them up per area:
+
+| Field | What it holds |
+|---|---|
+| Stage counts | Published, awaiting review (drafted), detected (not yet drafted) |
+| Reviewers | The area's reviewers |
+| Contributors | How many distinct people contributed |
+| Office apps | Which apps the area's steps come from |
+| Latest skills | The three most recently published |
+| Gaps | No reviewer · repeated work with nothing published · no area assigned |
+
+Where it shows:
+- **Console:** `GET /map` (`SkillMapsController`), as stat tiles, a "Skills by area" stacked bar, a table view and one card per area. The bar uses a one-hue ordinal blue ramp, light to dark for detected, awaiting review and published (validated: monotone lightness, the light end at 2.11:1 on white). It has a legend, hover and focus tooltips, and gap warnings carry an icon and a label.
+- **JSON:** `GET /map.json`.
+- **Add-in:** `GET /api/v1/addin/areas` drives the area chips in the Library tab.
+
 ## How the spec maps to this build
 
 | Spec | Implementation |
@@ -179,6 +197,7 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/javascript/capture.test.mjs` (`npm test`): batching, dedupe, formula-over-edit replacement, retry, recording, the key format and Markdown escaping.
 - `test/services/*`: detection (five scripted workflows plus noise, all captured with no extras, and long workflows stitched), ingest minimization, drafting (with a stubbed Claude client), publishing, versions and forks.
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
+- `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
 - **Manual browser check during development:** the real task pane in Chromium at 350 px wide, with Office.js replaced by a simulated Excel host (Microsoft's CDN isn't reachable from the build environment). It covered dialog sign-in, opting in (startup behavior set to `Load`), local versus remote events, recording and submitting, approving in the pane, and inserting steps.
 - **Not yet done:** the manifest has been parsed by Microsoft's `office-addin-manifest` and `office-addin-manifest-converter`, but not run through Microsoft's online validation service. Run `npm run validate` before deploying, then sideload into real Excel, Word and PowerPoint.
 

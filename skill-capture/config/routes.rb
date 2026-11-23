@@ -18,6 +18,7 @@ Rails.application.routes.draw do
         resource :me, only: %i[show destroy], controller: :sessions
         resources :events, only: :create
         resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
+        resources :areas, only: :index
         resources :candidates, only: %i[index show] do
           member do
             post :approve
@@ -34,6 +35,7 @@ Rails.application.routes.draw do
 
   authenticate :user do
     root "skills#index"
+    resource :skill_map, only: :show, path: "map"
 
     resources :skill_candidates, except: :destroy do
       member do
