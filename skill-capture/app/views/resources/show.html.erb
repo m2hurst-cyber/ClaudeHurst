@@ -1,0 +1,41 @@
+<% r = @resource %>
+<% content_for :title, r.name %>
+<div class="text-xs text-slate-500 mb-1"><%= link_to "Resources", resources_path, class: "hover:underline" %> / <%= link_to r.folder.label, resources_path(folder: r.folder.path), class: "hover:underline" %></div>
+<div class="flex flex-wrap items-start gap-3 mb-4">
+  <%= file_badge(r) %>
+  <div class="flex-1">
+    <h1 class="text-2xl font-bold"><%= r.name %></h1>
+    <p class="text-xs text-slate-500 font-mono break-all"><%= r.key %></p>
+  </div>
+  <%= link_to (r.kind == "link" ? "Open link" : "Download"), download_resource_path(r), class: btn_primary %>
+</div>
+<div class="grid md:grid-cols-3 gap-4 text-sm">
+  <div class="md:col-span-2 bg-white border rounded p-4 space-y-2">
+    <% if r.description.present? %><p><%= r.description %></p><% end %>
+    <dl class="grid grid-cols-[8rem_1fr] gap-y-1">
+      <dt class="text-slate-500">Type</dt><dd><%= r.kind == "link" ? "Link" : "#{r.filename} · #{r.content_type}" %></dd>
+      <% if r.kind == "file" %><dt class="text-slate-500">Size</dt><dd><%= number_to_human_size(r.byte_size) %> · v<%= r.version %></dd><% end %>
+      <dt class="text-slate-500">Access</dt><dd><%= r.folder.visible_to?(nil) ? "Firm: everyone and agents" : "Restricted to #{r.folder.chain.flat_map(&:areas).uniq.join(', ')}" %></dd>
+      <dt class="text-slate-500">Added by</dt><dd><%= r.uploaded_by&.name || "—" %> · <%= nice_time(r.created_at) %></dd>
+      <dt class="text-slate-500">Agents call</dt><dd><code class="text-xs break-all">GET /api/v1/resources/<%= r.key.delete_prefix("resource:") %></code></dd>
+    </dl>
+    <% if Capture::ResourceLibrary.can_manage?(current_user, r) %>
+      <details class="border-t pt-2">
+        <summary class="cursor-pointer text-sky-700">Replace or edit</summary>
+        <%= form_with model: r, url: resource_path(r), multipart: true, method: :patch, class: "grid sm:grid-cols-2 gap-2 mt-2" do |f| %>
+          <div><%= f.label :name %><%= f.text_field :name, class: input_css %></div>
+          <% if r.kind == "file" %><div><%= f.label :file, "New version" %><%= f.file_field :file, class: "block w-full text-sm" %></div><% else %><div><%= f.label :url %><%= f.url_field :url, class: input_css %></div><% end %>
+          <div class="sm:col-span-2"><%= f.label :description %><%= f.text_field :description, class: input_css %></div>
+          <div class="flex gap-2"><%= f.submit "Save", class: btn_primary %></div>
+        <% end %>
+        <%= button_to "Remove from library", resource_path(r), method: :delete, class: "text-xs text-red-700 hover:underline mt-2", data: { turbo_confirm: "Remove #{r.name}? Skills will lose it." } %>
+      </details>
+    <% end %>
+  </div>
+  <aside class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1">Used by</h2>
+    <% if @skills.any? %>
+      <ul class="space-y-1"><% @skills.each do |s| %><li><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></li><% end %></ul>
+    <% else %><p class="text-slate-500">No skills yet. Attach it from a skill's page.</p><% end %>
+  </aside>
+</div>

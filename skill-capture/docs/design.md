@@ -120,7 +120,7 @@ How it works:
 
 | Column | Meaning |
 |---|---|
-| `field` | The field in the taxonomy |
+| `fields` | Any number of fields, ordered (`skill_field_assignments`); the first is the primary, mirrored in `field_id` |
 | `apps` | The apps the skill uses |
 | `source` | `ai`, `rules` or `user` |
 | `confidence`, `rationale` | How sure the inference was, and why |
@@ -132,6 +132,8 @@ How it works:
 - **Field with rules:** keyword hits (title weighted ×2), plus the ancestors' evidence, plus a bonus when the skill's area matches a top-level field. Confidence is 0.35 + 0.08 × score, capped at 0.85.
 - **When it runs:** on every publish (rules inline; Claude through `ClassifySkillJob`) and in the hourly sweep for unclassified skills.
 - **People win:** inference never overwrites a confirmed classification (it only merges in newly observed apps). "Re-infer" unlocks it explicitly.
+
+**Many fields, user-made fields.** A skill can sit in as many fields as it really belongs to (Finance › FP&A *and* Design › Presentation design). Inference proposes up to three (rules keep matches scoring at least 60% of the best and drop ancestors/descendants of a match; Claude answers a `field_paths` array restricted to the taxonomy enum). On the skill card, anyone who can classify can tick fields off, add an existing field, or **create a new field or subfield** under any node; it's stored with `created_by` and is immediately usable by everyone. Admins still curate the tree.
 
 **Who can change it:** the skill's area reviewers, its publisher, its contributors and admins (`SkillPolicy#classify?`). They can set the field and apps (`source: user`), confirm an inference, or re-infer. Every change is audited.
 
@@ -145,6 +147,35 @@ How it works:
   - add-in (`?app=`; defaults to the host app)
   - integration API (`?app=&field=`)
 - **API:** `GET /api/v1/fields` returns the taxonomy. Skills in every API carry `field`, `field_label`, `apps` and `classified_by`.
+
+## Bridges (skills and roads that cross)
+
+A **bridge** is where work crosses from one domain or app to another, like "collect the charts from the Excel workbook and deploy them as an appendix in PowerPoint, or as a report in Word".
+
+- **Bridge skill:** a skill whose fields have more than one root (Finance and Design), or that runs in more than one app. Its label lists apps in **step order** (`Excel → PowerPoint`, from the observed step keys); fields only when no app is crossed.
+- **Bridge road:** a road between two skills where
+  - the app the first skill **ends in** differs from the app the next **starts in** (Excel → PowerPoint), or
+  - the two skills' fields part at the field or sub-field level (Finance → Legal, Accounting → Treasury). Two specialties of the same sub-field are neighbours, not a crossing.
+- **On the map:** bridge roads are drawn as rails with a ⇄ marker; the **⇄ Bridges** filter shows only them and switches markers to their labels. Cards and the library show a "⇄ Bridge" badge.
+
+## Resource library
+
+Templates, worksheets and decks that skills use (customer contract, NDA, hex key worksheet…) live in **callable folders**.
+
+- `ResourceFolder` is a tree. A folder is **firm** (everyone and agents) or **restricted** to areas (its people and admins; never agents). Restriction is inherited down the tree.
+- `Resource` is a file (stored in the database, 15 MB max, checksum, versioned on replace) or an https link. Every resource has a stable key, `resource:<folder path>/<slug>`, that agents and the add-in call.
+- `SkillResource` attaches resources to skills by name (so it carries across versions). The skill page has a Resources panel; resources appear in the map panel, in bundles and in the add-in memory.
+- Who manages: reviewers of the folder's areas and admins; anyone who can see a firm folder can upload into it.
+
+## Map → add-in: send a skill to local AI memory
+
+Click a road (or an intersection, or a planned route) and the panel offers **Send to my add-in** or **Route to…** a colleague's add-in or an agent (integration source).
+
+1. `POST /map/send` creates `AddinCommand`s (`load_skill` / `load_route`) for the target. It checks the target can see each skill; agents get shared stages only.
+2. The add-in polls `GET /api/v1/addin/commands` every few seconds while connected (agents poll `GET /api/v1/commands`). Delivery marks the command delivered and returns **bundles**.
+3. A bundle (`Capture::Bundle`) is `SKILL.md` + its road and intersection directions + its resources (with download URLs the receiver is allowed to fetch).
+4. The add-in stores bundles in its local memory (`window.SkillCaptureMemory`, localStorage, newest first, max 50) and shows them on the **Memory** tab: insert steps, **Copy for AI** (the skill, directions and resources as one context block), open resources, forget.
+5. The sender's panel polls `/map/sent` and shows "✓ Delivered to … now in its memory". Commands expire after a day.
 
 ## Gatekeeping: stages, promotions and voting
 
@@ -375,6 +406,8 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/integration/directions_test.rb`: generated scaffolds (exits and their share, the default exit, reviewers, predecessors, done-when), not-found keys, reviewer-only versioned writing, empty bodies refused, raw Markdown, search (roads, intersections, handoffs, full text inside directions), the agent search, place and route-with-directions APIs, map data and the add-in intersection.
 - `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.
 - `test/integration/pricing_ui_test.rb`: bounties page, skill traffic panel, "Fix this" proposals, map traffic data, the admin schedule editor and its validation, and the skills API traffic object.
+- `test/integration/bridges_resources_commands_test.rb`: bridge labels in step order, bridge roads (ends-in vs starts-in app, field partings), card badges, folder visibility (restricted vs agents), upload/link/version/attach/detach and permissions, sending to my add-in with bundle delivery and status, routing to a colleague or agent with sandbox protection.
+- `test/javascript/memory.test.mjs`: the add-in memory store (replace by name, cap, context text).
 - `test/javascript/route_map.test.mjs`: layout (journey order, parallel branches, loops, separate networks, loose skills) and road geometry.
 - **Manual browser check during development:** the real task pane in Chromium at 350 px wide, with Office.js replaced by a simulated Excel host (Microsoft's CDN isn't reachable from the build environment). It covered dialog sign-in, opting in (startup behavior set to `Load`), local versus remote events, recording and submitting, approving in the pane, and inserting steps.
 - **Not yet done:** the manifest has been parsed by Microsoft's `office-addin-manifest` and `office-addin-manifest-converter`, but not run through Microsoft's online validation service. Run `npm run validate` before deploying, then sideload into real Excel, Word and PowerPoint.

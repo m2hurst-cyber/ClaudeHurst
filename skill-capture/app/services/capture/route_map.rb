@@ -17,7 +17,7 @@ module Capture
       skills = Skill.published.visible_to(@user).includes(:parent_skill).to_a
       versions = Skill.group(:name).count
       metrics = SkillMetric.where(name: skills.map(&:name)).index_by(&:name)
-      classes = SkillClassification.includes(:field).where(skill_name: skills.map(&:name)).index_by(&:skill_name)
+      classes = SkillClassification.includes(field_assignments: :field).where(skill_name: skills.map(&:name)).index_by(&:skill_name)
       bounties = Bounty.active.where(skill_name: skills.map(&:name)).index_by(&:skill_name)
       names = skills.map(&:name).to_set
 
@@ -40,6 +40,9 @@ module Capture
       edges = SkillLink.where(from_node: ids.to_a, to_node: ids.to_a).group(:from_node, :to_node)
                        .pluck(:from_node, :to_node, Arel.sql("SUM(traffic)"), Arel.sql("BOOL_OR(origin = 'manual')"))
                        .map { |a, b, t, m| { from: a, to: b, kind: "next", traffic: t.to_i, manual: m } }
+      by_id = nodes.index_by { |n| n[:id] }
+      field_names = Field.pluck(:path, :name).to_h
+      edges.each { |e| (b = bridge(by_id[e[:from]], by_id[e[:to]], field_names)) && e[:bridge] = b }
 
       skills.each do |s|
         origin = s.lineage.drop(1).find { |anc| anc.name != s.name }
@@ -55,10 +58,37 @@ module Capture
 
     private
 
+    # A road between two skills is a bridge when it crosses fields (the skills share no field,
+    # counting parents and subfields) or apps (the app one skill ends in isn't the app the next
+    # begins in, e.g. a finished Excel analysis handed to a PowerPoint deck).
+    def bridge(a, b, names)
+      return nil unless a && b && a[:kind] == "skill" && b[:kind] == "skill"
+      fa, fb = Array(a[:fields]), Array(b[:fields])
+      related = ->(x, y) { x == y || x.start_with?("#{y}/") || y.start_with?("#{x}/") }
+      fields = nil
+      if fa.any? && fb.any? && fa.none? { |x| fb.any? { |y| related.(x, y) } }
+        sa, sb = fa.first.split("/"), fb.first.split("/")
+        k = sa.zip(sb).take_while { |x, y| x == y }.size # first level where they part
+        # Domains part at the field or sub-field level (Finance → Legal, Accounting → Treasury);
+        # two specialties of the same sub-field are neighbours, not a crossing.
+        fields = [names[sa.first(k + 1).join("/")], names[sb.first(k + 1).join("/")]].compact if k < 2
+      end
+      ends_in = Array(a[:step_apps]).last || Array(a[:apps]).last
+      starts_in = Array(b[:step_apps]).first || Array(b[:apps]).first
+      apps = ends_in && starts_in && ends_in != starts_in ? [ends_in, starts_in] : nil
+      return nil unless fields || apps
+      { fields: fields, apps: apps }.compact
+    end
+
     # apps here are the classified apps (falling back to apps seen in the steps).
     def classification(c, skill)
       apps = c&.apps.presence || Classifier.observed_apps(skill)
-      { apps: apps, field: c&.field&.path, field_label: c&.field&.label,
+      fields = c ? c.ordered_fields : []
+      { apps: apps, fields: fields.map(&:path), field_labels: fields.map(&:label),
+        field: fields.first&.path, field_label: fields.first&.label,
+        bridge: c&.bridge? || false, bridge_label: c&.bridge_label(skill),
+        step_apps: Classifier.observed_apps(skill), # apps in the order the steps use them
+        resources: ResourceLibrary.for_skill(skill.name, @user).map { |r| { name: r.name, ext: r.extension, key: r.key, url: url_helpers.resource_path(r) } },
         classified_by: c && (c.confirmed ? "person" : c.source) }.compact
     end
 

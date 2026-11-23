@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -23,6 +23,25 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_action_definitions_on_key", unique: true
     t.index ["source_id"], name: "index_action_definitions_on_source_id"
+  end
+
+  create_table "addin_commands", force: :cascade do |t|
+    t.bigint "sender_id"
+    t.bigint "target_user_id"
+    t.bigint "target_source_id"
+    t.string "kind", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "delivered_at"
+    t.string "delivered_to"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sender_id"], name: "index_addin_commands_on_sender_id"
+    t.index ["target_source_id", "status"], name: "index_addin_commands_on_target_source_id_and_status"
+    t.index ["target_source_id"], name: "index_addin_commands_on_target_source_id"
+    t.index ["target_user_id", "status"], name: "index_addin_commands_on_target_user_id_and_status"
+    t.index ["target_user_id"], name: "index_addin_commands_on_target_user_id"
   end
 
   create_table "addin_tokens", force: :cascade do |t|
@@ -96,6 +115,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
     t.string "keywords", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "created_by_id"
+    t.index ["created_by_id"], name: "index_fields_on_created_by_id"
     t.index ["parent_id"], name: "index_fields_on_parent_id"
     t.index ["path"], name: "index_fields_on_path", unique: true
   end
@@ -163,6 +184,43 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
     t.index ["skill_name", "status"], name: "index_promotions_on_skill_name_and_status"
   end
 
+  create_table "resource_folders", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "path", null: false
+    t.bigint "parent_id"
+    t.string "audience", default: "firm", null: false
+    t.string "areas", default: [], null: false, array: true
+    t.text "description"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_resource_folders_on_created_by_id"
+    t.index ["parent_id"], name: "index_resource_folders_on_parent_id"
+    t.index ["path"], name: "index_resource_folders_on_path", unique: true
+  end
+
+  create_table "resources", force: :cascade do |t|
+    t.bigint "folder_id", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.text "description"
+    t.string "kind", default: "file", null: false
+    t.string "url"
+    t.string "filename"
+    t.string "content_type"
+    t.integer "byte_size"
+    t.string "checksum"
+    t.binary "content"
+    t.integer "version", default: 1, null: false
+    t.bigint "uploaded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["folder_id", "slug"], name: "index_resources_on_folder_id_and_slug", unique: true
+    t.index ["folder_id"], name: "index_resources_on_folder_id"
+    t.index ["uploaded_by_id"], name: "index_resources_on_uploaded_by_id"
+  end
+
   create_table "skill_candidates", force: :cascade do |t|
     t.string "signature", null: false
     t.jsonb "steps", default: [], null: false
@@ -215,6 +273,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
     t.index ["updated_by_id"], name: "index_skill_classifications_on_updated_by_id"
   end
 
+  create_table "skill_field_assignments", force: :cascade do |t|
+    t.bigint "skill_classification_id", null: false
+    t.bigint "field_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "source", default: "rules", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["field_id"], name: "index_skill_field_assignments_on_field_id"
+    t.index ["skill_classification_id", "field_id"], name: "index_skill_field_assignments_unique", unique: true
+    t.index ["skill_classification_id"], name: "index_skill_field_assignments_on_skill_classification_id"
+  end
+
   create_table "skill_links", force: :cascade do |t|
     t.string "from_node", null: false
     t.string "to_node", null: false
@@ -244,6 +314,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_skill_metrics_on_name", unique: true
+  end
+
+  create_table "skill_resources", force: :cascade do |t|
+    t.string "skill_name", null: false
+    t.bigint "resource_id", null: false
+    t.string "note"
+    t.bigint "added_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["added_by_id"], name: "index_skill_resources_on_added_by_id"
+    t.index ["resource_id"], name: "index_skill_resources_on_resource_id"
+    t.index ["skill_name", "resource_id"], name: "index_skill_resources_on_skill_name_and_resource_id", unique: true
   end
 
   create_table "skill_votes", force: :cascade do |t|
@@ -513,6 +595,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
   end
 
   add_foreign_key "action_definitions", "sources"
+  add_foreign_key "addin_commands", "sources", column: "target_source_id"
+  add_foreign_key "addin_commands", "users", column: "sender_id"
+  add_foreign_key "addin_commands", "users", column: "target_user_id"
   add_foreign_key "addin_tokens", "users"
   add_foreign_key "audit_logs", "sources"
   add_foreign_key "audit_logs", "users"
@@ -521,15 +606,24 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000009) do
   add_foreign_key "credit_entries", "bounties"
   add_foreign_key "credit_entries", "users"
   add_foreign_key "fields", "fields", column: "parent_id"
+  add_foreign_key "fields", "users", column: "created_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "promotions", "users", column: "decided_by_id"
   add_foreign_key "promotions", "users", column: "requested_by_id"
+  add_foreign_key "resource_folders", "resource_folders", column: "parent_id"
+  add_foreign_key "resource_folders", "users", column: "created_by_id"
+  add_foreign_key "resources", "resource_folders", column: "folder_id"
+  add_foreign_key "resources", "users", column: "uploaded_by_id"
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "users", column: "reviewer_id"
   add_foreign_key "skill_classifications", "fields"
   add_foreign_key "skill_classifications", "users", column: "updated_by_id"
+  add_foreign_key "skill_field_assignments", "fields"
+  add_foreign_key "skill_field_assignments", "skill_classifications"
   add_foreign_key "skill_links", "users", column: "created_by_id"
+  add_foreign_key "skill_resources", "resources"
+  add_foreign_key "skill_resources", "users", column: "added_by_id"
   add_foreign_key "skill_votes", "users"
   add_foreign_key "skills", "skills", column: "parent_skill_id"
   add_foreign_key "skills", "users", column: "published_by_id"

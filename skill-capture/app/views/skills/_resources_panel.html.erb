@@ -1,0 +1,34 @@
+<% items = Capture::ResourceLibrary.for_skill(s.name, current_user) %>
+<% can = policy(s).classify? %>
+<div class="bg-white border rounded p-4" id="resources">
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">Resources</h2>
+    <%= link_to "Library", resources_path, class: "text-xs text-sky-700 hover:underline" %>
+  </div>
+  <% if items.any? %>
+    <ul class="mt-2 space-y-2">
+      <% items.each do |r| %>
+        <li class="flex items-center gap-2">
+          <%= file_badge(r) %>
+          <span class="flex-1 min-w-0">
+            <%= link_to r.name, resource_path(r), class: "text-sky-700 hover:underline" %>
+            <span class="block text-xs text-slate-500 font-mono truncate" title="<%= r.key %>"><%= r.key %></span>
+          </span>
+          <%= link_to "⬇", download_resource_path(r), class: "text-slate-600 hover:text-slate-900", title: "Download", "aria-label": "Download #{r.name}" %>
+          <% if can %><%= button_to "×", skill_resource_path(s, r), method: :delete, class: "text-slate-400 hover:text-red-700", title: "Detach", "aria-label": "Detach #{r.name}" %><% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-slate-500 mt-1">No templates or worksheets attached.</p>
+  <% end %>
+  <% if can %>
+    <% options = ResourceFolder.tree.select { |f, _| f.visible_to?(current_user) }.flat_map { |f, _| f.resources.map { |r| ["#{f.label} / #{r.name}", r.id] } } %>
+    <% if options.any? %>
+      <%= form_with url: skill_resources_path(s), method: :post, class: "flex gap-1 mt-3" do %>
+        <%= select_tag :resource_id, options_for_select(options), prompt: "Attach from the library…", class: "border rounded px-2 py-1 text-xs flex-1 min-w-0", "aria-label": "Resource to attach" %>
+        <button class="<%= btn %> text-xs">Attach</button>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

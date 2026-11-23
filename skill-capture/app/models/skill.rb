@@ -43,7 +43,7 @@ class Skill < ApplicationRecord
     end
     if field.present?
       ids = Field.where("path = :p OR path LIKE :c", p: field, c: "#{sanitize_sql_like(field)}/%").select(:id)
-      scope = scope.where(name: SkillClassification.where(field_id: ids).select(:skill_name))
+      scope = scope.where(name: SkillClassification.where(id: SkillFieldAssignment.where(field_id: ids).select(:skill_classification_id)).select(:skill_name))
     end
     scope
   end

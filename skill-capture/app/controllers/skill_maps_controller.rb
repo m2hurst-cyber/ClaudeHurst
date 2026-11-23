@@ -32,12 +32,19 @@ class SkillMapsController < ApplicationController
     scope = scope.where(stage: @stages) if @stages.any?
     scope = scope.where(name: SkillClassification.where("apps && ARRAY[?]::varchar[]", @apps).select(:skill_name)) if @apps.any?
     @skills = scope.order(:title).to_a
-    @classes = SkillClassification.includes(:field, :updated_by).where(skill_name: @skills.map(&:name)).index_by(&:skill_name)
+    @classes = SkillClassification.includes(:updated_by, field_assignments: :field).where(skill_name: @skills.map(&:name)).index_by(&:skill_name)
     @metrics = SkillMetric.where(name: @skills.map(&:name)).index_by(&:name)
-    @by_field = @skills.group_by { |s| @classes[s.name]&.field_id }
+    paths = @skills.to_h { |s| [s.name, @classes[s.name]&.ordered_fields || []] }
+    @by_field = Hash.new { |h, k| h[k] = [] }
+    @skills.each do |s|
+      fs = paths[s.name]
+      fs.empty? ? @by_field[nil] << s : fs.each { |f| @by_field[f.id] << s }
+    end
     @fields = Field.all.to_a
     @children = @fields.group_by(&:parent_id)
-    @counts = @fields.to_h { |f| [f.id, @skills.count { |s| (fp = @classes[s.name]&.field&.path) && (fp == f.path || fp.start_with?("#{f.path}/")) }] }
+    @counts = @fields.to_h do |f|
+      [f.id, @skills.count { |s| paths[s.name].any? { |x| x.path == f.path || x.path.start_with?("#{f.path}/") } }]
+    end
   end
 
   # GET /map/areas: where skills live, by area

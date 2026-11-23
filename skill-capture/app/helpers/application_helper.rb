@@ -44,6 +44,14 @@ module ApplicationHelper
     end
   end
 
+  FILE_STYLE = { "docx" => ["DOC", "#185abd"], "doc" => ["DOC", "#185abd"], "xlsx" => ["XLS", "#107c41"], "xls" => ["XLS", "#107c41"],
+                 "csv" => ["CSV", "#107c41"], "pptx" => ["PPT", "#c43e1c"], "pdf" => ["PDF", "#b91c1c"], "link" => ["URL", "#52514e"] }.freeze
+
+  def file_badge(resource)
+    label, color = FILE_STYLE.fetch(resource.extension, [resource.extension.first(3).upcase, "#52514e"])
+    tag.span(label, class: "inline-grid place-items-center w-9 h-9 shrink-0 rounded text-[10px] font-bold text-white", style: "background: #{color}", "aria-hidden": true)
+  end
+
   def classification_source(c)
     return tag.span("Unclassified", class: "text-xs text-slate-400") unless c
     if c.confirmed

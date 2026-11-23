@@ -67,7 +67,10 @@ namespace :capture do
       "legal-sign-off" => ["legal", "Get legal sign-off", [step.("word", "Summarize deviations for counsel"), step.("word", "Record the approval")]],
       "review-nda" => ["legal", "Review an NDA", [step.("word", "Check the NDA against the standard"), step.("word", "Flag non-standard terms")]],
       "variance-analysis" => ["finance", "Run the monthly variance analysis", [step.("excel", "Compute variance by cost centre"), step.("excel", "Run a regression on cost drivers"), step.("excel", "Chart the top variances")]],
-      "board-deck-design" => ["finance", "Design the board deck", [step.("powerpoint", "Apply the board slide template"), step.("powerpoint", "Lay out charts and brand colours")]]
+      "board-deck-design" => ["finance", "Design the board deck", [step.("powerpoint", "Apply the board slide template"), step.("powerpoint", "Lay out charts and brand colours")]],
+      # Bridge skills: they carry work from one app into another.
+      "charts-to-ppt-appendix" => ["finance", "Collect workbook charts into a PowerPoint appendix", [step.("excel", "Open the variance workbook and select every chart"), step.("excel", "Copy the charts"), step.("powerpoint", "Add appendix slides from the template"), step.("powerpoint", "Paste one chart per slide and note its source")]],
+      "charts-to-word-report" => ["finance", "Turn workbook charts into a Word report", [step.("excel", "Select the key charts in the workbook"), step.("excel", "Copy the charts as pictures"), step.("word", "Start from the monthly report template"), step.("word", "Paste charts under Key figures and write the summary")]]
     }
     created = {}
     skills.each do |name, (area, title, steps)|
@@ -106,6 +109,8 @@ namespace :capture do
     journeys = [
       [%w[export-trial-balance reconcile-bank-statement post-month-end-accruals month-end-close-pack], 7],
       [%w[post-month-end-accruals variance-analysis month-end-close-pack board-deck-design], 5],
+      [%w[variance-analysis charts-to-ppt-appendix board-deck-design], 4],
+      [%w[variance-analysis charts-to-word-report], 3],
       [%w[export-trial-balance reconcile-multi-currency-bank post-month-end-accruals], 3],
       [%w[build-quote-deck write-proposal prepare-contract redline-contract legal-sign-off], 6],
       [%w[build-quote-deck write-proposal prepare-contract], 2],
@@ -138,6 +143,53 @@ namespace :capture do
     Skill.published.find_each { |s| Capture::Classifier.apply!(s) }
     { "prepare-contract" => "legal/contracts", "month-end-close-pack" => "data-analysis/reporting" }.each do |name, path|
       SkillClassification.for(name)&.update!(field: Field.find_by(path: path), source: "user", confirmed: true, confidence: nil, rationale: nil, updated_by: admin)
+    end
+
+    # Resource library: callable folders with real Office files, attached to the skills that use them.
+    folder = lambda do |path, audience = "firm", areas = []|
+      parent = nil
+      path.split("/").each_with_index do |name, i|
+        last = i == path.count("/")
+        parent = ResourceFolder.find_or_create_by!(path: [parent&.path, name.parameterize].compact.join("/")) do |f|
+          f.assign_attributes(name: name, parent: parent, audience: last ? audience : "firm", areas: last ? areas : [], created_by: admin)
+        end
+      end
+      parent
+    end
+    files = Rails.root.join("db/demo/resources")
+    types = { "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation" }
+    library = {
+      ["Legal/Templates", "firm", []] => { "Customer contract template" => "customer-contract-template.docx", "Mutual NDA template" => "mutual-nda-template.docx" },
+      ["Finance/Workbooks", "restricted", ["finance"]] => { "Hex key worksheet" => "hex-key-worksheet.xlsx", "Bank reconciliation workbook" => "bank-reconciliation-workbook.xlsx", "Variance analysis workbook" => "variance-analysis-workbook.xlsx" },
+      ["Finance/Reports", "firm", []] => { "Monthly report template" => "monthly-report-template.docx" },
+      ["Design/Templates", "firm", []] => { "Board deck template" => "board-deck-template.pptx", "Appendix slides template" => "appendix-slides-template.pptx" }
+    }
+    by_name = {}
+    library.each do |(path, audience, areas), items|
+      f = folder.(path, audience, areas)
+      items.each do |name, file|
+        by_name[name] = f.resources.find_or_initialize_by(slug: name.parameterize).tap do |r|
+          next if r.persisted?
+          r.name = name
+          r.uploaded_by = admin
+          File.open(files.join(file), "rb") { |io| r.attach_file(io, filename: file, content_type: types[File.extname(file).delete(".")]) }
+          r.save!
+        end
+      end
+    end
+    {
+      "prepare-contract" => ["Customer contract template"], "redline-contract" => ["Customer contract template"],
+      "review-nda" => ["Mutual NDA template"],
+      "reconcile-bank-statement" => ["Bank reconciliation workbook", "Hex key worksheet"],
+      "reconcile-multi-currency-bank" => ["Bank reconciliation workbook"],
+      "variance-analysis" => ["Variance analysis workbook"],
+      "charts-to-ppt-appendix" => ["Variance analysis workbook", "Appendix slides template"],
+      "charts-to-word-report" => ["Variance analysis workbook", "Monthly report template"],
+      "board-deck-design" => ["Board deck template"]
+    }.each do |skill, names|
+      names.each { |n| SkillResource.find_or_create_by!(skill_name: skill, resource: by_name.fetch(n)) { |sr| sr.added_by = admin } }
     end
 
     # Written agent directions for a few places (the rest stay generated)

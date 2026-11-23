@@ -28,6 +28,11 @@ Rails.application.routes.draw do
           end
         end
         resources :procedures, only: :create
+        resources :commands, only: :index
+        resources :bundles, only: :show, constraints: { id: /[a-z0-9-]+/ }
+        resources :resources, only: [] do
+          member { get :download }
+        end
       end
 
       resources :events, only: :create
@@ -35,6 +40,10 @@ Rails.application.routes.draw do
       get :route, to: "routes#show"
       get :market, to: "skills#market"
       get :fields, to: "skills#fields"
+      get :commands, to: "commands#index"
+      get "bundles/:id", to: "commands#bundle", as: :bundle, constraints: { id: /[a-z0-9-]+/ }
+      get :resources, to: "commands#resources"
+      get "resources/*path", to: "commands#resource", as: :resource, format: false
       get :search, to: "places#search"
       get "places/:key", to: "places#show", as: :place, constraints: { key: /[^\/]+?/ }, format: /json|md/
     end
@@ -64,6 +73,7 @@ Rails.application.routes.draw do
     resources :skills, only: %i[index show edit update] do
       resources :links, only: %i[create destroy], controller: :skill_links, constraints: { id: /[^\/]+/ }
       resource :vote, only: :update, controller: :skill_votes
+      resources :resources, only: %i[create destroy], controller: :skill_resources
       resource :classification, only: :update, controller: :skill_classifications do
         post :confirm
         post :reinfer
@@ -76,6 +86,12 @@ Rails.application.routes.draw do
       end
     end
     resources :connected_apps, only: %i[index destroy]
+    resources :resources, only: %i[index show create update destroy] do
+      member { get :download }
+    end
+    resources :resource_folders, only: :create
+    post "map/send", to: "skill_commands#create", as: :map_send
+    get "map/sent", to: "skill_commands#index", as: :map_sent
     resources :promotions, only: :index do
       member do
         post :approve

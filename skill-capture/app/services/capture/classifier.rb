@@ -12,7 +12,10 @@ module Capture
                      "teams" => "Teams", "powerbi" => "Power BI", "bi" => "Power BI", "sharepoint" => "SharePoint" }.freeze
     APP_WORDS = { /\boutlook\b|\bemail\b/i => "Outlook", /\bteams\b/i => "Teams", /power ?bi/i => "Power BI", /sharepoint/i => "SharePoint" }.freeze
 
-    Result = Struct.new(:field, :apps, :source, :confidence, :rationale, keyword_init: true)
+    MAX_FIELDS = 3
+    Result = Struct.new(:fields, :apps, :source, :confidence, :rationale, keyword_init: true) do
+      def field = fields.first
+    end
 
     def self.call(skill, client: nil) = new(skill, client: client).call
 
@@ -25,8 +28,8 @@ module Capture
         return c
       end
       r = call(skill, client: client)
-      c.update!(field: r.field, apps: r.apps, source: r.source, confidence: r.confidence, rationale: r.rationale, inferred_at: Time.current)
-      c
+      c.update!(apps: r.apps, source: r.source, confidence: r.confidence, rationale: r.rationale, inferred_at: Time.current)
+      c.set_fields!(r.fields, source: r.source)
     end
 
     def self.observed_apps(skill)
@@ -72,27 +75,37 @@ module Capture
       by_id = fields.index_by(&:id)
       # A node's evidence includes its ancestors' (a "Reconciliation" match inside "Finance" beats a stray hit elsewhere).
       total = ->(f) { f.ancestors_and_self.sum { |a| own[a.id][0] } }
-      best = fields.select { |f| own[f.id][0].positive? }.max_by { |f| [total.(f), f.depth] }
+      ranked = fields.select { |f| own[f.id][0].positive? }.sort_by { |f| [-total.(f), -f.depth] }
+      best = ranked.first
       apps = (observed | text_apps)
-      return Result.new(field: nil, apps: apps, source: "rules", confidence: nil, rationale: "No keywords matched the taxonomy.") unless best
-      hits = best.ancestors_and_self.flat_map { |a| own[a.id][1] }.uniq
-      Result.new(field: best, apps: apps, source: "rules", confidence: [0.35 + 0.08 * total.(best), 0.85].min.round(2),
+      return Result.new(fields: [], apps: apps, source: "rules", confidence: nil, rationale: "No keywords matched the taxonomy.") unless best
+      # Also keep other strong matches (at least 60% of the best), skipping ancestors/descendants of ones kept.
+      chosen = []
+      ranked.each do |f|
+        break if chosen.size >= MAX_FIELDS
+        next if total.(f) < [total.(best) * 0.6, 2].max
+        next if chosen.any? { |c| f.path.start_with?("#{c.path}/") || c.path.start_with?("#{f.path}/") }
+        chosen << f
+      end
+      hits = chosen.flat_map { |f| f.ancestors_and_self.flat_map { |a| own[a.id][1] } }.uniq
+      Result.new(fields: chosen, apps: apps, source: "rules", confidence: [0.35 + 0.08 * total.(best), 0.85].min.round(2),
                  rationale: "Matched #{hits.first(5).map { |h| "“#{h}”" }.join(', ')}#{" and its area (#{@skill.domain})" if @skill.domain.present? && by_id.values.any? { |f| f.slug == @skill.domain.to_s.parameterize }}.")
     end
 
     SYSTEM = <<~PROMPT.freeze
       You classify an organization's reusable work procedures ("skills").
-      Pick the single most specific field from the taxonomy that describes the kind of work, and
-      the Microsoft apps the procedure uses. Choose only from the lists given. If nothing fits, use "none".
+      Pick the most specific fields from the taxonomy that describe the kind of work (one to three,
+      most important first; more than one only when the procedure genuinely spans them), and
+      the Microsoft apps the procedure uses. Choose only from the lists given. If nothing fits, return no fields.
       Give a confidence from 0 to 1 and a one-sentence rationale a colleague would find convincing.
     PROMPT
 
     def claude(observed)
       fields = Field.all.to_a
       schema = {
-        type: "object", additionalProperties: false, required: %w[field_path apps confidence rationale],
+        type: "object", additionalProperties: false, required: %w[field_paths apps confidence rationale],
         properties: {
-          field_path: { type: "string", enum: fields.map(&:path) + ["none"] },
+          field_paths: { type: "array", items: { type: "string", enum: fields.map(&:path) } },
           apps: { type: "array", items: { type: "string", enum: SkillClassification::APPS } },
           confidence: { type: "number" },
           rationale: { type: "string" }
@@ -111,8 +124,8 @@ module Capture
       )
       raise ClaudeDrafter::DraftError, "declined" if msg.stop_reason.to_s == "refusal"
       d = JSON.parse(msg.content.select { |b| b.type.to_s == "text" }.map(&:text).join)
-      field = fields.find { |f| f.path == d["field_path"] }
-      Result.new(field: field, apps: observed | (Array(d["apps"]) & SkillClassification::APPS), source: "ai",
+      chosen = Array(d["field_paths"]).uniq.filter_map { |p| fields.find { |f| f.path == p } }.first(MAX_FIELDS)
+      Result.new(fields: chosen, apps: observed | (Array(d["apps"]) & SkillClassification::APPS), source: "ai",
                  confidence: d["confidence"].to_f.clamp(0, 1).round(2), rationale: d["rationale"].to_s.first(500))
     end
   end

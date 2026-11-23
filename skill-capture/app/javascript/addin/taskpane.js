@@ -3,6 +3,7 @@ import { createCapture } from "addin/capture";
 import { manualStep } from "addin/vocabulary";
 import { wireHost, setAutoLoad, insertText, openInBrowser, connectDialog } from "addin/office_hosts";
 import { renderMarkdown, toPlainSteps } from "addin/markdown";
+import { memory } from "addin/memory";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -77,16 +78,40 @@ async function loadMe() {
     state.capture.setDomain(state.me.domains?.[0]);
     clearInterval(flushTimer);
     flushTimer = setInterval(() => state.capture.flush().catch(() => {}), 15000);
+    startInbox();
   } catch (e) {
     state.me = null;
     if (e.status !== 401) flash(e.message, "error");
   }
 }
 
+// ---------- skills sent from the map → local memory ----------
+let inboxTimer = null;
+function startInbox() {
+  clearInterval(inboxTimer);
+  checkInbox();
+  inboxTimer = setInterval(checkInbox, 5000);
+}
+
+async function checkInbox() {
+  if (!api.connected) return;
+  try {
+    const cmds = await api.commands(state.host, window.Office?.context?.diagnostics?.platform);
+    if (!cmds.length) return;
+    let added = 0;
+    const names = [];
+    cmds.forEach((c) => c.bundles.forEach((b) => { memory.add(b, c.from); added++; names.push(b.title); }));
+    const from = cmds[0].from;
+    flash(`${from ? `${from} sent` : "Received"} ${added === 1 ? `“${names[0]}”` : `${added} skills`}. Added to memory.`);
+    state.tab = "memory";
+    render();
+  } catch { /* offline: try again next tick */ }
+}
+
 // ---------- rendering ----------
 function render() {
   if (!state.me) return renderConnect();
-  const tabs = [["library", "Library"], ["record", "Record"]];
+  const tabs = [["library", "Library"], ["memory", `Memory${memory.list().length ? ` (${memory.list().length})` : ""}`], ["record", "Record"]];
   if (state.me.reviewer) tabs.push(["review", `Review${state.me.open_reviews ? ` (${state.me.open_reviews})` : ""}`]);
   tabs.push(["settings", "Settings"]);
   view.innerHTML = `
@@ -98,7 +123,7 @@ function render() {
     ${flashHtml()}
     <section id="panel"></section>`;
   updateCaptureBadge();
-  ({ library: renderLibrary, record: renderRecord, review: renderReview, settings: renderSettings }[state.tab])();
+  ({ library: renderLibrary, memory: renderMemory, record: renderRecord, review: renderReview, settings: renderSettings }[state.tab])();
 }
 
 function updateCaptureBadge() {
@@ -169,7 +194,8 @@ async function renderSkill(name) {
       <div id="vote-box" class="flex items-center gap-2 mb-2">${voteHtml(s)}</div>
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
-      <div class="flex gap-1 mb-3">
+      <div class="flex flex-wrap gap-1 mb-3">
+        <button data-action="remember" class="${btnPrimary}">Add to memory</button>
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
       </div>
@@ -181,6 +207,41 @@ async function renderSkill(name) {
       ${s.next_up?.length ? `<div class="border-t mt-3 pt-2"><div class="text-xs text-slate-500 mb-1">When you're done, people usually continue with</div>
         ${s.next_up.map((n) => `<button data-skill="${esc(n.name)}" class="block text-left text-sky-700 hover:underline">→ ${esc(n.title)}${n.traffic ? ` <span class="text-xs text-slate-500">(${n.traffic} trips)</span>` : ""}</button>`).join("")}</div>` : ""}`;
   } catch (e) { panel().innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
+}
+
+function renderMemory() {
+  const items = memory.list();
+  panel().innerHTML = items.length ? `
+    <p class="text-xs text-slate-500 mb-2">Skills loaded on this device, ready for the AI working here. Sent from the map or added from the library.</p>
+    <div class="space-y-2">${items.map((m) => `
+      <div class="border rounded p-2">
+        <div class="flex items-start gap-2">
+          <button data-memory="${esc(m.name)}" class="flex-1 text-left font-medium text-sky-700 hover:underline">${esc(m.title)}</button>
+          <button data-action="forget" data-name="${esc(m.name)}" class="text-xs text-slate-400 hover:text-red-700" aria-label="Remove ${esc(m.title)} from memory">remove</button>
+        </div>
+        <div class="text-xs text-slate-500">${stageLabel(m.stage)} · v${m.version}${m.from ? ` · from ${esc(m.from)}` : ""} · ${new Date(m.loaded_at).toLocaleString()}</div>
+        ${m.fields?.length || m.apps?.length ? `<div class="text-xs text-slate-700">${esc((m.fields || []).join(" · "))}${m.apps?.length ? ` · ${esc(m.apps.join(", "))}` : ""}</div>` : ""}
+        ${m.resources?.length ? `<div class="text-xs text-slate-600 mt-1">📎 ${m.resources.length} resource${m.resources.length > 1 ? "s" : ""}</div>` : ""}
+      </div>`).join("")}</div>
+    <button data-action="forget-all" class="${btn} mt-3 text-xs">Clear memory</button>`
+    : `<p class="text-slate-500">Nothing in memory yet. Click a road on the Skill map and choose <strong>Send to my add-in</strong>, or open a skill here and choose <strong>Add to memory</strong>.</p>`;
+}
+
+function renderMemoryItem(name) {
+  const m = memory.get(name);
+  if (!m) return renderMemory();
+  state.openSkill = { title: m.title, body: String(m.skill_md || "").replace(/^---[\s\S]*?---\s*/, ""), name: m.name };
+  panel().innerHTML = `
+    <button data-action="back-memory" class="text-sky-700 mb-2">← Memory</button>
+    <h2 class="text-base font-semibold">${esc(m.title)}</h2>
+    <div class="text-xs text-slate-500 mb-2">In memory since ${new Date(m.loaded_at).toLocaleString()}${m.from ? ` · sent by ${esc(m.from)}` : ""}</div>
+    <div class="flex gap-1 mb-2">
+      ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
+      <button data-action="copy-context" data-name="${esc(m.name)}" class="${btn}">Copy for AI</button>
+    </div>
+    ${m.resources?.length ? `<div class="mb-2"><div class="text-xs text-slate-500 mb-1">Resources</div>${m.resources.map((r) => `<div class="text-xs">📎 <button data-action="open-url" data-url="${esc(r.url)}" class="text-sky-700 hover:underline">${esc(r.name)}</button> <span class="text-slate-400">${esc(r.key)}</span></div>`).join("")}</div>` : ""}
+    <article class="border-t pt-2">${renderMarkdown(state.openSkill.body)}</article>
+    ${(m.directions || []).map((d) => `<details class="border-t mt-2 pt-2"><summary class="cursor-pointer font-medium">${esc(d.title)}</summary><article class="text-xs mt-1">${renderMarkdown(d.markdown)}</article></details>`).join("")}`;
 }
 
 function renderRecord() {
@@ -285,8 +346,9 @@ function renderSettings() {
 
 // ---------- actions ----------
 document.addEventListener("click", async (ev) => {
-  const t = ev.target.closest("[data-tab],[data-action],[data-skill],[data-candidate],[data-area]");
+  const t = ev.target.closest("[data-tab],[data-action],[data-skill],[data-candidate],[data-area],[data-memory]");
   if (!t) return;
+  if (t.dataset.memory) return renderMemoryItem(t.dataset.memory);
   if (t.dataset.area !== undefined && !t.dataset.action) return renderLibrary(state.query, t.dataset.area);
   if (t.dataset.tab) { state.tab = t.dataset.tab; return render(); }
   if (t.dataset.skill) return renderSkill(t.dataset.skill);
@@ -305,6 +367,17 @@ document.addEventListener("click", async (ev) => {
     } else if (a === "back-library") { renderLibrary(); }
     else if (a === "back-review") { renderReview(); }
     else if (a === "open-url") { openInBrowser(t.dataset.url); }
+    else if (a === "remember") {
+      memory.add(await api.bundle(state.openSkill.name));
+      flash(`“${state.openSkill.title}” added to memory.`); state.tab = "memory"; render();
+    }
+    else if (a === "forget") { memory.remove(t.dataset.name); render(); }
+    else if (a === "forget-all") { memory.clear(); render(); }
+    else if (a === "back-memory") { renderMemory(); }
+    else if (a === "copy-context") {
+      await navigator.clipboard?.writeText(memory.asContext(t.dataset.name)).catch(() => {});
+      flash("Copied the skill, its directions and resources for your AI."); render(); renderMemoryItem(t.dataset.name);
+    }
     else if (a === "vote") {
       const r = await api.vote(state.openSkill.name, Number(t.dataset.value));
       Object.assign(state.openSkill, { votes: r.votes, my_vote: r.my_vote });

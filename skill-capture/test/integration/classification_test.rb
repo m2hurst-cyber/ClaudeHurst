@@ -44,40 +44,62 @@ class ClassificationTest < ActionDispatch::IntegrationTest
   end
 
   test "Claude picks only from the taxonomy (closed list), and its result is used" do
-    fake = FakeClaude.new(field_path: "data-analysis/statistics", apps: ["Excel", "Power BI"], confidence: 0.91, rationale: "Variance math")
+    fake = FakeClaude.new(field_paths: %w[data-analysis/statistics finance/accounting/reconciliation made-up/path], apps: ["Excel", "Power BI"],
+                          confidence: 0.91, rationale: "Variance math")
     r = Capture::Classifier.call(@recon, client: fake)
-    assert_equal ["data-analysis/statistics", %w[Excel Power\ BI], "ai", 0.91], [r.field.path, r.apps, r.source, r.confidence]
-    enum = fake.req.dig(:output_config, :format, :schema, :properties, :field_path, :enum)
+    assert_equal [%w[data-analysis/statistics finance/accounting/reconciliation], %w[Excel Power\ BI], "ai", 0.91],
+                 [r.fields.map(&:path), r.apps, r.source, r.confidence]
+    enum = fake.req.dig(:output_config, :format, :schema, :properties, :field_paths, :items, :enum)
     assert_includes enum, "finance/accounting/reconciliation"
-    assert_includes enum, "none"
     sent = JSON.parse(fake.req[:messages].first[:content])
     assert_equal "Reconcile the bank statement", sent.dig("skill", "title")
 
-    none = Capture::Classifier.call(@recon, client: FakeClaude.new(field_path: "none", apps: [], confidence: 0.2, rationale: "?"))
-    assert_nil none.field
+    none = Capture::Classifier.call(@recon, client: FakeClaude.new(field_paths: [], apps: [], confidence: 0.2, rationale: "?"))
+    assert_empty none.fields
     assert_equal ["Excel"], none.apps, "apps seen in the steps are always kept"
   end
 
   test "people win: a confirmed classification is never overwritten by inference" do
     sign_in @rev
     stats = Field.find_by!(path: "data-analysis/statistics")
-    patch skill_classification_path(@recon), params: { field_id: stats.id, apps: ["Outlook"] }
+    patch skill_classification_path(@recon), params: { add_field_id: stats.id, apps: ["Outlook"] }
     c = SkillClassification.for("reconcile-bank")
-    assert_equal ["user", true, stats, %w[Excel Outlook], @rev], [c.source, c.confirmed, c.field, c.apps, c.updated_by]
+    assert_equal ["user", true, [stats], %w[Excel Outlook], @rev], [c.source, c.confirmed, c.ordered_fields, c.apps, c.updated_by]
     Capture::Classifier.apply!(@recon.reload)
-    assert_equal stats, c.reload.field
+    assert_equal [stats], c.reload.ordered_fields
 
     post reinfer_skill_classification_path(@recon)
     c.reload
-    assert_equal ["finance/accounting/reconciliation", false], [c.field.path, c.confirmed]
+    assert_equal ["finance/accounting/reconciliation", false], [c.ordered_fields.first.path, c.confirmed]
     post confirm_skill_classification_path(@recon)
     assert_equal [true, @rev], c.reload.values_at(:confirmed, :updated_by_id).then { |a, b| [a, User.find(b)] }
     assert AuditLog.exists?(action: "classification.confirmed")
   end
 
+  test "a skill can have any number of fields, and people can create new fields and subfields while classifying" do
+    sign_in @rev
+    recon = Field.find_by!(path: "finance/accounting/reconciliation")
+    treasury = Field.find_by!(path: "finance/treasury")
+    stats = Field.find_by!(path: "data-analysis/statistics")
+    patch skill_classification_path(@recon), params: { field_ids: [recon.id, treasury.id], add_field_id: stats.id,
+                                                       new_field_name: "Hex keys", new_field_parent_id: treasury.id }
+    c = SkillClassification.for("reconcile-bank")
+    assert_equal %w[finance/accounting/reconciliation finance/treasury data-analysis/statistics finance/treasury/hex-keys], c.field_paths
+    hex = Field.find_by!(path: "finance/treasury/hex-keys")
+    assert_equal [@rev, "Hex keys"], [hex.created_by, hex.name]
+    assert c.bridge?, "spans Finance and Data analysis"
+    assert_equal recon, c.field, "the first field is the primary one"
+
+    patch skill_classification_path(@recon), params: { field_ids: [stats.id] } # unticking removes the others
+    assert_equal ["data-analysis/statistics"], c.reload.field_paths
+
+    get skills_path(field: "data-analysis")
+    assert_includes response.body, "Reconcile the bank statement"
+  end
+
   test "only the area's reviewers, publisher, contributors and admins can change it" do
     sign_in @member
-    patch skill_classification_path(@recon), params: { field_id: Field.first.id }
+    patch skill_classification_path(@recon), params: { add_field_id: Field.first.id }
     assert_redirected_to root_path
     assert_not SkillClassification.for("reconcile-bank").confirmed
   end

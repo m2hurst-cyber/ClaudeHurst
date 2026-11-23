@@ -19,8 +19,9 @@ const areaName = (a) => (!a ? "No area" : a.length <= 3 ? a.toUpperCase() : a.sp
 // branches as side roads, unpublished workflows as unpaved roads.
 export default class extends Controller {
   static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend", "search", "results",
-                    "appChip", "stageChip", "fieldButton", "fieldTree", "hideOthers", "filterCount"]
-  static values = { routeUrl: String, colors: Object, tiers: Object, currency: String, searchUrl: String, placeUrl: String }
+                    "appChip", "stageChip", "fieldButton", "fieldTree", "hideOthers", "filterCount", "bridgeChip", "panelClose"]
+  static values = { routeUrl: String, colors: Object, tiers: Object, currency: String, searchUrl: String, placeUrl: String,
+                    sendUrl: String, sentUrl: String, recipients: Array }
 
   connect() {
     this.map = JSON.parse(this.dataTarget.textContent)
@@ -42,7 +43,8 @@ export default class extends Controller {
   // ---------- filters (apps, field hierarchy, stage) ----------
   readFiltersFromUrl() {
     const q = new URLSearchParams(location.search)
-    return { apps: new Set(q.getAll("app")), field: q.get("field") || null, stages: new Set(q.getAll("stage")), hide: q.get("hide") === "1" }
+    return { apps: new Set(q.getAll("app")), field: q.get("field") || null, stages: new Set(q.getAll("stage")), hide: q.get("hide") === "1",
+             bridges: q.get("bridges") === "1" }
   }
 
   writeFiltersToUrl() {
@@ -51,23 +53,32 @@ export default class extends Controller {
     if (this.filters.field) q.set("field", this.filters.field)
     this.filters.stages.forEach((s) => q.append("stage", s))
     if (this.filters.hide) q.set("hide", "1")
+    if (this.filters.bridges) q.set("bridges", "1")
     history.replaceState(null, "", `${location.pathname}${q.toString() ? `?${q}` : ""}`)
   }
 
   matches(n) {
     const f = this.filters
     if (f.apps.size && !(n.apps || []).some((a) => f.apps.has(a))) return false
-    if (f.field && !(n.field && (n.field === f.field || n.field.startsWith(`${f.field}/`)))) return false
+    if (f.field && !(n.fields || []).some((p) => p === f.field || p.startsWith(`${f.field}/`))) return false
+    if (f.bridges && !(n.bridge || this.allEdges.some((e) => e.bridge && (e.from === n.id || e.to === n.id)))) return false
     if (f.stages.size && !(n.kind === "skill" && f.stages.has(n.stage))) return false
     return true
   }
 
-  get filtering() { return this.filters.apps.size || this.filters.field || this.filters.stages.size }
+  get filtering() { return this.filters.apps.size || this.filters.field || this.filters.stages.size || this.filters.bridges }
+
+  toggleBridges() {
+    this.filters.bridges = !this.filters.bridges
+    const view = this.view
+    this.draw(); this.setView(view) // redraw bridge markers as full labels (or back)
+    this.applyFilters()
+  }
 
   toggleApp(e) { const a = e.currentTarget.dataset.app; this.filters.apps.has(a) ? this.filters.apps.delete(a) : this.filters.apps.add(a); this.applyFilters() }
   toggleStage(e) { const s = e.currentTarget.dataset.stage; this.filters.stages.has(s) ? this.filters.stages.delete(s) : this.filters.stages.add(s); this.applyFilters() }
   setField(path) { this.filters.field = path; this.fieldTreeTarget.hidden = true; this.fieldButtonTarget.setAttribute("aria-expanded", "false"); this.applyFilters() }
-  clearFilters() { this.filters = { apps: new Set(), field: null, stages: new Set(), hide: false }; this.hideOthersTarget.checked = false; this.applyFilters() }
+  clearFilters() { this.filters = { apps: new Set(), field: null, stages: new Set(), hide: false, bridges: false }; this.hideOthersTarget.checked = false; this.applyFilters() }
 
   toggleFieldTree() {
     const open = this.fieldTreeTarget.hidden
@@ -84,7 +95,7 @@ export default class extends Controller {
     const kids = new Map()
     fields.forEach((f) => { const k = f.parent || ""; (kids.get(k) || kids.set(k, []).get(k)).push(f) })
     const skills = this.allNodes.filter((n) => n.kind === "skill")
-    const count = (path) => skills.filter((n) => n.field && (n.field === path || n.field.startsWith(`${path}/`))).length
+    const count = (path) => skills.filter((n) => (n.fields || []).some((p) => p === path || p.startsWith(`${path}/`))).length
     const row = (label, path, depth, n) => {
       const b = this.append(box, "button", `w-full text-left flex items-center gap-2 rounded px-2 py-1 hover:bg-slate-50 ${this.filters.field === path ? "bg-slate-900 text-white hover:bg-slate-800" : ""}`)
       b.type = "button"; b.setAttribute("role", "treeitem"); b.setAttribute("aria-level", String(depth + 1))
@@ -101,7 +112,7 @@ export default class extends Controller {
       walk(f.path, depth + 1)
     })
     walk("", 0)
-    const un = skills.filter((n) => !n.field).length
+    const un = skills.filter((n) => !(n.fields || []).length).length
     if (un) this.append(box, "p", "text-xs text-slate-500 px-2 pt-1 border-t mt-1", `${un} not classified yet`)
   }
 
@@ -110,6 +121,7 @@ export default class extends Controller {
     const on = (b, v) => { b.setAttribute("aria-pressed", String(v)); b.classList.toggle("bg-slate-900", v); b.classList.toggle("text-white", v); b.classList.toggle("bg-white", !v) }
     this.appChipTargets.forEach((b) => on(b, this.filters.apps.has(b.dataset.app)))
     this.stageChipTargets.forEach((b) => on(b, this.filters.stages.has(b.dataset.stage)))
+    if (this.hasBridgeChipTarget) on(this.bridgeChipTarget, this.filters.bridges)
     this.hideOthersTarget.checked = this.filters.hide
     const f = (this.map.fields || []).find((x) => x.path === this.filters.field)
     const label = f ? (this.map.nodes.find((n) => n.field === f.path)?.field_label || f.name) : "All fields"
@@ -192,6 +204,8 @@ export default class extends Controller {
     }
 
     this.edgeEls = []
+    this.pendingBridgeLabels = []
+    this.bridgeLabelEls = []
     for (const e of this.map.edges) {
       const a = this.geo.positions.get(e.from), b = this.geo.positions.get(e.to)
       if (!a || !b) continue
@@ -205,6 +219,11 @@ export default class extends Controller {
       } else {
         const d = roadPath(a, b, SEG)
         const w = trafficWidth(e.traffic, this.maxTraffic)
+        if (e.bridge) { // bridge deck: dark rails either side of the road
+          el("path", { d, fill: "none", stroke: "#3f3f46", "stroke-width": w + 9, "stroke-linecap": "butt" }, g)
+          el("path", { d, fill: "none", stroke: SURFACE, "stroke-width": w + 5, "stroke-linecap": "butt" }, g)
+          g.classList.add("rm-bridge")
+        }
         el("path", { d, fill: "none", stroke: SURFACE, "stroke-width": w + 4, "stroke-linecap": "round" }, g)
         el("path", { d, fill: "none", stroke: e.traffic ? ROAD : ROAD_LINKED, "stroke-width": w, "stroke-linecap": "round" }, g)
         el("path", { d, fill: "none", stroke: "transparent", "stroke-width": 1, "marker-end": "url(#rm-arrow)" }, g)
@@ -214,6 +233,7 @@ export default class extends Controller {
         g.classList.add("cursor-pointer")
         g.addEventListener("click", () => this.selectHandoff(e.from, e.to))
       }
+      if (e.bridge) this.pendingBridgeLabels.push({ e, g })
       g.addEventListener("pointerenter", (ev) => this.edgeTip(ev, e))
       g.addEventListener("pointermove", (ev) => this.moveTip(ev))
       g.addEventListener("pointerleave", () => this.hideTip())
@@ -227,6 +247,9 @@ export default class extends Controller {
         "aria-label": `${n.title}, ${areaName(n.area)}${n.kind === "unpaved" ? ", unpaved, in review" : ""}` }, places)
       el("rect", { x: -12, y: -36, width: SEG + 24, height: 70, rx: 8, fill: "transparent" }, g)
       const c = this.color(n)
+      if (n.bridge) { // a skill that itself spans fields or apps: bridge rails along the road
+        el("line", { x1: -4, y1: 0, x2: SEG + 4, y2: 0, stroke: "#3f3f46", "stroke-width": 18, "stroke-linecap": "butt" }, g)
+      }
       el("line", { x1: 0, y1: 0, x2: SEG, y2: 0, stroke: SURFACE, "stroke-width": 14, "stroke-linecap": "round" }, g)
       el("line", { x1: 0, y1: 0, x2: SEG, y2: 0, stroke: c, "stroke-width": n.stage === "local" ? 6 : 10, "stroke-linecap": "round",
         "stroke-dasharray": n.kind === "unpaved" ? "12 9" : null, "stroke-opacity": n.stage === "local" ? 0.6 : 1 }, g)
@@ -235,7 +258,7 @@ export default class extends Controller {
       title.textContent = truncate(n.title, 26)
       const meta = this.mode === "traffic" && n.tier
         ? [`${this.tiersValue[n.tier].icon} ${this.tiersValue[n.tier].label}`, this.money(n.price), n.bounty ? `💰 ${this.money(n.bounty.pool)}` : null].filter(Boolean).join(" · ")
-        : [n.stage === "local" ? "🧪 local" : n.stage === "market" ? "🌐 market" : null, n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
+        : [n.bridge ? `⇄ ${n.bridge_label || "bridge"}` : null, n.stage === "local" ? "🧪 local" : n.stage === "market" ? "🌐 market" : null, n.bridge ? null : n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
            n.improvements ? `improved ×${n.improvements}` : null, n.bounty ? "💰 bounty" : null].filter(Boolean).join(" · ")
       const m = el("text", { x: 0, y: 26, "font-size": 12.5, fill: INK_2 }, g)
       m.textContent = meta
@@ -247,6 +270,25 @@ export default class extends Controller {
       g.addEventListener("click", () => this.select(n.id))
       g.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); this.select(n.id) } })
       this.nodeEls.set(n.id, g)
+    }
+
+    // Bridge labels at the middle of each bridge road: what it crosses.
+    for (const { e, g } of this.pendingBridgeLabels) {
+      const path = g.querySelector("path")
+      const mid = path.getPointAtLength(path.getTotalLength() / 2)
+      const full = this.filters.bridges
+      // Straight hops sit between two titled roads, so their label drops below the meta line.
+      const straight = this.geo.positions.get(e.from)?.y === this.geo.positions.get(e.to)?.y
+      const dy = straight ? 44 : -14
+      const lg = el("g", { transform: `translate(${mid.x},${mid.y + (full ? dy : 0)})`, class: "rm-bridge-label pointer-events-none" }, places)
+      const t = el("text", { x: 0, y: 4, "font-size": full ? 10.5 : 11, "font-weight": 700, "text-anchor": "middle", fill: INK }, lg)
+      t.textContent = full ? `⇄ ${this.bridgeShort(e.bridge)}` : "⇄"
+      const bb = t.getBBox()
+      lg.insertBefore(full
+        ? el("rect", { x: bb.x - 5, y: bb.y - 2, width: bb.width + 10, height: bb.height + 4, rx: 4, fill: "#ffffff", stroke: "#3f3f46", "stroke-width": 1 })
+        : el("circle", { cx: 0, cy: 0, r: 9, fill: "#ffffff", stroke: "#3f3f46", "stroke-width": 1.5 }), t)
+      this.bridgeLabelEls = this.bridgeLabelEls || []
+      this.bridgeLabelEls.push({ e, lg })
     }
 
     // Intersections: the end of each skill road that has exits (or written directions).
@@ -282,6 +324,10 @@ export default class extends Controller {
     const nodeOp = (id) => (keep && !keep.has(id) ? 0.12 : 1) * (!this.focus || this.focus.nodes.has(id) ? 1 : 0.18)
     for (const [id, g] of this.nodeEls) g.style.opacity = nodeOp(id)
     for (const [id, g] of this.junctionEls || []) g.style.opacity = nodeOp(id)
+    for (const { e, lg } of this.bridgeLabelEls || []) {
+      const vis = (!keep || (keep.has(e.from) && keep.has(e.to))) && (!this.focus || this.focus.edges.has(`${e.from}>${e.to}`))
+      lg.style.opacity = vis ? 1 : 0.15
+    }
     for (const { e, g } of this.edgeEls) {
       const filtered = keep && !(keep.has(e.from) && keep.has(e.to)) ? 0.1 : 1
       g.style.opacity = filtered * (!this.focus || this.focus.edges.has(`${e.from}>${e.to}`) ? 1 : 0.12)
@@ -303,6 +349,8 @@ export default class extends Controller {
 
   // ---------- selection & planning ----------
   select(id) {
+    this.openPanel()
+    this.keepClearOfPanel([id])
     const n = this.byId.get(id)
     const out = this.map.edges.filter((e) => e.from === id && e.kind === "next").sort((a, b) => b.traffic - a.traffic)
     const inc = this.map.edges.filter((e) => e.to === id && e.kind === "next").sort((a, b) => b.traffic - a.traffic)
@@ -317,7 +365,18 @@ export default class extends Controller {
     h.href = n.url
     this.append(panel, "div", "text-xs text-slate-500 mb-2",
       [areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, n.improvements ? `improved ×${n.improvements}` : null, n.apps?.join(", ")].filter(Boolean).join(" · "))
-    if (n.field_label) this.append(panel, "div", "text-xs text-slate-700 mb-2", `Field: ${n.field_label} ${n.classified_by === "person" ? "(✓ confirmed)" : "(✨ inferred)"}`)
+    if (n.field_labels?.length) this.append(panel, "div", "text-xs text-slate-700 mb-2", `${n.field_labels.length > 1 ? "Fields" : "Field"}: ${n.field_labels.join(" · ")} ${n.classified_by === "person" ? "(✓ confirmed)" : "(✨ inferred)"}`)
+    if (n.bridge) this.append(panel, "div", "text-xs font-semibold text-slate-900 mb-2", `⇄ Bridge skill: carries work ${n.bridge_label}`)
+    if (n.kind === "skill") this.actionsInto(panel, [n.id], n.title)
+    if (n.resources?.length) {
+      this.append(panel, "h3", "font-semibold mt-3 mb-1 text-slate-700", "Resources")
+      const ul = this.append(panel, "ul", "space-y-1 text-xs")
+      n.resources.forEach((r) => {
+        const li = this.append(ul, "li", "flex items-center gap-2")
+        this.append(li, "span", "inline-grid place-items-center w-8 h-5 rounded text-[9px] font-bold text-white bg-slate-600", r.ext.toUpperCase().slice(0, 4))
+        const a = this.append(li, "a", "text-sky-700 hover:underline", r.name); a.href = r.url
+      })
+    }
     if (n.tier) {
       const box = this.append(panel, "div", "border rounded p-2 mb-2 text-xs space-y-0.5")
       this.append(box, "div", "font-semibold text-sm", this.trafficText(n))
@@ -347,6 +406,67 @@ export default class extends Controller {
     return `${Math.round(m / 144) / 10} days`
   }
 
+  openPanel() { this.panelTarget.classList.remove("hidden"); this.panelCloseTarget.classList.remove("hidden") }
+  // Pan so the given skills sit in the part of the map the overlay panel doesn't cover.
+  keepClearOfPanel(ids) {
+    const pts = ids.map((i) => this.geo.positions.get(i)).filter(Boolean)
+    if (!pts.length) return
+    const vw = this.viewportTarget.clientWidth, pw = this.panelTarget.offsetWidth + 16
+    if (!vw || pw >= vw) return
+    const k = this.view.w / vw // svg units per px
+    const visibleRight = this.view.x + (vw - pw) * k
+    const right = Math.max(...pts.map((p) => p.x + SEG)) + 20
+    if (right > visibleRight) this.setView({ ...this.view, x: this.view.x + (right - visibleRight) })
+  }
+  closePanel() { this.panelTarget.classList.add("hidden"); this.panelCloseTarget.classList.add("hidden"); this.highlight(null) }
+
+  // ---------- send to an add-in / agent ----------
+  actionsInto(panel, names, title) {
+    const box = this.append(panel, "div", "border rounded p-2 my-2 space-y-2 bg-slate-50")
+    const row = this.append(box, "div", "flex flex-wrap gap-1")
+    if (names.length === 1) {
+      const open = this.append(row, "a", "px-2 py-1 rounded border bg-white text-xs hover:bg-slate-50", "Open skill")
+      open.href = this.byId.get(names[0])?.url || "#"
+    }
+    const mine = this.append(row, "button", "px-2 py-1 rounded bg-slate-900 text-white text-xs hover:bg-slate-700",
+      names.length > 1 ? `Send route (${names.length}) to my add-in` : "Send to my add-in")
+    mine.type = "button"
+    mine.addEventListener("click", () => this.send(names, "me", status))
+    const route = this.append(box, "div", "flex gap-1")
+    const sel = this.append(route, "select", "border rounded px-1 py-1 text-xs flex-1 min-w-0")
+    sel.setAttribute("aria-label", "Send to")
+    this.append(sel, "option", null, "Route to…").value = ""
+    this.recipientsValue.filter(([, v]) => v !== "me").forEach(([label, v]) => { const o = this.append(sel, "option", null, label); o.value = v })
+    const go = this.append(route, "button", "px-2 py-1 rounded border bg-white text-xs", "Send")
+    go.type = "button"
+    go.addEventListener("click", () => sel.value && this.send(names, sel.value, status))
+    const status = this.append(box, "p", "text-xs text-slate-600", "Loads the skill, its directions and resources into the add-in's memory.")
+  }
+
+  async send(names, target, status) {
+    status.textContent = "Sending…"
+    const token = document.querySelector('meta[name="csrf-token"]')?.content
+    const body = new URLSearchParams()
+    names.forEach((n) => body.append("skills[]", n))
+    body.set("target", target)
+    const res = await fetch(this.sendUrlValue, { method: "POST", headers: { "X-CSRF-Token": token, Accept: "application/json" }, body })
+    const r = await res.json()
+    if (!res.ok) { status.textContent = r.error || "Couldn't send"; return }
+    status.textContent = `Queued for ${r.to}. Waiting for it to check in…`
+    this.watchDelivery(r.id, status)
+  }
+
+  watchDelivery(id, status, tries = 0) {
+    clearTimeout(this.deliveryTimer)
+    this.deliveryTimer = setTimeout(async () => {
+      const res = await fetch(`${this.sentUrlValue}?ids[]=${id}`, { headers: { Accept: "application/json" } })
+      const [c] = await res.json()
+      if (c?.status === "delivered") status.textContent = `✓ Delivered to ${c.to} (${c.delivered_to}): now in its memory.`
+      else if (tries < 40) this.watchDelivery(id, status, tries + 1)
+      else status.textContent = `Still queued for ${c?.to}. It will arrive when the add-in is next open (within a day).`
+    }, 3000)
+  }
+
   // ---------- places & directions ----------
   async directionsInto(container, key, { open = true } = {}) {
     const box = this.append(container, "div", "mt-3 border-t pt-2")
@@ -370,6 +490,7 @@ export default class extends Controller {
   }
 
   selectJunction(id) {
+    this.openPanel()
     const n = this.byId.get(id)
     const out = this.map.edges.filter((e) => e.from === id && e.kind === "next").sort((a, b) => b.traffic - a.traffic)
     this.highlight([id, ...out.map((e) => e.to)], out.map((e) => `${e.from}>${e.to}`))
@@ -383,12 +504,14 @@ export default class extends Controller {
   }
 
   selectHandoff(from, to) {
+    this.openPanel()
+    this.keepClearOfPanel([from, to])
     const a = this.byId.get(from), b = this.byId.get(to)
     const e = this.map.edges.find((x) => x.from === from && x.to === to && x.kind === "next")
     this.highlight([from, to], [`${from}>${to}`])
     const panel = this.panelTarget
     panel.replaceChildren()
-    this.append(panel, "div", "text-xs text-slate-500", "Handoff")
+    this.append(panel, "div", "text-xs text-slate-500", e?.bridge ? `⇄ Bridge · ${this.bridgeText(e.bridge)}` : "Handoff")
     this.append(panel, "h2", "font-semibold text-base", `${a.title} → ${b.title}`)
     this.append(panel, "p", "text-xs text-slate-600", e?.traffic ? `${e.traffic} trips` : "Linked by a reviewer")
     this.directionsInto(panel, `handoff:${from}>${to}`)
@@ -469,6 +592,7 @@ export default class extends Controller {
     const r = await res.json()
     const panel = this.panelTarget
     panel.replaceChildren()
+    this.openPanel()
     this.append(panel, "h2", "font-semibold mb-2", "Route")
     if (!r.found) {
       this.highlight([from, to], [])
@@ -490,6 +614,7 @@ export default class extends Controller {
       const leg = r.legs[i]
       if (leg) this.append(body, "div", "text-xs text-slate-400 mt-1", leg.traffic ? `↓ ${leg.traffic} people took this road` : "↓ linked by a reviewer")
     })
+    this.actionsInto(panel, r.keys.filter((k) => !k.startsWith("candidate:")), "route")
     if (r.directions?.length) {
       this.append(panel, "h3", "font-semibold mt-4 mb-1 text-slate-700", "Agent directions, in order")
       const ul = this.append(panel, "ol", "list-decimal ml-5 space-y-0.5 text-xs")
@@ -504,10 +629,7 @@ export default class extends Controller {
 
   clear() {
     this.fromTarget.value = ""; this.toTarget.value = ""
-    this.highlight(null)
-    this.panelTarget.replaceChildren()
-    this.append(this.panelTarget, "h2", "font-semibold mb-1", "Plan a route")
-    this.append(this.panelTarget, "p", "text-slate-600", "Pick where you are and where you need to get to, or click a skill on the map to see where people go next.")
+    this.closePanel()
   }
 
   append(parent, tag, cls, text) {
@@ -522,17 +644,25 @@ export default class extends Controller {
   nodeTip(ev, n) {
     const stage = { local: "Local (sandbox)", firm: "Firm", market: "Market" }[n.stage]
     const lines = [[n.title, "font-semibold"], [[areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, stage].filter(Boolean).join(" · "), "text-slate-600"],
-      ...(n.field_label ? [[`Field: ${n.field_label}${n.classified_by === "person" ? " ✓" : " ✨"}`, "text-slate-700"]] : []),
+      ...(n.bridge ? [[`⇄ Bridge: ${n.bridge_label}`, "font-semibold"]] : []),
+      ...(n.field_labels?.length ? [[`${n.field_labels.length > 1 ? "Fields" : "Field"}: ${n.field_labels.join(" · ")}${n.classified_by === "person" ? " ✓" : " ✨"}`, "text-slate-700"]] : []),
       ...(n.tier ? [[this.trafficText(n), "text-slate-900"]] : []),
       ...(n.bounty ? [[`💰 Bounty ${this.money(n.bounty.pool)}`, "text-slate-900"]] : []),
       [[n.apps?.join(", "), `${n.steps} steps`, n.improvements ? `improved ×${n.improvements}` : null, n.contributors ? `${n.contributors} contributors` : null].filter(Boolean).join(" · "), "text-slate-600"]]
     this.showTip(ev, lines)
   }
 
+  // Map label: the app hop if there is one (the most concrete crossing), else the field hop.
+  bridgeShort(b) { return (b.apps || b.fields || []).join(" → ") }
+
+  bridgeText(b) {
+    return [b.fields ? b.fields.join(" → ") : null, b.apps ? b.apps.join(" → ") : null].filter(Boolean).join(" · ")
+  }
+
   edgeTip(ev, e) {
     const a = this.byId.get(e.from).title, b = this.byId.get(e.to).title
     const head = e.kind === "branch" ? "Branch (variant)" : e.traffic ? `${e.traffic} trip${e.traffic === 1 ? "" : "s"}` : "Linked by a reviewer"
-    this.showTip(ev, [[head, "font-semibold"], [`${a} → ${b}`, "text-slate-600"]])
+    this.showTip(ev, [[e.bridge ? `⇄ Bridge: ${this.bridgeText(e.bridge)}` : head, "font-semibold"], ...(e.bridge ? [[head, "text-slate-600"]] : []), [`${a} → ${b}`, "text-slate-600"]])
   }
 
   showTip(ev, lines) {

@@ -1,8 +1,10 @@
 # A node in the field taxonomy. Paths are slugs joined by "/", kept in sync on save.
 class Field < ApplicationRecord
   belongs_to :parent, class_name: "Field", optional: true
+  belongs_to :created_by, class_name: "User", optional: true
   has_many :children, -> { order(:position, :name) }, class_name: "Field", foreign_key: :parent_id, dependent: :restrict_with_error
   has_many :classifications, class_name: "SkillClassification", dependent: :nullify
+  has_many :assignments, class_name: "SkillFieldAssignment", dependent: :delete_all
 
   validates :name, presence: true, length: { maximum: 60 }
   validates :path, uniqueness: true

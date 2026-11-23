@@ -55,6 +55,10 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
   - The route planner steers around jammed skills when an equally short road exists.
   - Admins tune the schedule on **Pricing**.
 - **Skill map by area.** The **By area** tab shows every area (finance, legal and so on). For each area it shows how many skills are published, awaiting review or only detected, who reviews it, who contributed, and which Office apps the work happens in. Areas with no reviewer, or with repeated work that hasn't been captured yet, are flagged as gaps. In the add-in, the Library tab filters by the same areas.
+- **Many fields per skill, user-made fields.** A skill card holds as many fields and subfields as fit; people can add or create them, and AI inference proposes up to three.
+- **Resource library.** Customer contracts, NDAs, worksheets and decks sit in callable folders (firm-wide or restricted to areas), each with a key like `resource:legal/templates/mutual-nda-template` that agents and the add-in fetch. Attach them to skills.
+- **Bridges.** Skills and roads that cross apps (collect the charts from an Excel workbook into a PowerPoint appendix or a Word report) or domains (Finance → Legal) are drawn as ⇄ bridges and have their own map filter.
+- **Click a road, send it to the AI.** From the map, send a skill or a whole route to your running Office add-in, a colleague's, or an agent. The add-in loads it, with its directions and resources, into its local memory (Memory tab, "Copy for AI").
 - **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 
 The add-in is a set of web pages plus a manifest, all hosted by this Rails app. The same app is the **web console** for admins: people, add-in deployment, the full review workflow and the audit log. The design is in [docs/design.md](docs/design.md).

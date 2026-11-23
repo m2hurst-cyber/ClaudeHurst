@@ -90,7 +90,10 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 11. **Sandbox isolation.** Local skills never reach agents or people outside their area, contributors and admins. Every query that returns skills goes through `Skill.visible_to(user)`; `nil` means agents (firm and market only). New code that lists skills, places or links must do the same.
 12. **People win over AI.** A classification a person set or confirmed (`confirmed: true`) is never overwritten by inference, except through an explicit "Re-infer".
 13. **Promotion integrity.** No one approves their own request. A non-admin reviewer can't approve a skill they published. Only admins waive gates, and only with a written reason. Promotion is one stage at a time.
-14. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+14. **Restricted resources stay restricted.** `ResourceFolder#visible_to?` walks the chain; restricted folders are never visible to agents (`nil` viewer) and never bundled for them. Resource downloads check the folder for the caller.
+15. **Commands respect visibility.** `POST /map/send` refuses skills the target can't see; agents receive firm and market skills only. A command has exactly one target and expires after a day.
+16. **Fields are many.** Classification writes go through `SkillClassification#set_fields!`, which keeps `field_id` equal to the primary field. Don't write `field_id` directly.
+17. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -157,6 +160,17 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 - Keys are `road:<skill>`, `junction:<skill>` and `handoff:<from>><to>`. URL-encode `>` as `%3E`.
 
 **Route API** (integration token): `GET /api/v1/route?from=<skill>&to=<skill>` returns `{skills: [...names], legs: [{from, to, traffic, manual}], directions: [{key, kind, title, written, markdown}]}`, where directions run road → intersection → handoff → … → road, or 404 when there is no known road. Published skills only.
+
+**Resources, commands and bundles:**
+
+| Method & path | Token | Purpose |
+|---|---|---|
+| `GET /api/v1/addin/commands?host=&platform=` | add-in | Pending commands for this person; marks them delivered; returns `{commands: [{id, kind, from, bundles: [...]}]}` |
+| `GET /api/v1/addin/bundles/:name` | add-in | One bundle: `{name, version, title, stage, fields, apps, skill_md, directions: [{key, kind, markdown}], resources: [{key, name, url}]}` |
+| `GET /api/v1/addin/resources/:id/download` | add-in | The file, if its folder is visible to the person |
+| `GET /api/v1/commands` | integration | Pending commands routed to this agent, with bundles |
+| `GET /api/v1/bundles/:name` | integration | Bundle (firm or market skills only) |
+| `GET /api/v1/resources` and `GET /api/v1/resources/<folder path>/<slug>` | integration | Firm resources; the file itself for a key |
 
 **Action keys** match `^[\w.:\-/#]{1,160}$`. Add-in keys come from `vocabulary.js`. Typed steps are `<host>.step:<slug>`.
 
@@ -256,3 +270,11 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - New add-in step keys go in `vocabulary.js` with a human label, and must match the action-key format.
 - Gate any new Office.js API with `Office.context.requirements.isSetSupported` and degrade gracefully.
 - Never add seeded users, default passwords or committed secrets (`config/master.key` and `.env*` are git-ignored; credentials files are not used).
+
+## Changelog: multi-field, resources, bridges, map → add-in
+
+- Skills carry unlimited fields; people can create fields and subfields from the skill card.
+- Resource library (`/resources`) with firm/restricted folders and `resource:` keys.
+- Bridges: cross-app and cross-domain skills and roads, a ⇄ Bridges map filter.
+- The map panel sends a skill or route to my add-in, a colleague's add-in, or an agent; the add-in keeps it in local memory (Memory tab, `window.SkillCaptureMemory`).
+- Tests: 96 Rails runs, 21 JavaScript tests.

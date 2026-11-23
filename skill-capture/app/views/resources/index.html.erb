@@ -1,0 +1,69 @@
+<% content_for :title, "Resources" %>
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Resource library</h1>
+  <p class="text-sm text-slate-500">Templates, worksheets and decks that skills use, in callable folders. Every item has a key (<code>resource:folder/name</code>) that agents and the add-in can fetch.</p>
+</div>
+
+<div class="grid lg:grid-cols-[16rem_1fr] gap-4">
+  <aside class="space-y-3 text-sm">
+    <nav class="bg-white border rounded p-2" aria-label="Folders">
+      <%= link_to "All folders", resources_path, class: "block rounded px-2 py-1.5 #{@folder ? 'hover:bg-slate-50' : 'bg-slate-900 text-white'}" %>
+      <% @folders.each do |f, depth| %>
+        <%= link_to resources_path(folder: f.path), class: "flex items-center gap-1.5 rounded px-2 py-1.5 #{@folder == f ? 'bg-slate-900 text-white' : 'hover:bg-slate-50'}", style: "padding-left: #{8 + depth * 14}px" do %>
+          <span aria-hidden="true">📁</span><span class="flex-1"><%= f.name %></span>
+          <% if f.audience == "restricted" %><span title="Restricted to <%= f.areas.join(', ') %>" aria-label="Restricted">🔒</span><% end %>
+        <% end %>
+      <% end %>
+    </nav>
+    <details class="bg-white border rounded p-3">
+      <summary class="cursor-pointer font-medium">New folder</summary>
+      <%= form_with model: ResourceFolder.new, url: resource_folders_path, class: "space-y-2 mt-2" do |f| %>
+        <%= f.text_field :name, placeholder: "e.g. Templates", required: true, class: input_css, "aria-label": "Folder name" %>
+        <%= f.select :parent_id, @folders.map { |x, d| ["#{"  " * d * 2}#{x.name}", x.id] }, { include_blank: "(top level)", selected: @folder&.id }, class: input_css, "aria-label": "Inside" %>
+        <%= f.select :audience, [["Firm: everyone and agents", "firm"], ["Restricted to areas", "restricted"]], {}, class: input_css, "aria-label": "Audience" %>
+        <%= f.text_field :areas, placeholder: "Areas if restricted, e.g. legal", class: input_css, "aria-label": "Areas" %>
+        <%= f.submit "Create folder", class: btn %>
+      <% end %>
+    </details>
+  </aside>
+
+  <section>
+    <div class="flex flex-wrap items-end gap-2 mb-3">
+      <div class="flex-1 min-w-48">
+        <h2 class="font-semibold"><%= @folder ? @folder.label : "All folders" %></h2>
+        <% if @folder %><p class="text-xs text-slate-500 font-mono">resource:<%= @folder.path %>/…<%= " · restricted to #{@folder.areas.join(', ')}" if @folder.audience == "restricted" %></p><% end %>
+      </div>
+      <%= form_with url: resources_path, method: :get, class: "flex gap-1" do |f| %>
+        <%= hidden_field_tag :folder, @folder&.path %>
+        <%= search_field_tag :q, params[:q], placeholder: "Search resources", class: "border rounded px-2 py-1.5 text-sm" %>
+        <%= f.submit "Search", class: btn %>
+      <% end %>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-2 mb-4">
+      <% @resources.each do |r| %>
+        <%= link_to resource_path(r), class: "flex items-start gap-3 bg-white border rounded p-3 hover:shadow-sm" do %>
+          <%= file_badge(r) %>
+          <span class="flex-1 min-w-0">
+            <span class="block font-medium text-sky-700"><%= r.name %></span>
+            <span class="block text-xs text-slate-500 truncate"><%= r.folder.label %> · <%= r.kind == "link" ? "link" : number_to_human_size(r.byte_size) %> · v<%= r.version %></span>
+            <span class="block text-xs text-slate-500"><%= pluralize(@usage[r.id].to_i, "skill") %> use this</span>
+          </span>
+        <% end %>
+      <% end %>
+      <% if @resources.empty? %><p class="md:col-span-2 bg-white border rounded p-6 text-center text-sm text-slate-500">Nothing here yet.</p><% end %>
+    </div>
+
+    <details class="bg-white border rounded p-3 text-sm" <%= "open" if @folder && @resources.empty? %>>
+      <summary class="cursor-pointer font-medium">Add a file or link<%= " to #{@folder.name}" if @folder %></summary>
+      <%= form_with model: @new_resource, url: resources_path, multipart: true, class: "grid sm:grid-cols-2 gap-2 mt-2" do |f| %>
+        <div><%= f.label :folder_id, "Folder" %><%= f.select :folder_id, @folders.map { |x, d| ["#{"  " * d * 2}#{x.name}", x.id] }, { selected: @folder&.id }, class: input_css %></div>
+        <div><%= f.label :name %><%= f.text_field :name, placeholder: "Defaults to the file name", class: input_css %></div>
+        <div><%= f.label :file %><%= f.file_field :file, class: "block w-full text-sm" %></div>
+        <div><%= f.label :url, "…or a link (https://)" %><%= f.url_field :url, placeholder: "https://contoso.sharepoint.com/...", class: input_css %></div>
+        <div class="sm:col-span-2"><%= f.label :description %><%= f.text_field :description, class: input_css %></div>
+        <div><%= f.submit "Add to library", class: btn_primary %></div>
+      <% end %>
+    </details>
+  </section>
+</div>
