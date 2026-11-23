@@ -30,12 +30,15 @@ Rails.application.routes.draw do
 
       resources :events, only: :create
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
+      get :route, to: "routes#show"
     end
   end
 
   authenticate :user do
     root "skills#index"
-    resource :skill_map, only: :show, path: "map"
+    get "map", to: "skill_maps#show", as: :skill_map
+    get "map/route", to: "skill_maps#route", as: :skill_map_route
+    get "map/areas", to: "skill_maps#areas", as: :skill_map_areas
 
     resources :skill_candidates, except: :destroy do
       member do
@@ -46,6 +49,7 @@ Rails.application.routes.draw do
       end
     end
     resources :skills, only: %i[index show edit update] do
+      resources :links, only: %i[create destroy], controller: :skill_links, constraints: { id: /[^\/]+/ }
       member do
         get :download
         post :deprecate

@@ -6,7 +6,15 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
 - **Record a procedure.** An expert starts recording and does the task once. The add-in lists each step Office reports, such as "Insert rows", "Sort data" or "Add a slide". The expert adds their own notes for the parts Office can't see, such as checks, decisions and where data comes from, then submits the procedure for review.
 - **Capture repeated workflows (opt-in).** Anyone can turn on *Capture my workflow*. The add-in then shares the *types* of steps they take, never file names, sheet names, values or text, and changes made by co-authors are ignored. When several people repeat the same sequence, Skill Capture proposes it as a skill.
 - **Review inside Office.** Reviewers see drafts for their areas in the pane and can approve or reject them there. Drafts are written by Claude when `ANTHROPIC_API_KEY` is set, otherwise by a built-in template.
-- **Skill map.** The web console's **Map** page shows every area (finance, legal and so on). For each area it shows how many skills are published, awaiting review or only detected, who reviews it, who contributed, and which Office apps the work happens in. Areas with no reviewer, or with repeated work that hasn't been captured yet, are flagged as gaps. In the add-in, the Library tab filters by the same areas.
+- **Route map.** The web console's **Map** shows skills as a road network, like a navigation app:
+  - each published skill is a stretch of road, colored by area
+  - roads connect skills that people do one after another end to end, drawn thicker the more people take them
+  - variants branch off their parent and run beside it, and improved skills carry an "improved ×N" badge
+  - workflows still in review appear as unpaved roads
+  - **Find route** gives turn-by-turn directions from one skill to another, and clicking a skill shows where people go next
+  - reviewers can also draw a road by hand
+  - in the add-in, each skill ends with "people usually continue with…"
+- **Skill map by area.** The **By area** tab shows every area (finance, legal and so on). For each area it shows how many skills are published, awaiting review or only detected, who reviews it, who contributed, and which Office apps the work happens in. Areas with no reviewer, or with repeated work that hasn't been captured yet, are flagged as gaps. In the add-in, the Library tab filters by the same areas.
 - **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 
 The add-in is a set of web pages plus a manifest, all hosted by this Rails app. The same app is the **web console** for admins: people, add-in deployment, the full review workflow and the audit log. The design is in [docs/design.md](docs/design.md).

@@ -41,18 +41,21 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 | `app/policies/*` | SkillCandidatePolicy, SkillPolicy |
 | `db/migrate/*` | Four migrations: Solid Queue tables, core tables, skill tables, add-in tokens |
 | `lib/tasks/capture.rake` | `users:create`, `capture:sweep`, `capture:export`, `capture:demo` |
-| `app/services/capture/skill_map.rb`, `app/views/skill_maps/show.html.erb` | Skill map: where skills live, per area, with gaps (console `/map`) |
+| `app/services/capture/route_map.rb`, `chain_detector.rb`, `route_planner.rb` | Route map: skills as roads, observed and manual links between them, branches, improvements, turn-by-turn planner |
+| `app/models/skill_link.rb` | Roads between skills (by name; `observed` with traffic, or `manual`) |
+| `app/javascript/route_map/layout.js`, `app/javascript/controllers/route_map_controller.js` | Map layout (pure, tested) and SVG renderer (console `/map`) |
+| `app/services/capture/skill_map.rb`, `app/views/skill_maps/areas.html.erb` | By-area view: where skills live, per area, with gaps (console `/map/areas`) |
 | `docs/design.md` | Full design: architecture, data model, detection, privacy, tests |
 
 ## 3. Commands (run from `skill-capture/`)
 
 ```bash
 bundle install && bin/rails db:prepare
-bin/rails test                      # expected: 46 runs, 0 failures
-npm install && npm test             # expected: 10 pass, 0 fail
+bin/rails test                      # expected: 53 runs, 0 failures
+npm install && npm test             # expected: 18 pass, 0 fail
 bin/rails users:create EMAIL=a@example.org NAME="A" ROLE=admin   # prints a one-time password; no accounts are seeded
 bin/addin-dev                       # https://localhost:3000 with Office dev cert (web + Tailwind + jobs)
-bin/rails capture:demo              # development only: sample Excel and Word workflows, then detection
+bin/rails capture:demo              # development only: 10 chained skills (finance close, sales→legal), a branch, an improvement, unpaved roads
 npm run manifest && npm run validate   # Microsoft's online manifest validation (NOT yet run; see §8)
 ```
 
@@ -95,7 +98,8 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | User review workflow and notifications | ✅ | Console Review page plus the pane's Review tab; in-app notifications to area reviewers |
 | Tagging and categorization | ✅ | Tags and area (domain) |
 | Linking to related documentation | ⛔ | Not modeled |
-| Visual of where skills live (by area) | ✅ | Console **Map** page (`/map`, `/map.json`) and add-in area chips. `skill_map_test.rb` |
+| Visual map of how skills connect (journeys, branches, improvements) | ✅ | Console **Map → Routes** (`/map`, `/map.json`, `/map/route`), skill-page "On the map" panel, add-in "people usually continue with". `route_map_test.rb`, `route_map.test.mjs` |
+| Visual of where skills live (by area) | ✅ | **Map → By area** (`/map/areas`) and add-in area chips. `skill_map_test.rb` |
 | Institutional memory (discoverable, origin preserved) | ✅ | Library (console and pane), `GET /api/v1/skills`, provenance, contributors notified when published |
 | Data storage | ✅ | PostgreSQL. No knowledge graph (not needed at MVP scale) |
 | Version control and forks | ✅ | Versions, forks, lineage view |
@@ -133,6 +137,8 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | `POST /api/v1/events` | Same event shape plus `actor: {id, name?}` |
 | `GET /api/v1/skills` and `GET /api/v1/skills/:name` | Same library data; `:name` returns the current version with `skill_md` |
 
+**Route API** (integration token): `GET /api/v1/route?from=<skill>&to=<skill>` returns `{skills: [...names], legs: [{from, to, traffic, manual}]}`, or 404 when there is no known road. Published skills only.
+
 **Action keys** match `^[\w.:\-/#]{1,160}$`. Add-in keys come from `vocabulary.js`. Typed steps are `<host>.step:<slug>`.
 
 ## 7. Configuration (env vars)
@@ -155,6 +161,8 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | `SKILL_CAPTURE_LLM=off` | unset | Disables Claude even when a key is set |
 | `SKILL_CAPTURE_MODEL` | `claude-opus-5-5` | Drafting model |
 | `SKILL_CAPTURE_EXPORT_DIR` | unset | Write `SKILL.md` on every publish |
+| `SKILL_CAPTURE_CHAIN_GAP_HOURS` | 24 | Maximum gap between two skills for them to count as one journey |
+| `SKILL_CAPTURE_MIN_CHAIN_TRAFFIC` | 2 | Trips needed before an observed road appears |
 | `SECRET_KEY_BASE` | none | Required in production (there is no credentials file) |
 
 The full list is in `app/services/capture/config.rb` and `app/services/capture/addin.rb`.
@@ -170,7 +178,11 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 7. **Outlook is not supported** (it needs a mail add-in manifest or the unified JSON manifest).
 8. **No SSO.** Dialog sign-in with Devise. Third-party cookie restrictions don't affect the API (it uses bearer tokens), but sign-in happens in the dialog window.
 9. **Detection runs in memory** over the lookback window (`WorkflowDetector#sessions` loads all events). Fine for MVP volumes; will need batching or SQL at scale.
-10. **Template drafts are generic.** For real use, Claude or a human edit is expected.
+10. **Route map limits.**
+    - Chains are inferred only from *published or open* workflows matched exactly in event streams. A fork with steps identical to its parent's can't be told apart from it.
+    - Chain detection, like workflow detection, runs in memory.
+    - The layout is built for tens of skills per network. Hundreds will need clustering by area, or zoom levels.
+11. **Template drafts are generic.** For real use, Claude or a human edit is expected.
 
 ## 9. Decisions the planner needs to make
 
@@ -178,6 +190,7 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - **Manifest format.** Stay on the XML manifest, or move to the unified JSON manifest (needed for Outlook, Teams and Copilot surfaces).
 - **Distribution.** Centralized deployment only, or also AppSource.
 - **Background capture default.** Is per-person opt-in enough, or should admins be able to turn it on for everyone (with notice)?
+- **Journeys.** Should end-to-end processes become first-class (named journeys such as "Procure to pay", with owners and target routes), or stay emergent from traffic? This affects how Step 2 routes work.
 - **Area taxonomy.** Areas are free text today (set on reviewers, events and requests). Should they become a managed list, a hierarchy (for example Finance → AP / AR), or come from Entra groups?
 - **Governance.** Is there a knowledge-council review on top of per-area reviewers? What is the licensing or contributor agreement for published skills?
 - **Hand-off to Step 2.** How does the routing engine consume skills (`GET /api/v1/skills`, the exported `SKILL.md` directory, or something else)?

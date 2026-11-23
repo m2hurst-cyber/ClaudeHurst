@@ -38,6 +38,41 @@
       <% if s.source_candidate && policy(s.source_candidate).show? %><div><%= link_to "Review record", skill_candidate_path(s.source_candidate), class: "text-sky-700 hover:underline" %></div><% end %>
       <div>License: <%= s.license %></div>
     </div>
+    <% nexts = SkillLink.neighbours(s.name, direction: :next).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
+    <% prevs = SkillLink.neighbours(s.name, direction: :previous).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
+    <% manual_next = SkillLink.manual.where(from_node: s.name).pluck(:to_node) %>
+    <div class="bg-white border rounded p-4">
+      <div class="flex items-baseline justify-between">
+        <h2 class="font-semibold mb-1">On the map</h2>
+        <%= link_to "Open map", skill_map_path, class: "text-xs text-sky-700 hover:underline" %>
+      </div>
+      <% if prevs.any? %>
+        <div class="text-xs text-slate-500 mt-1">People arrive from</div>
+        <ul class="space-y-0.5"><% prevs.each do |l| %><li><%= link_to l[:skill].title, skill_path(l[:skill]), class: "text-sky-700 hover:underline" %> <span class="text-xs text-slate-500"><%= l[:traffic].positive? ? "#{l[:traffic]} trips" : "linked" %></span></li><% end %></ul>
+      <% end %>
+      <div class="text-xs text-slate-500 mt-2">People continue with</div>
+      <% if nexts.any? %>
+        <ul class="space-y-0.5">
+          <% nexts.each do |l| %>
+            <li class="flex items-baseline gap-1">
+              <%= link_to l[:skill].title, skill_path(l[:skill]), class: "text-sky-700 hover:underline" %>
+              <span class="text-xs text-slate-500"><%= [l[:traffic].positive? ? "#{l[:traffic]} trips" : nil, l[:manual] ? "linked by a reviewer" : nil].compact.join(" · ") %></span>
+              <% if manual_next.include?(l[:name]) && policy(s).update? %>
+                <%= button_to "×", skill_link_path(s, l[:name]), method: :delete, class: "text-xs text-slate-400 hover:text-red-700", title: "Remove link", form: { class: "inline" } %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-slate-500">Nothing observed yet.</p>
+      <% end %>
+      <% if s.status == "published" && policy(s).update? %>
+        <%= form_with url: skill_links_path(s), method: :post, class: "flex gap-1 mt-2" do %>
+          <%= select_tag :to, options_for_select(Skill.published.where.not(name: s.name).order(:title).pluck(:title, :name)), prompt: "Add what comes next…", class: "border rounded px-2 py-1 text-xs flex-1 min-w-0", "aria-label": "Skill that comes next" %>
+          <button class="<%= btn %> text-xs">Link</button>
+        <% end %>
+      <% end %>
+    </div>
     <div class="bg-white border rounded p-4">
       <h2 class="font-semibold mb-1">Versions</h2>
       <ul class="space-y-1">

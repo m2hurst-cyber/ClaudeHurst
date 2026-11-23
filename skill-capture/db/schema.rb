@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000004) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -101,6 +101,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000004) do
     t.index ["signature"], name: "index_skill_candidates_on_signature", unique: true
     t.index ["skill_id"], name: "index_skill_candidates_on_skill_id"
     t.index ["status"], name: "index_skill_candidates_on_status"
+  end
+
+  create_table "skill_links", force: :cascade do |t|
+    t.string "from_node", null: false
+    t.string "to_node", null: false
+    t.string "origin", null: false
+    t.integer "traffic", default: 0, null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_skill_links_on_created_by_id"
+    t.index ["from_node", "to_node", "origin"], name: "index_skill_links_on_from_node_and_to_node_and_origin", unique: true
+    t.index ["to_node"], name: "index_skill_links_on_to_node"
   end
 
   create_table "skills", force: :cascade do |t|
@@ -332,6 +345,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000004) do
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "users", column: "reviewer_id"
+  add_foreign_key "skill_links", "users", column: "created_by_id"
   add_foreign_key "skills", "skills", column: "parent_skill_id"
   add_foreign_key "skills", "users", column: "published_by_id"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

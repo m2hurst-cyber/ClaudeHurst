@@ -33,7 +33,7 @@ class SkillMapTest < ActionDispatch::IntegrationTest
 
   test "any signed-in person sees the map page, chart, table and cards" do
     sign_in @member
-    get skill_map_path
+    get skill_map_areas_path
     assert_response :success
     body = response.body
     assert_includes body, "Skills by area"
@@ -44,7 +44,7 @@ class SkillMapTest < ActionDispatch::IntegrationTest
     assert_includes body, 'id="area-unassigned"'
     assert_includes body, 'href="/skills?domain=finance"', "area links must keep the filter (url helpers eat a domain: option)"
 
-    get skill_map_path(format: :json)
+    get skill_map_areas_path(format: :json)
     legal = response.parsed_body.find { |a| a["name"] == "legal" }
     assert_equal 1, legal["awaiting_review"]
   end

@@ -17,6 +17,8 @@ namespace :capture do
     result.created.each { |c| Capture::DraftGenerator.call(c) }
     puts "#{result.patterns.size} repeated workflows; #{result.created.size} new, #{result.updated.size} updated"
     result.patterns.each { |p| puts "  #{p.occurrences}x by #{p.actors.size}: #{p.steps.join(' → ')}" }
+    chains = Capture::ChainDetector.call
+    puts "#{chains.size} skill-to-skill transitions observed"
   end
 
   desc "Write every published skill to DIR/<name>/SKILL.md (default ./skill-repo)"
@@ -25,38 +27,76 @@ namespace :capture do
     Skill.published.find_each { |s| puts "wrote #{Capture::SkillFile.export(s, dir: dir)}" }
   end
 
-  desc "Development demo: feed the add-in's built-in Excel and Word sources with repeated workflows, then sweep"
+  desc "Development demo: published skills that chain into end-to-end journeys, with a branch, an improvement and unpaved roads"
   task demo: :environment do
     abort "Development only" unless Rails.env.development?
-    flows = {
-      ["Excel", "finance"] => [["excel.document.opened", nil], ["excel.worksheet.switched", nil], ["excel.rows.inserted", nil],
-                               ["excel.cells.edited", nil], ["excel.formula.changed", nil], ["excel.data.sorted", nil],
-                               ["excel.step:check-totals-match-the-bank-statement", "Check totals match the bank statement"]],
-      ["Word", "legal"] => [["word.document.opened", nil], ["word.contentcontrol.added", nil], ["word.paragraph.changed", nil],
-                            ["word.step:check-clause-library-for-current-wording", "Check the clause library for the current wording"],
-                            ["word.paragraph.deleted", nil]]
+    admin = User.find_by(role: "admin") or abort("Create an admin first: bin/rails users:create ROLE=admin ...")
+
+    step = ->(host, text) { ["#{host}.step:#{text.parameterize}", text] }
+    skills = {
+      "export-trial-balance" => ["finance", "Export the trial balance", [step.("excel", "Refresh the GL extract"), step.("excel", "Export the trial balance by entity")]],
+      "reconcile-bank-statement" => ["finance", "Reconcile the bank statement", [step.("excel", "Import the bank statement"), step.("excel", "Match payments to ledger lines"), step.("excel", "Investigate unmatched items")]],
+      "post-month-end-accruals" => ["finance", "Post month-end accruals", [step.("excel", "List open purchase orders"), step.("excel", "Calculate accruals"), step.("excel", "Load the accrual journal")]],
+      "month-end-close-pack" => ["finance", "Build the month-end close pack", [step.("powerpoint", "Update KPI slides"), step.("powerpoint", "Add variance commentary")]],
+      "build-quote-deck" => ["sales", "Build a quote deck", [step.("powerpoint", "Duplicate the quote template"), step.("powerpoint", "Fill in pricing tables")]],
+      "write-proposal" => ["sales", "Write the proposal", [step.("word", "Start from the proposal template"), step.("word", "Insert scope and pricing")]],
+      "prepare-contract" => ["sales", "Prepare the customer contract", [step.("word", "Generate the contract from the template"), step.("word", "Fill in commercial terms")]],
+      "redline-contract" => ["legal", "Redline a customer contract", [step.("word", "Compare against the clause library"), step.("word", "Mark up deviations")]],
+      "legal-sign-off" => ["legal", "Get legal sign-off", [step.("word", "Summarize deviations for counsel"), step.("word", "Record the approval")]],
+      "review-nda" => ["legal", "Review an NDA", [step.("word", "Check the NDA against the standard"), step.("word", "Flag non-standard terms")]]
     }
-    labels = {
-      "excel.document.opened" => "Open the workbook", "excel.worksheet.switched" => "Switch to another worksheet",
-      "excel.rows.inserted" => "Insert rows", "excel.cells.edited" => "Enter or edit cell values",
-      "excel.formula.changed" => "Enter or change a formula", "excel.data.sorted" => "Sort data",
-      "word.document.opened" => "Open the document", "word.contentcontrol.added" => "Insert a form field (content control)",
-      "word.paragraph.changed" => "Edit text", "word.paragraph.deleted" => "Delete paragraphs"
-    }
-    actors = [%w[demo-1 Analyst\ A], %w[demo-2 Analyst\ B], %w[demo-3 Analyst\ C]]
-    flows.each_with_index do |((host, domain), steps), f|
-      events = []
-      4.times do |i|
-        actor = actors[(i + f) % actors.size]
-        steps.each_with_index do |(key, label), j|
-          events << { action: key, label: label || labels[key], domain: domain, actor: { id: actor[0], name: actor[1] },
-                      session: "demo-#{f}-#{i}", occurred_at: ((i + 1).days.ago + f.hours + (j * 3).minutes).utc.iso8601,
-                      context: { app: host.downcase } }
+    created = {}
+    skills.each do |name, (area, title, steps)|
+      next created[name] = Skill.current(name) if Skill.current(name)
+      steps.each { |key, label| ActionDefinition.find_or_create_by!(key: key) { |d| d.label = label; d.domain = area } }
+      c = SkillCandidate.create!(signature: "demo:#{name}", steps: steps.map(&:first), domain: area, origin: "detected", status: "drafted",
+                                 occurrence_count: 4, distinct_actor_count: 3, draft_name: name, draft_title: title,
+                                 draft_description: "#{title} (demo skill).", draft_body: "# #{title}\n\n" + steps.each_with_index.map { |(_, l), i| "#{i + 1}. #{l}" }.join("\n"),
+                                 contributors: [{ "key" => "demo-1", "name" => "Analyst A" }, { "key" => "demo-2", "name" => "Analyst B" }],
+                                 first_seen_at: 20.days.ago, last_seen_at: 2.days.ago)
+      created[name] = Capture::Publisher.publish!(c, reviewer: admin)
+    end
+    # An improvement and a branch
+    if Skill.where(name: "reconcile-bank-statement").count == 1
+      Capture::Publisher.revise!(created["reconcile-bank-statement"], editor: admin, attrs: { body: created["reconcile-bank-statement"].body + "\n4. Sign off the reconciliation", change_note: "Added sign-off" })
+      Capture::Publisher.revise!(Skill.current("reconcile-bank-statement"), editor: admin,
+                                 attrs: { name: "reconcile-multi-currency-bank", title: "Reconcile a multi-currency bank account" })
+      # A real variant differs in its steps; give the demo fork its own currency step.
+      fork = Skill.current("reconcile-multi-currency-bank")
+      key, label = step.("excel", "Revalue balances at month-end rates")
+      ActionDefinition.find_or_create_by!(key: key) { |d| d.label = label; d.domain = "finance" }
+      fork.update!(source: fork.source.merge("workflow" => fork.source["workflow"].insert(1, key)))
+    end
+    # Unpaved: workflows seen but not yet reviewed
+    [["finance", "Chase late expense reports", %w[outlook.step:list-late-claims excel.step:email-reminders]],
+     ["legal", "Renew a supplier contract", %w[word.step:check-renewal-date word.step:update-term-dates]]].each do |area, title, steps|
+      SkillCandidate.find_or_create_by!(signature: "demo:#{title.parameterize}") do |c|
+        c.assign_attributes(steps: steps, domain: area, origin: "detected", status: "detected", draft_title: title, occurrence_count: 3, distinct_actor_count: 2)
+      end
+    end
+
+    # End-to-end journeys (traffic). The integration source stands in for the add-in here.
+    src = Source.find_by(name: "Demo journeys") || Source.issue!(name: "Demo journeys", kind: "integration").first
+    journeys = [
+      [%w[export-trial-balance reconcile-bank-statement post-month-end-accruals month-end-close-pack], 6],
+      [%w[export-trial-balance reconcile-multi-currency-bank post-month-end-accruals], 2],
+      [%w[build-quote-deck write-proposal prepare-contract redline-contract legal-sign-off], 4],
+      [%w[build-quote-deck write-proposal prepare-contract], 2],
+      [%w[review-nda legal-sign-off], 3]
+    ]
+    events = []
+    journeys.each_with_index do |(chain, times), j|
+      times.times do |i|
+        t = (i + 1).days.ago - j.hours
+        chain.each_with_index do |name, k|
+          Array(Skill.current(name)&.source&.dig("workflow")).each_with_index do |key, m|
+            events << { action: key, actor: { id: "demo-#{j}-#{i}" }, session: "j#{j}-#{i}-#{k}", occurred_at: (t + k.hours + m.minutes).utc.iso8601 }
+          end
         end
       end
-      r = Capture::Ingestor.call(Source.for_office_host(host), events)
-      puts "#{host}: ingested #{r.accepted} events"
     end
-    Rake::Task["capture:sweep"].invoke
+    events.each_slice(400) { |b| Capture::Ingestor.call(src, b) }
+    n = Capture::ChainDetector.call.size
+    puts "Demo ready: #{Skill.published.count} skills, #{n} roads observed. Open /map."
   end
 end

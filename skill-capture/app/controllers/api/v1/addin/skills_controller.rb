@@ -10,7 +10,11 @@ module Api
 
         def show
           skill = Skill.current(params[:id]) || raise(ActiveRecord::RecordNotFound)
-          render json: summary(skill).merge(body: skill.body, url: skill_url(skill), contributors: Array(skill.source["contributors"]))
+          next_up = SkillLink.neighbours(skill.name, direction: :next).filter_map do |l|
+            (s = Skill.current(l[:name])) && { name: s.name, title: s.title, traffic: l[:traffic] }
+          end
+          render json: summary(skill).merge(body: skill.body, url: skill_url(skill), contributors: Array(skill.source["contributors"]),
+                                            next_up: next_up.first(3))
         end
 
         private

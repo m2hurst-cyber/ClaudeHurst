@@ -15,6 +15,10 @@ module Capture
     def session_gap = ENV.fetch("SKILL_CAPTURE_SESSION_GAP_MINUTES", 30).to_i.minutes
     def lookback = ENV.fetch("SKILL_CAPTURE_LOOKBACK_DAYS", 30).to_i.days
     def retention = ENV.fetch("SKILL_CAPTURE_RETENTION_DAYS", 90).to_i.days
+    # Two skills done within this time of each other count as one end-to-end journey.
+    def chain_gap = ENV.fetch("SKILL_CAPTURE_CHAIN_GAP_HOURS", 24).to_i.hours
+    # Observed links need at least this many transitions to appear on the route map.
+    def min_chain_traffic = ENV.fetch("SKILL_CAPTURE_MIN_CHAIN_TRAFFIC", 2).to_i
     def max_batch = ENV.fetch("SKILL_CAPTURE_MAX_BATCH", 500).to_i
     def publish_alert_threshold = ENV.fetch("SKILL_CAPTURE_PUBLISH_ALERT_PER_HOUR", 10).to_i
     def ingest_alert_threshold = ENV.fetch("SKILL_CAPTURE_INGEST_ALERT_PER_HOUR", 50_000).to_i

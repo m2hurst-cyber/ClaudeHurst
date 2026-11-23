@@ -60,7 +60,31 @@ Events carry only:
 
 Add-in events are always attributed server-side to the connected person; any actor in the payload is ignored. Typed steps in a recorded procedure are sent as written, because the person submits them deliberately.
 
-## Skill map (where skills live)
+## Route map (how skills connect end to end)
+
+Like a navigation map: skills are roads, and journeys are the sequences people actually travel.
+
+| Map element | Source |
+|---|---|
+| **Road (skill)** | Each current published skill, colored by area. Hue slots are assigned by sorted area name, so a color never changes on filtering. Past 8 areas the rest share "Other" gray |
+| **Road between skills** | `SkillLink` (`from_node` → `to_node`), by skill *name*, so links survive new versions |
+| Observed traffic | `Capture::ChainDetector` (runs in the hourly sweep and in `capture:sweep`). It lines up each person's events, finds where each skill's or open workflow's steps occur contiguously, and counts consecutive different skills no more than `SKILL_CAPTURE_CHAIN_GAP_HOURS` (24) apart. A road needs `SKILL_CAPTURE_MIN_CHAIN_TRAFFIC` (2) trips. Observed links are recomputed each run |
+| Manual links | Reviewers add or remove them on the skill page ("Add what comes next…") |
+| **Branch** | A fork (`parent_skill` with a different name), drawn as a dotted side road. The variant runs parallel to its parent (same column) |
+| **Improvement** | The number of earlier versions of the same name, shown as "improved ×N" |
+| **Unpaved road** | An open (detected or drafted) workflow, visible only to people allowed to see it (policy scope) |
+| **Route planner** | `Capture::RoutePlanner`: Dijkstra over "next" roads. Fewest hops wins, and among equal hops the busiest roads win. Served at `GET /map/route` (console) and `GET /api/v1/route` (integration token, published skills only, for agents and the Step 2 routing engine) |
+
+The layout is `app/javascript/route_map/layout.js`. Each connected network is laid out on its own: a skill's column is the longest chain of roads leading to it (loops broken), rows are ordered by barycenter sweeps, networks are stacked biggest first, and unconnected skills go in a final grid. Rendering is SVG (`route_map_controller.js`) with:
+- pan and zoom, and a minimum readable scale on small screens
+- hover and focus tooltips
+- click to see "where people go next / come from"
+- legend chips that focus one area
+- a "Show as list" text alternative
+
+A known limit: a fork whose steps are identical to its parent's can't be told apart from activity. Its traffic is credited to one of the two. A real variant usually adds or changes steps.
+
+## Skill map by area (where skills live)
 
 Skills, candidates and reviewers all carry an **area** (`domain`). `Capture::SkillMap` rolls them up per area:
 
@@ -198,6 +222,8 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/services/*`: detection (five scripted workflows plus noise, all captured with no extras, and long workflows stitched), ingest minimization, drafting (with a stubbed Claude client), publishing, versions and forks.
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
 - `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
+- `test/integration/route_map_test.rb`: observed roads (traffic, minimum, gap), recomputation keeping manual links, branches, improvements, unpaved visibility, the planner (busier road wins, gaps), the agent route API, reviewer-drawn links and the add-in "next up".
+- `test/javascript/route_map.test.mjs`: layout (journey order, parallel branches, loops, separate networks, loose skills) and road geometry.
 - **Manual browser check during development:** the real task pane in Chromium at 350 px wide, with Office.js replaced by a simulated Excel host (Microsoft's CDN isn't reachable from the build environment). It covered dialog sign-in, opting in (startup behavior set to `Load`), local versus remote events, recording and submitting, approving in the pane, and inserting steps.
 - **Not yet done:** the manifest has been parsed by Microsoft's `office-addin-manifest` and `office-addin-manifest-converter`, but not run through Microsoft's online validation service. Run `npm run validate` before deploying, then sideload into real Excel, Word and PowerPoint.
 

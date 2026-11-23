@@ -144,7 +144,9 @@ async function renderSkill(name) {
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
       </div>
-      <article class="border-t pt-2">${renderMarkdown(s.body)}</article>`;
+      <article class="border-t pt-2">${renderMarkdown(s.body)}</article>
+      ${s.next_up?.length ? `<div class="border-t mt-3 pt-2"><div class="text-xs text-slate-500 mb-1">When you're done, people usually continue with</div>
+        ${s.next_up.map((n) => `<button data-skill="${esc(n.name)}" class="block text-left text-sky-700 hover:underline">→ ${esc(n.title)}${n.traffic ? ` <span class="text-xs text-slate-500">(${n.traffic} trips)</span>` : ""}</button>`).join("")}</div>` : ""}`;
   } catch (e) { panel().innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
 }
 

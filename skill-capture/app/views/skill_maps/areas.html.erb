@@ -1,0 +1,122 @@
+<% content_for :title, "Skill map" %>
+<%
+  stages = [
+    ["published", "Published", "--stage-published", "#ffffff"],
+    ["awaiting_review", "Awaiting review", "--stage-review", "#ffffff"],
+    ["detected", "Detected, not drafted yet", "--stage-detected", "#0b0b0b"]
+  ]
+  totals = Capture::SkillMap::STAGES.index_with { |s| @areas.sum { |a| a.public_send(s) } }
+  gap_areas = @areas.count { |a| a.gaps.any? }
+  area_label = ->(a) { area_name(a.name) }
+%>
+<style>
+  /* Ordinal ramp (one hue, light → dark = less → more mature). Validated: monotone L, light end 2.11:1 on white. */
+  .skill-map { --stage-published: #1c5cab; --stage-review: #3987e5; --stage-detected: #86b6ef;
+               --status-warning: #fab219; --grid: #e7e5e4; }
+  .skill-map .seg { height: 20px; margin-right: 2px; }           /* 2px surface gap between segments */
+  .skill-map .seg:last-child { margin-right: 0; border-radius: 0 4px 4px 0; } /* rounded data end, square at baseline */
+  .skill-map .seg:focus-visible { outline: 2px solid #0b0b0b; outline-offset: 1px; }
+</style>
+
+<div class="skill-map" data-controller="map-tooltip">
+  <%= render "tabs", subtitle: "Where your organization's know-how lives: each area, how much of its repeated work has become published skills, and where the gaps are." %>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 text-sm">
+    <% [["Areas", @areas.count { |a| !a.unassigned? }], ["Published skills", totals["published"]],
+        ["Awaiting review", totals["awaiting_review"]], ["Areas with gaps", gap_areas]].each do |label, value| %>
+      <div class="bg-white border rounded p-3">
+        <div class="text-xs text-slate-500"><%= label %></div>
+        <div class="text-2xl font-semibold"><%= number_with_delimiter(value) %></div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @areas.empty? %>
+    <p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No areas yet. Areas appear when skills are captured or reviewers are given areas on the People page.</p>
+  <% else %>
+    <section class="bg-white border rounded p-4 mb-6" aria-labelledby="by-area">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 id="by-area" class="font-semibold">Skills by area</h2>
+        <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600" aria-label="Legend">
+          <% stages.each do |_, label, var, _| %>
+            <li class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background: var(<%= var %>)"></span><%= label %></li>
+          <% end %>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <% @areas.each do |a| %>
+          <div class="grid grid-cols-[7rem_1fr] sm:grid-cols-[10rem_1fr] items-center gap-3 text-sm">
+            <a href="#area-<%= a.name.parameterize %>" class="truncate text-slate-800 hover:underline" title="<%= area_label.(a) %>"><%= area_label.(a) %></a>
+            <div class="flex items-center gap-2 min-w-0">
+              <% if a.total.zero? %>
+                <span class="text-xs text-slate-400">No skills yet</span>
+              <% else %>
+                <div class="flex min-w-0" style="width: <%= (a.total * 100.0 / @max).round(2) %>%">
+                  <% stages.each do |key, label, var, _| %>
+                    <% n = a.public_send(key) %>
+                    <% next if n.zero? %>
+                    <div class="seg" tabindex="0" role="img" style="flex: <%= n %> 1 0; background: var(<%= var %>)"
+                         aria-label="<%= "#{area_label.(a)}: #{n} #{label.downcase}" %>"
+                         data-action="pointerenter->map-tooltip#show pointermove->map-tooltip#move pointerleave->map-tooltip#hide focus->map-tooltip#show blur->map-tooltip#hide"
+                         data-area="<%= area_label.(a) %>" data-stage="<%= label %>" data-value="<%= n %>" data-total="<%= a.total %>"></div>
+                  <% end %>
+                </div>
+                <span class="text-xs text-slate-600 tabular-nums whitespace-nowrap"><%= a.total %></span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <details class="mt-4 text-sm">
+        <summary class="cursor-pointer text-slate-600">Show as table</summary>
+        <table class="w-full mt-2">
+          <thead class="text-left text-slate-500"><tr><th class="py-1 font-medium">Area</th><% stages.each do |_, label, _, _| %><th class="py-1 font-medium text-right"><%= label %></th><% end %><th class="py-1 font-medium text-right">Total</th></tr></thead>
+          <tbody class="divide-y">
+            <% @areas.each do |a| %>
+              <tr><td class="py-1"><%= area_label.(a) %></td><% stages.each do |key, *| %><td class="py-1 text-right tabular-nums"><%= a.public_send(key) %></td><% end %><td class="py-1 text-right tabular-nums"><%= a.total %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </details>
+    </section>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% @areas.each do |a| %>
+        <section id="area-<%= a.name.parameterize %>" class="bg-white border rounded p-4 text-sm flex flex-col gap-2 scroll-mt-4">
+          <div class="flex items-baseline justify-between gap-2">
+            <h3 class="font-semibold text-base"><%= area_label.(a) %></h3>
+            <%= link_to "#{a.published} published", (a.unassigned? ? skills_path : skills_path(params: { domain: a.name })), class: "text-sky-700 hover:underline text-xs whitespace-nowrap" %>
+          </div>
+
+          <% a.gaps.each do |gap| %>
+            <div class="flex items-start gap-1.5 text-xs text-slate-800">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" class="mt-px shrink-0"><path d="M8 1.5 15 14.5H1z" fill="var(--status-warning)"/><path d="M8 6v4M8 12v.5" stroke="#0b0b0b" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span><span class="sr-only">Warning: </span><%= gap %></span>
+            </div>
+          <% end %>
+
+          <dl class="grid grid-cols-[6.5rem_1fr] gap-y-1 text-slate-700">
+            <dt class="text-slate-500">In review</dt><dd><%= a.awaiting_review %> drafted · <%= a.detected %> detected</dd>
+            <dt class="text-slate-500">Reviewers</dt><dd><%= a.reviewers.join(", ").presence || "Admins only" %></dd>
+            <dt class="text-slate-500">Contributors</dt><dd><%= a.contributors %></dd>
+            <dt class="text-slate-500">Office apps</dt><dd><%= a.apps.map { |app, n| "#{app} (#{n} steps)" }.join(", ").presence || "—" %></dd>
+          </dl>
+
+          <% if a.top_skills.any? %>
+            <div>
+              <div class="text-xs text-slate-500 mb-1">Latest skills</div>
+              <ul class="space-y-0.5">
+                <% a.top_skills.each do |s| %><li><%= link_to s[:title], skill_path(s[:id]), class: "text-sky-700 hover:underline" %></li><% end %>
+              </ul>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div data-map-tooltip-target="tip" role="tooltip" hidden
+       class="fixed z-10 pointer-events-none bg-white border rounded shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
+</div>
