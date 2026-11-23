@@ -32,6 +32,9 @@ module Capture
       ENV["SKILL_CAPTURE_LLM"] != "off" && (ENV["ANTHROPIC_API_KEY"].present? || ENV["ANTHROPIC_AUTH_TOKEN"].present?)
     end
 
+    # Rest stops are mirrored here as JSON (redundancy). Point it at separately backed-up storage in production.
+    def rest_stop_dir = Pathname(ENV.fetch("SKILL_CAPTURE_REST_STOP_DIR", Rails.root.join("storage", "rest_stops", Rails.env).to_s))
+
     def llm_model = ENV.fetch("SKILL_CAPTURE_MODEL", "claude-opus-5-5")
   end
 end

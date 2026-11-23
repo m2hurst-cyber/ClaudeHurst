@@ -93,7 +93,9 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 14. **Restricted resources stay restricted.** `ResourceFolder#visible_to?` walks the chain; restricted folders are never visible to agents (`nil` viewer) and never bundled for them. Resource downloads check the folder for the caller.
 15. **Commands respect visibility.** `POST /map/send` refuses skills the target can't see; agents receive firm and market skills only. A command has exactly one target and expires after a day.
 16. **Fields are many.** Classification writes go through `SkillClassification#set_fields!`, which keeps `field_id` equal to the primary field. Don't write `field_id` directly.
-17. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+17. **History is never rewritten.** Reverting a rest stop publishes a new version; the state before the revert is saved (pinned) first. Manual, pinned and branch-point rest stops are never pruned. New code that changes a skill's content, directions, resources or fields should take a rest stop (`Capture::RestStops.capture!`, which skips unchanged states).
+18. **Prompts only read a person's own events** (`actor_key = user:<id>`), never other people's, and only propose: every accepted prompt goes through review. A dismissed prompt is never raised again.
+19. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -171,6 +173,15 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | `GET /api/v1/commands` | integration | Pending commands routed to this agent, with bundles |
 | `GET /api/v1/bundles/:name` | integration | Bundle (firm or market skills only) |
 | `GET /api/v1/resources` and `GET /api/v1/resources/<folder path>/<slug>` | integration | Firm resources; the file itself for a key |
+
+**Prompts and rest stops:**
+
+| Method & path | Token | Purpose |
+|---|---|---|
+| `GET /api/v1/addin/prompts` | add-in | Open save/extend/branch prompts: `[{id, kind, headline, skill, skill_title, occurrences, steps: [{action, label}], added, removed, choices}]` |
+| `POST /api/v1/addin/prompts/:id/respond` | add-in | `{choice: save\|extend\|branch\|snooze\|dismiss, title?}` → `{status, candidate?: {id, title, name, url}}` |
+| `POST /api/v1/addin/events` | add-in | Response now also carries `prompts` raised by what was just sent |
+| `GET /api/v1/skills/:name/rest_stops`, `GET /api/v1/rest_stops/:id` | integration | Rest stops of shared skills; `:id` includes the snapshot |
 
 **Action keys** match `^[\w.:\-/#]{1,160}$`. Add-in keys come from `vocabulary.js`. Typed steps are `<host>.step:<slug>`.
 
@@ -279,4 +290,11 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - The map panel sends a skill or route to my add-in, a colleague's add-in, or an agent; the add-in keeps it in local memory (Memory tab, `window.SkillCaptureMemory`).
 - The demo "Hex key worksheet" is the brand palette (hex codes, Office theme slots, chart series order, per-app usage, contrast checks), firm-wide in Design › Brand and attached to the chart and deck skills.
 - `capture:demo` seeds journeys once; re-running keeps them (it used to invent backward roads).
-- Tests: 96 Rails runs, 21 JavaScript tests.
+
+## Changelog: protocols and rest stops
+
+- Save / extend / branch protocols (`Protocol`, `SkillPrompt`, `Capture::Prompter`), answered in the add-in or on `/prompts`; admin thresholds at `/admin/protocols`.
+- Candidates carry `proposal_kind` and `base_skill`; publishing an extend makes the next version, a branch a linked sandbox variant.
+- Rest stops (`RestStop`, `Capture::RestStops`): automatic and manual snapshots, revert as a new version, branch start points, disk mirror with `capture:rest_stops:verify`, daily `RestStopSweepJob`. The map panel links each skill's rest stops.
+- Add-in: prompt card, autosaved recordings, a fix for a library render race.
+- Tests: 107 Rails runs, 22 JavaScript tests.

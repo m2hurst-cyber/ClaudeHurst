@@ -41,5 +41,7 @@ export function createApi(base = location.origin) {
     approve: (id) => request("POST", `/api/v1/addin/candidates/${id}/approve`),
     reject: (id, notes) => request("POST", `/api/v1/addin/candidates/${id}/reject`, { notes }),
     submitProcedure: (p) => request("POST", "/api/v1/addin/procedures", p),
+    prompts: () => request("GET", "/api/v1/addin/prompts"),
+    respondPrompt: (id, choice, title) => request("POST", `/api/v1/addin/prompts/${id}/respond`, { choice, title }),
   };
 }

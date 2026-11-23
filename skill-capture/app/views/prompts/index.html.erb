@@ -1,0 +1,14 @@
+<% content_for :title, "Prompts" %>
+<h1 class="text-2xl font-bold mb-1">Save · Extend · Branch</h1>
+<p class="text-sm text-slate-500 mb-4">Skill Capture watches for patterns in your own work in Office and asks before it loses them:
+  <strong>save</strong> a workflow you keep repeating, <strong>extend</strong> a skill you keep adding steps to, or <strong>branch</strong> a skill you do your own way.
+  Nothing changes until a reviewer approves it, and every change leaves a rest stop you can revert to.</p>
+<% if @live.any? %>
+  <div class="space-y-3 mb-6"><%= render partial: "prompt", collection: @live, as: :p %></div>
+<% else %>
+  <div class="bg-white border rounded p-6 text-sm text-slate-500 mb-6">Nothing to decide right now. Prompts appear here and in the Office add-in as patterns show up in your work.</div>
+<% end %>
+<% if @answered.any? %>
+  <h2 class="font-semibold mb-2">Earlier</h2>
+  <div class="space-y-2"><%= render partial: "prompt", collection: @answered, as: :p %></div>
+<% end %>

@@ -1,0 +1,33 @@
+<% content_for :title, "Protocols" %>
+<h1 class="text-2xl font-bold mb-1">Protocols &amp; triggers</h1>
+<p class="text-sm text-slate-500 mb-4">When Skill Capture prompts people to save, extend or branch their work, and how rest stops (restorable snapshots) are kept. Triggers look only at each person's own add-in activity; accepting a prompt sends a draft to the area's reviewers.</p>
+<% desc = {
+     "save" => "Someone repeats a workflow that no skill or candidate covers.",
+     "extend" => "Someone finishes a skill and then does the same extra steps, again and again.",
+     "branch" => "Someone starts and finishes a skill but does the middle differently, again and again.",
+     "rest_stop" => "Snapshots are taken before and after every change and when a branch starts; these settings add a daily one and limit how many automatic ones are kept. Manual, pinned and branch-start rest stops are never pruned."
+   } %>
+<% names = { "min_repeats" => "Times seen", "min_steps" => "At least (steps)", "lookback_days" => "Look back (days)", "snooze_days" => "\"Not now\" snoozes (days)",
+             "max_added_steps" => "Up to (added steps)", "max_extra_steps" => "Up to (extra steps)", "daily" => "Daily rest stop when a skill changed", "keep_auto" => "Keep automatic (per skill)" } %>
+<%= form_with url: admin_protocols_path, method: :patch, class: "space-y-4 max-w-3xl text-sm" do %>
+  <% if @protocols.any? { |p| p.errors.any? } %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded"><%= @protocols.flat_map { |p| p.errors.full_messages.map { |m| "#{p.label}: #{m}" } }.to_sentence %></div>
+  <% end %>
+  <% @protocols.each do |p| %>
+    <fieldset class="bg-white border rounded p-4">
+      <legend class="px-1 font-semibold"><%= { "save" => "💾", "extend" => "➕", "branch" => "⑂", "rest_stop" => "🅿" }[p.key] %> <%= p.label %></legend>
+      <p class="text-slate-500 mb-2"><%= desc[p.key] %></p>
+      <label class="flex items-center gap-2 mb-2"><%= hidden_field_tag "protocols[#{p.key}][enabled]", "0", id: nil %><%= check_box_tag "protocols[#{p.key}][enabled]", "1", p.enabled %> Enabled</label>
+      <div class="grid sm:grid-cols-4 gap-3">
+        <% Protocol::DEFAULTS[p.key].each do |name, default| %>
+          <% if default == true || default == false %>
+            <label class="flex items-center gap-2 sm:col-span-2"><%= hidden_field_tag "protocols[#{p.key}][#{name}]", "0", id: nil %><%= check_box_tag "protocols[#{p.key}][#{name}]", "1", p[name] %> <%= names[name] %></label>
+          <% else %>
+            <div><%= label_tag "protocols_#{p.key}_#{name}", names[name] %><%= number_field_tag "protocols[#{p.key}][#{name}]", p[name], id: "protocols_#{p.key}_#{name}", class: input_css %></div>
+          <% end %>
+        <% end %>
+      </div>
+    </fieldset>
+  <% end %>
+  <%= submit_tag "Save protocols", class: btn_primary %>
+<% end %>

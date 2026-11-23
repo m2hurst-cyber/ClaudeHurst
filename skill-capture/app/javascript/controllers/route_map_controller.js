@@ -377,6 +377,12 @@ export default class extends Controller {
         const a = this.append(li, "a", "text-sky-700 hover:underline", r.name); a.href = r.url
       })
     }
+    if (n.rest_stops) {
+      const rs = this.append(panel, "div", "mt-3 text-xs flex items-baseline gap-1 flex-wrap")
+      this.append(rs, "span", "font-semibold text-slate-700", "🅿 Rest stops")
+      this.append(rs, "span", "text-slate-500", `${n.rest_stops.count} · latest ${this.ago(n.rest_stops.latest_at)}`)
+      const a = this.append(rs, "a", "text-sky-700 hover:underline ml-auto", "View or revert"); a.href = n.rest_stops.list_url
+    }
     if (n.tier) {
       const box = this.append(panel, "div", "border rounded p-2 mb-2 text-xs space-y-0.5")
       this.append(box, "div", "font-semibold text-sm", this.trafficText(n))
@@ -654,6 +660,11 @@ export default class extends Controller {
 
   // Map label: the app hop if there is one (the most concrete crossing), else the field hop.
   bridgeShort(b) { return (b.apps || b.fields || []).join(" → ") }
+
+  ago(iso) {
+    const m = Math.max(0, (Date.now() - Date.parse(iso)) / 60000)
+    return m < 1 ? "just now" : m < 60 ? `${Math.round(m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
+  }
 
   bridgeText(b) {
     return [b.fields ? b.fields.join(" → ") : null, b.apps ? b.apps.join(" → ") : null].filter(Boolean).join(" · ")

@@ -1,0 +1,59 @@
+<% s = p.skill %>
+<% icon = { "save" => "💾", "extend" => "➕", "branch" => "⑂" }[p.kind] %>
+<div class="bg-white border rounded p-4 text-sm" id="<%= dom_id(p) %>">
+  <div class="flex items-start gap-2">
+    <span class="text-xl leading-none" aria-hidden="true"><%= icon %></span>
+    <div class="flex-1 min-w-0">
+      <div class="font-semibold"><%= p.headline %></div>
+      <div class="text-xs text-slate-500 mt-0.5">
+        <%= Protocol::LABELS[p.kind] %> protocol · seen <%= p.occurrences %>× in your recent work<%= " · last #{time_ago_in_words(p.last_seen_at)} ago" if p.last_seen_at %>
+        <% if s %> · based on <%= link_to "#{s.title} v#{s.version}", skill_path(s), class: "text-sky-700 hover:underline" %><% end %>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3 mt-3">
+        <% if s %>
+          <div>
+            <div class="text-xs text-slate-500 mb-1">The skill today</div>
+            <ol class="list-decimal ml-5 text-slate-600">
+              <% p.labels(Array(s.source["workflow"])).zip(Array(s.source["workflow"])).each do |label, key| %>
+                <li class="<%= 'line-through text-red-700' if Array(p.evidence['removed']).include?(key) %>"><%= label %></li>
+              <% end %>
+            </ol>
+          </div>
+        <% end %>
+        <div>
+          <div class="text-xs text-slate-500 mb-1"><%= s ? "What you do" : "Your steps" %></div>
+          <ol class="list-decimal ml-5">
+            <% p.step_labels.zip(p.steps).each do |label, key| %>
+              <li class="<%= 'text-emerald-800 font-medium' if Array(p.evidence['added']).include?(key) %>"><%= label %><%= " (new)" if Array(p.evidence['added']).include?(key) %></li>
+            <% end %>
+          </ol>
+        </div>
+      </div>
+      <% if %w[open snoozed].include?(p.status) %>
+        <%= form_with url: respond_prompt_path(p), method: :post, class: "mt-3 space-y-2" do %>
+          <% if p.choices.include?("save") || p.choices.include?("branch") %>
+            <label class="block"><span class="text-xs text-slate-500">Name it (optional)</span>
+              <input name="title" class="<%= input_css %>" placeholder="<%= p.kind == 'save' ? 'e.g. Format the variance table' : "#{s&.title} (my way)" %>"></label>
+          <% end %>
+          <div class="flex flex-wrap gap-2">
+            <% p.choices.each_with_index do |choice, i| %>
+              <button name="choice" value="<%= choice %>" class="<%= i.zero? ? btn_primary : btn %>">
+                <%= { "save" => "💾 Save as a skill", "extend" => "➕ Extend (new version)", "branch" => "⑂ Branch (my variant)" }[choice] %>
+              </button>
+            <% end %>
+            <button name="choice" value="snooze" class="<%= btn %>">Not now</button>
+            <button name="choice" value="dismiss" class="<%= btn %> text-slate-500">Don't ask again</button>
+          </div>
+          <p class="text-xs text-slate-500">
+            <%= { "save" => "Creates a draft for the area's reviewers.", "extend" => "Proposes your extra steps as the skill's next version; a rest stop keeps the current one.", "branch" => "Proposes your way as a variant that starts in the sandbox; the original stays as it is." }[p.choices.first] %>
+          </p>
+        <% end %>
+      <% else %>
+        <div class="mt-2 text-xs text-slate-500">
+          <%= p.status.humanize %><%= " (#{p.response})" if p.response && p.status == 'accepted' %> <%= nice_time(p.responded_at) %>
+          <% if p.candidate %> · <%= link_to "Review record", skill_candidate_path(p.candidate), class: "text-sky-700 hover:underline" %><% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

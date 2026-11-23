@@ -6,10 +6,15 @@ class SkillCandidate < ApplicationRecord
   belongs_to :skill, optional: true
   belongs_to :reviewer, class_name: "User", optional: true
   belongs_to :requested_by, class_name: "User", optional: true
+  # Set when the candidate proposes extending (a new version of) or branching an existing skill.
+  belongs_to :base_skill, class_name: "Skill", optional: true
+  PROPOSALS = %w[save extend branch].freeze
 
   validates :signature, presence: true, uniqueness: true
   validates :status, inclusion: { in: STATUSES }
   validates :origin, inclusion: { in: %w[detected manual] }
+  validates :proposal_kind, inclusion: { in: PROPOSALS }, allow_nil: true
+  validates :base_skill, presence: true, if: -> { %w[extend branch].include?(proposal_kind) }
   validates :draft_name, format: { with: Skill::NAME_FORMAT, message: "must be lowercase letters, digits and hyphens" },
                          length: { maximum: 64 }, allow_blank: true
 

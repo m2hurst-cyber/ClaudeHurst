@@ -177,6 +177,34 @@ Click a road (or an intersection, or a planned route) and the panel offers **Sen
 4. The add-in stores bundles in its local memory (`window.SkillCaptureMemory`, localStorage, newest first, max 50) and shows them on the **Memory** tab: insert steps, **Copy for AI** (the skill, directions and resources as one context block), open resources, forget.
 5. The sender's panel polls `/map/sent` and shows "✓ Delivered to … now in its memory". Commands expire after a day.
 
+## Protocols: save, extend, branch
+
+Triggers that turn a person's own repeated work into proposals, before it's lost (`Capture::Prompter`, rules in `Protocol`).
+
+| Protocol | Trigger (in the person's own add-in events, within the lookback) | Proposal |
+|---|---|---|
+| **Save** | A run of ≥ *min steps* (no repeats) seen ≥ *min repeats* times that no skill's workflow covers, and no reviewer has already decided on | A new skill (reuses an open detected candidate with the same steps) |
+| **Extend** | The skill's exact workflow, then the same 1..*max added* steps, ≥ *min repeats* times (longest repeated tail wins) | The skill's workflow + those steps, as its **next version** (same name) |
+| **Branch** | Starts with the skill's first step, ends with its last, keeps at least half its steps, differs in between (≤ *max extra* steps longer), ≥ *min repeats* times. A run that fits several skills belongs to the closest one | The person's way as a **branch** (new name, parent link, starts at the policy's initial stage) |
+
+- **When:** after the add-in posts events (at most once a minute per person; new prompts come back in the response), and in the hourly sweep for everyone active that day.
+- **Answers:** the choices offered (Extend prompts also offer Branch and vice versa), **Not now** (snoozed for the protocol's days), **Don't ask again** (never re-raised; other prompts for that skill and kind stay quiet for the lookback). One open prompt per skill and kind; at most five open per person.
+- **Accepting** creates a `SkillCandidate` with `origin: manual`, `proposal_kind` and `base_skill`, drafted like any recorded procedure. Extend drafts keep the skill's name; branch drafts get a unique new name. Publishing an extend makes version N+1; publishing a branch links `parent_skill` to the base and registers the branch against the base's bounty.
+- **Where:** the add-in shows the first prompt as a card above every tab; the console has **Prompts** (link in the header when any are open) with a before/after of the steps; notifications link there. Admins edit thresholds at **Admin → Protocols**.
+
+## Rest stops (version snapshots and revert)
+
+`RestStop` is a full snapshot of a skill: title, description, instructions, tags, inputs, outputs, license, area, stage, workflow, parent, every waypoint's directions (road, intersection and handoffs from it), attached resource keys, fields and apps. Its checksum is SHA-256 over the canonical JSON.
+
+- **Automatic:** before and after every publish, revision, extend and branch; before and after directions change; on promotion; daily (`RestStopSweepJob`, 02:41) for skills that changed without a new version (directions, resources, fields). An automatic rest stop identical to the latest one is skipped.
+- **Branches:** a branch's first rest stop is pinned and holds its **parent's** content as it was (`branch_point`), so a branch can always revert to where it started.
+- **Manual:** anyone who can classify the skill can save one with a label; people who can revert can pin one.
+- **Revert** (`Capture::RestStops.revert!`): the area's reviewers, admins, or the publisher of a sandbox skill. It saves the current state first (pinned `before_revert`), publishes the snapshot as the next version (same stage), and restores directions (as new waypoint revisions), resources and fields. Nothing is rewritten, so a revert can itself be reverted.
+- **Retention:** manual, pinned and branch-point rest stops are kept forever; the newest *keep auto* automatic ones per skill are kept (Protocol `rest_stop`).
+- **Redundancy:** each rest stop is written atomically to `SKILL_CAPTURE_REST_STOP_DIR` (default `storage/rest_stops/<env>/<skill>/rest-stop-<id>.json`). `verify!` (daily, and `capture:rest_stops:verify`) re-checks both copies: it rewrites a missing or damaged mirror from the database, restores a damaged database snapshot from an intact mirror, and recreates rows that exist only in the mirror. Put that directory on separately backed-up storage in production.
+- **Add-in:** an unfinished recording is autosaved locally and offered back ("Recovered N unsaved steps") after the pane closes or crashes.
+- **API:** `GET /api/v1/skills/:name/rest_stops` and `GET /api/v1/rest_stops/:id` for shared skills (integration token).
+
 ## Gatekeeping: stages, promotions and voting
 
 **Stages** (`skills.stage`):
@@ -407,6 +435,7 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.
 - `test/integration/pricing_ui_test.rb`: bounties page, skill traffic panel, "Fix this" proposals, map traffic data, the admin schedule editor and its validation, and the skills API traffic object.
 - `test/integration/bridges_resources_commands_test.rb`: bridge labels in step order, bridge roads (ends-in vs starts-in app, field partings), card badges, folder visibility (restricted vs agents), upload/link/version/attach/detach and permissions, sending to my add-in with bundle delivery and status, routing to a colleague or agent with sandbox protection.
+- `test/integration/protocols_rest_stops_test.rb`: extend, branch and save triggers (thresholds, no duplicates, closest-skill attribution), answering (extend → next version, branch → sandbox branch with a parent, save reusing a detected candidate), dismiss/snooze/disabled protocols, the add-in prompt API, admin protocol validation, automatic and manual rest stops with dedupe and pruning, full revert (text, steps, directions, resources, fields) with permissions, branch revert to its starting point, mirror repair in both directions and row restore, the daily sweep, and the agent API.
 - `test/javascript/memory.test.mjs`: the add-in memory store (replace by name, cap, context text).
 - `test/javascript/route_map.test.mjs`: layout (journey order, parallel branches, loops, separate networks, loose skills) and road geometry.
 - **Manual browser check during development:** the real task pane in Chromium at 350 px wide, with Office.js replaced by a simulated Excel host (Microsoft's CDN isn't reachable from the build environment). It covered dialog sign-in, opting in (startup behavior set to `Load`), local versus remote events, recording and submitting, approving in the pane, and inserting steps.

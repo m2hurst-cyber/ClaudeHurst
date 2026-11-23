@@ -23,6 +23,7 @@
           <% if current_user.admin? %>
             <%= nav_link "Fields", admin_fields_path %>
             <%= nav_link "Gates", admin_gates_path %>
+            <%= nav_link "Protocols", admin_protocols_path %>
             <%= nav_link "Pricing", admin_pricing_path %>
             <%= nav_link "Add-in", admin_deploy_path %>
             <%= nav_link "Integrations", admin_sources_path %>
@@ -31,6 +32,9 @@
             <%= nav_link "Audit", admin_audit_logs_path %>
           <% end %>
           <div class="ml-auto flex items-center gap-3 text-sm">
+            <% if (np = current_user.skill_prompts.live.count).positive? %>
+              <%= link_to prompts_path, class: "text-amber-300 hover:text-white", title: "Save, extend or branch your repeated work" do %>⤴ <%= pluralize(np, "prompt") %><% end %>
+            <% end %>
             <%= link_to notifications_path, class: "text-slate-300 hover:text-white" do %>
               Inbox<% if unread_notifications_count.positive? %> <span class="ml-1 bg-red-500 text-white rounded-full px-1.5 text-xs"><%= unread_notifications_count %></span><% end %>
             <% end %>

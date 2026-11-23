@@ -31,6 +31,7 @@
     <%= render "resources_panel", s: s %>
     <%= render "stage_panel", s: s %>
     <%= render "vote_panel", s: s %>
+    <%= render "rest_stops_panel", s: s %>
     <div class="bg-white border rounded p-4 space-y-1">
       <h2 class="font-semibold mb-1">Origin</h2>
       <div>Published by <%= s.published_by&.name || "—" %> on <%= nice_time(s.published_at) %></div>

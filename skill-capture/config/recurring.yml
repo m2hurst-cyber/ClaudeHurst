@@ -3,6 +3,10 @@ default: &default
     class: CaptureSweepJob
     queue: default
     schedule: every hour at minute 23
+  rest_stop_sweep:
+    class: RestStopSweepJob
+    queue: default
+    schedule: every day at 2:41am
 
 development:
   <<: *default

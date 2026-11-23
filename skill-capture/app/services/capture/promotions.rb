@@ -51,6 +51,7 @@ module Capture
         retire!(promotion, skill) if promotion.replaces_name.present?
       end
       SkillFile.export(skill) if skill.shared?
+      RestStops.capture!(skill, reason: "promoted", user: @user, label: "Promoted to #{skill.stage_label}")
       AuditLog.record("promotion.approved", user: @user, subject: promotion, skill: skill.name, to: promotion.to_stage, waived: promotion.waived)
       notify_people(skill, "“#{skill.title}” is now #{skill.stage_label}#{skill.stage == 'firm' ? ': available to the whole firm' : ': promoted to market'}")
       promotion

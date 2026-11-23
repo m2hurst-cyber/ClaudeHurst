@@ -1,0 +1,97 @@
+<% r = @stop; snap = r.snapshot; cur = @current %>
+<% now = cur ? Capture::RestStops.snapshot(cur) : {} %>
+<% content_for :title, "Rest stop ##{r.id}" %>
+<% labels = ->(keys) { (h = ActionDefinition.labels_for(keys)) && keys.map { |k| h[k] } } %>
+<div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+  <div>
+    <div class="text-xs text-slate-500 mb-1"><%= link_to snap["title"], (cur ? skill_path(cur, anchor: "rest-stops") : skills_path), class: "hover:underline" %> / Rest stops</div>
+    <h1 class="text-2xl font-bold">🅿 <%= r.label.presence || r.reason_label %></h1>
+    <div class="text-sm text-slate-500 mt-1">
+      <%= r.skill_name %> v<%= r.skill_version %> · <%= r.kind %> · <%= r.reason_label %> · <%= nice_time(r.created_at) %><%= " · by #{r.created_by.name}" if r.created_by %>
+    </div>
+    <div class="text-xs mt-1">
+      <% if r.intact? %><span class="text-emerald-700">✓ Checksum verified</span><% else %><span class="text-red-700">✗ Checksum mismatch (repair with capture:rest_stops:verify)</span><% end %>
+      · <% if Capture::RestStops.path_for(r).exist? %><span class="text-emerald-700">✓ Mirrored</span><% else %><span class="text-amber-700">Not mirrored yet</span><% end %>
+      · <span class="font-mono text-slate-400"><%= r.checksum.first(12) %></span>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <%= link_to "Download .json", rest_stop_path(r, format: :json), class: btn %>
+    <% if cur && Capture::RestStops.can_revert?(current_user, cur) %>
+      <%= button_to (r.pinned ? "Unpin" : "📌 Pin"), rest_stop_path(r), method: :patch, params: { pinned: !r.pinned }, class: btn %>
+      <%= button_to "Revert to this rest stop", revert_rest_stop_path(r), class: btn_primary,
+            data: { turbo_confirm: "Publish this rest stop as v#{cur.version + 1} of #{cur.title}? The current version is saved as a rest stop first." } %>
+    <% end %>
+  </div>
+</div>
+
+<% if cur %>
+  <% rows = [
+       ["Title", snap["title"], now["title"]],
+       ["Description", snap["description"], now["description"]],
+       ["Steps", labels.(Array(snap["workflow"])), labels.(Array(now["workflow"]))],
+       ["Instructions", snap["body"], now["body"]],
+       ["Tags", Array(snap["tags"]), Array(now["tags"])],
+       ["Directions", Array(snap["directions"]).map { |d| d["key"] + ":" + Digest::SHA1.hexdigest(d["body"].to_s)[0, 8] }, Array(now["directions"]).map { |d| d["key"] + ":" + Digest::SHA1.hexdigest(d["body"].to_s)[0, 8] }],
+       ["Resources", Array(snap["resources"]).map { |x| x["name"] }, Array(now["resources"]).map { |x| x["name"] }],
+       ["Fields", Array(snap["fields"]), Array(now["fields"])],
+       ["Apps", Array(snap["apps"]), Array(now["apps"])]
+     ] %>
+  <% changed = rows.reject { |_, a, b| a == b } %>
+  <div class="bg-white border rounded p-4 text-sm mb-4">
+    <h2 class="font-semibold mb-1">Compared with the current version (v<%= cur.version %>)</h2>
+    <% if changed.empty? %>
+      <p class="text-slate-500">Identical to the current version<%= " (same content, different version number)" if cur.version != r.skill_version %>.</p>
+    <% else %>
+      <p class="text-slate-500 mb-2">Reverting changes: <strong><%= changed.map(&:first).join(", ") %></strong>. Unchanged: <%= (rows - changed).map(&:first).join(", ").presence || "nothing" %>.</p>
+      <% if changed.any? { |n, *| n == "Instructions" } %>
+        <% then_lines = snap["body"].to_s.lines.map(&:rstrip); now_lines = now["body"].to_s.lines.map(&:rstrip) %>
+        <div class="border rounded p-2 mb-3 font-mono text-xs overflow-x-auto">
+          <div class="text-[11px] uppercase text-slate-500 font-sans mb-1">Instructions: what reverting does</div>
+          <% (now_lines - then_lines).reject(&:blank?).each do |l| %><div class="bg-red-50 text-red-800 whitespace-pre-wrap">− <%= l %></div><% end %>
+          <% (then_lines - now_lines).reject(&:blank?).each do |l| %><div class="bg-emerald-50 text-emerald-800 whitespace-pre-wrap">+ <%= l %></div><% end %>
+        </div>
+      <% end %>
+      <div class="grid md:grid-cols-2 gap-3">
+        <% changed.reject { |n, *| %w[Instructions Directions].include?(n) }.each do |name, then_v, now_v| %>
+          <div class="border rounded p-2">
+            <div class="text-xs text-slate-500 mb-1"><%= name %></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><div class="text-[11px] uppercase text-emerald-700">At this rest stop</div><%= then_v.is_a?(Array) ? safe_join(then_v.map { |x| content_tag(:div, x) }) : then_v %></div>
+              <div><div class="text-[11px] uppercase text-slate-500">Now</div><%= now_v.is_a?(Array) ? safe_join(now_v.map { |x| content_tag(:div, x) }) : now_v %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-3 text-sm mb-4">This skill has no published version now, so it can't be reverted here.</div>
+<% end %>
+
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2 bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1"><%= snap["title"] %></h2>
+    <p class="text-sm mb-3"><%= snap["description"] %></p>
+    <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= snap["body"] %></pre>
+    <% Array(snap["directions"]).each do |d| %>
+      <details class="border-t mt-3 pt-2"><summary class="cursor-pointer font-medium text-sm"><%= d["title"] %> <span class="text-xs text-slate-400 font-mono"><%= d["key"] %></span></summary>
+        <pre class="whitespace-pre-wrap text-xs bg-slate-50 border rounded p-2 mt-1"><%= d["body"] %></pre></details>
+    <% end %>
+  </div>
+  <div class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">Steps</h2>
+      <ol class="list-decimal ml-5"><% labels.(Array(snap["workflow"])).each do |l| %><li><%= l %></li><% end %></ol>
+    </div>
+    <div class="bg-white border rounded p-4 space-y-1">
+      <h2 class="font-semibold mb-1">Also saved</h2>
+      <div><span class="text-slate-500">Resources:</span> <%= Array(snap["resources"]).map { |x| x["name"] }.join(", ").presence || "none" %></div>
+      <div><span class="text-slate-500">Fields:</span> <%= Array(snap["fields"]).join(", ").presence || "none" %></div>
+      <div><span class="text-slate-500">Apps:</span> <%= Array(snap["apps"]).join(", ").presence || "none" %></div>
+      <div><span class="text-slate-500">Stage then:</span> <%= Skill::STAGE_LABELS[snap["stage"]] %></div>
+      <% if snap["branched_from"] %><div><span class="text-slate-500">Branched from:</span> <%= snap["branched_from"] %></div><% end %>
+      <% if snap["parent"] %><div><span class="text-slate-500">Parent:</span> <%= snap["parent"] %></div><% end %>
+    </div>
+  </div>
+</div>

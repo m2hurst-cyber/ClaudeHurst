@@ -5,6 +5,15 @@
     <div class="text-xs text-slate-500 mb-1"><%= link_to "Review", skill_candidates_path, class: "hover:underline" %> / Candidate #<%= c.id %></div>
     <h1 class="text-2xl font-bold"><%= c.display_title %></h1>
     <div class="mt-1 flex gap-2 items-center text-sm"><%= status_badge(c.status) %> <span class="text-slate-500"><%= c.domain || "no area" %> · <%= c.origin %></span></div>
+    <% if c.proposal_kind && c.base_skill %>
+      <div class="mt-2 text-sm bg-sky-50 border border-sky-200 rounded px-2 py-1 inline-block">
+        <%= { "extend" => "➕ Extends", "branch" => "⑂ Branches" }[c.proposal_kind] %>
+        <%= link_to "#{c.base_skill.title} v#{c.base_skill.version}", skill_path(c.base_skill), class: "text-sky-700 underline" %>
+        <span class="text-slate-500"><%= c.proposal_kind == "extend" ? "· publishes as its next version" : "· publishes as a new branch in the sandbox" %> · a rest stop is kept</span>
+      </div>
+    <% elsif c.proposal_kind == "save" %>
+      <div class="mt-2 text-sm text-slate-600">💾 Saved from <%= c.requested_by&.name || "someone" %>'s repeated work</div>
+    <% end %>
   </div>
   <div class="flex flex-wrap gap-2">
     <% if policy(c).update? %>

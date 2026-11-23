@@ -49,6 +49,20 @@ namespace :capture do
     end
   end
 
+  namespace :rest_stops do
+    desc "Check every rest stop against its checksum and its disk mirror; repair what's missing (DRY_RUN=1 to only report)"
+    task verify: :environment do
+      report = Capture::RestStops.verify!(repair: ENV["DRY_RUN"] != "1")
+      puts "Rest stops in #{Capture::Config.rest_stop_dir}: #{report.map { |k, v| "#{k}=#{v}" }.join(' ')}"
+      exit(1) if report[:unrecoverable].positive?
+    end
+
+    desc "Take a rest stop of every published skill that changed since its last one"
+    task sweep: :environment do
+      puts "#{Capture::RestStops.sweep!} new rest stops"
+    end
+  end
+
   desc "Development demo: published skills that chain into end-to-end journeys, with a branch, an improvement and unpaved roads"
   task demo: :environment do
     abort "Development only" unless Rails.env.development?
@@ -269,6 +283,36 @@ namespace :capture do
     { "reconcile-multi-currency-bank" => [1, 1, 1, 1], "reconcile-bank-statement" => [1, -1, 1, -1], "post-month-end-accruals" => [1, 1, -1] }.each do |name, values|
       values.each_with_index { |v, i| SkillVote.find_or_create_by!(user: voters[i], skill_name: name) { |sv| sv.value = v; sv.comment = ("Handles FX without a separate sheet" if name.include?("multi") && i.zero?) } }
     end
+    # Rest stops: a first snapshot of every skill, plus a hand-made one before a rebrand.
+    Capture::RestStops.sweep!
+    deck = Skill.current("board-deck-design")
+    if deck.version == 1
+      Capture::RestStops.capture!(deck, reason: "manual", kind: "manual", user: admin, label: "Before the brand refresh")
+      Capture::Publisher.revise!(deck, editor: admin, attrs: {
+        body: deck.body + "\n\nBrand refresh: set the theme colors from the hex key worksheet before laying out slides; titles in Navy (#1F3A5F), charts in Accent 1–6 order.",
+        change_note: "Brand refresh: theme colors from the hex key"
+      })
+    end
+
+    # Save / extend / branch prompts: each admin and reviewer has, in their own add-in, (a) finished the
+    # appendix skill and then applied the brand colors and added a sources slide, three times, and
+    # (b) reconciled the bank with auto-match rules instead of matching by hand, twice.
+    extra = { "powerpoint.step:apply-brand-colors-from-the-hex-key" => "Apply brand colors from the hex key",
+              "powerpoint.step:add-a-sources-slide" => "Add a sources slide",
+              "excel.step:run-auto-match-rules" => "Run auto-match rules" }
+    extra.each { |k, l| ActionDefinition.find_or_create_by!(key: k) { |d| d.label = l } }
+    appendix = Array(Skill.current("charts-to-ppt-appendix").source["workflow"])
+    recon = Array(Skill.current("reconcile-bank-statement").source["workflow"])
+    office = Source.for_office_host("PowerPoint")
+    User.active.where(role: %w[admin reviewer]).find_each do |u|
+      next if u.skill_prompts.exists?
+      run = ->(steps, at) { steps.each_with_index { |k, i| UsageEvent.create!(source: office, actor_key: u.actor_key, actor_name: u.name, session_key: "demo-#{SecureRandom.hex(4)}", action_key: k, occurred_at: at + i.minutes) } }
+      fix_session = ->(at) { UsageEvent.where(actor_key: u.actor_key, occurred_at: at..(at + 1.hour)).update_all(session_key: "demo-#{at.to_i}") }
+      3.times { |i| at = (i + 1).days.ago; run.(appendix + extra.keys.first(2), at); fix_session.(at) }
+      2.times { |i| at = (i + 1).days.ago - 3.hours; run.([recon[0], "excel.step:run-auto-match-rules", recon[2]], at); fix_session.(at) }
+      Capture::Prompter.call(u)
+    end
+
     fx = Skill.current("reconcile-multi-currency-bank")
     unless Promotion.exists?(skill_name: fx.name)
       Promotion.create!(skill_name: fx.name, skill_version: fx.version, from_stage: "local", to_stage: "firm", requested_by: voters.first,

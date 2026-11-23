@@ -83,6 +83,11 @@ export function createCapture({ host, send, now = () => Date.now(), uuid = () =>
     setCapturing(on) { capturing = !!on; if (!capturing) { queue = []; last = null; } emit(); },
     setDomain(d) { domain = d || null; },
     startRecording() { recording = { steps: [], startedAt: now() }; emit(); },
+    // Pick up a recording autosaved before the pane closed or crashed.
+    restoreRecording(steps) {
+      recording = { steps: (steps || []).filter((s) => s && s.action && s.label).map((s) => ({ action: s.action, label: s.label, t: now() })), startedAt: now() };
+      emit();
+    },
     addNote(step) { if (recording && step.label) { recording.steps.push({ ...step, t: now() }); emit(); } },
     removeStep(index) { if (recording) { recording.steps.splice(index, 1); emit(); } },
     stopRecording() {

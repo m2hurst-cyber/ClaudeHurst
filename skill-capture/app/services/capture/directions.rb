@@ -67,7 +67,8 @@ module Capture
 
     def self.save!(place, body:, title: nil, tags: [], note: nil, user:)
       raise ArgumentError, "Directions can't be empty" if body.to_s.strip.empty?
-      Waypoint.transaction do
+      RestStops.capture!(place.skill, reason: "before_update", user: user)
+      wp = Waypoint.transaction do
         wp = place.waypoint || Waypoint.new(key: place.key, kind: place.kind, from_name: place.from_name, to_name: place.to_name, version: 0)
         wp.assign_attributes(title: title.presence || place.title, body: body.to_s, tags: Array(tags).map { |t| t.to_s.parameterize }.reject(&:blank?).uniq,
                              version: wp.version + 1, updated_by: user)
@@ -76,6 +77,8 @@ module Capture
         AuditLog.record("directions.saved", user: user, subject: wp, key: wp.key, version: wp.version)
         wp
       end
+      RestStops.capture!(place.skill, reason: "directions", user: user)
+      wp
     end
 
     def default_title(kind, skill, to_skill)

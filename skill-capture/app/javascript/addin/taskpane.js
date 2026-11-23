@@ -10,9 +10,10 @@ const view = document.getElementById("view");
 const api = createApi();
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const CAPTURE_KEY = "skillcapture.capturing";
+const DRAFT_KEY = "skillcapture.recordingDraft"; // autosaved recording (redundancy if the pane closes)
 const areaName = (n) => n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
-const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok",
+const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok", prompts: [], recovered: null,
                 hostOnly: settings.get("skillcapture.hostOnly") !== "0" }; // default: show skills for the app you're in
 let flushTimer = null;
 
@@ -58,8 +59,21 @@ async function boot() {
   state.host = info.host ? String(info.host) : null;
   document.getElementById("host-label").textContent = state.host || "Not in Office";
 
-  state.capture = createCapture({ host: state.host, send: (p) => api.sendEvents(p) });
-  state.capture.onChange(() => { if (state.tab === "record") renderRecordSteps(); updateCaptureBadge(); });
+  state.capture = createCapture({ host: state.host, send: async (p) => {
+    const r = await api.sendEvents(p);
+    if (r?.prompts?.length) { mergePrompts(r.prompts); render(); } // a trigger fired on what was just sent
+    return r;
+  } });
+  state.capture.onChange(() => {
+    if (state.tab === "record") renderRecordSteps();
+    updateCaptureBadge();
+    const rec = state.capture.state().recording;
+    if (rec) settings.set(DRAFT_KEY, JSON.stringify({ steps: rec.steps, savedAt: Date.now() }));
+  });
+  try {
+    const draft = JSON.parse(settings.get(DRAFT_KEY) || "null");
+    if (draft?.steps?.length) state.recovered = draft;
+  } catch { settings.set(DRAFT_KEY, null); }
 
   if (state.host && ["Excel", "Word", "PowerPoint"].includes(state.host)) {
     try { state.wired = await wireHost(state.host, (k) => state.capture.record(k)); }
@@ -93,8 +107,21 @@ function startInbox() {
   inboxTimer = setInterval(checkInbox, 5000);
 }
 
+let inboxTicks = 0;
+function mergePrompts(list) {
+  const seen = new Set(state.prompts.map((p) => p.id));
+  state.prompts = state.prompts.concat(list.filter((p) => !seen.has(p.id)));
+}
+
 async function checkInbox() {
   if (!api.connected) return;
+  if (inboxTicks++ % 6 === 0) { // prompts every 30 s
+    try {
+      const before = state.prompts.map((p) => p.id).join();
+      state.prompts = await api.prompts();
+      if (state.prompts.map((p) => p.id).join() !== before) renderPromptCard();
+    } catch { /* offline */ }
+  }
   try {
     const cmds = await api.commands(state.host, window.Office?.context?.diagnostics?.platform);
     if (!cmds.length) return;
@@ -121,9 +148,36 @@ function render() {
          class="px-2 py-1.5 -mb-px border-b-2 whitespace-nowrap ${state.tab === id ? "border-slate-900 font-semibold" : "border-transparent text-slate-500"}">${esc(label)}</button>`).join("")}
     </nav>
     ${flashHtml()}
+    <div id="prompt-card"></div>
     <section id="panel"></section>`;
+  renderPromptCard();
   updateCaptureBadge();
   ({ library: renderLibrary, memory: renderMemory, record: renderRecord, review: renderReview, settings: renderSettings }[state.tab])();
+}
+
+// ---------- save / extend / branch prompts ----------
+const CHOICE = { save: "💾 Save as a skill", extend: "➕ Extend", branch: "⑂ Branch" };
+const KIND_ICON = { save: "💾", extend: "➕", branch: "⑂" };
+function renderPromptCard() {
+  const el = document.getElementById("prompt-card");
+  if (!el) return;
+  const p = state.prompts[0];
+  if (!p) { el.innerHTML = ""; return; }
+  const added = new Set(p.added);
+  const naming = p.choices.includes("save") || p.choices.includes("branch");
+  el.innerHTML = `
+    <div class="mb-3 rounded border border-amber-300 bg-amber-50 p-2" role="region" aria-label="Suggestion">
+      <div class="flex gap-1.5"><span aria-hidden="true">${KIND_ICON[p.kind]}</span><strong class="flex-1">${esc(p.headline)}</strong>
+        ${state.prompts.length > 1 ? `<span class="text-xs text-slate-500 whitespace-nowrap">1 of ${state.prompts.length}</span>` : ""}</div>
+      <ol class="list-decimal ml-5 mt-1 text-xs">${p.steps.map((s) => `<li class="${added.has(s.label) ? "text-emerald-800 font-semibold" : "text-slate-600"}">${esc(s.label)}${added.has(s.label) ? " (new)" : ""}</li>`).join("")}</ol>
+      ${p.removed.length ? `<div class="text-xs text-red-700 mt-1">You skip: ${p.removed.map(esc).join(", ")}</div>` : ""}
+      ${naming ? `<input id="prompt-title" class="${input} mt-2 text-xs" placeholder="${p.kind === "save" ? "Name it (optional)" : `${esc(p.skill_title || "")} (my way)`}" aria-label="Name">` : ""}
+      <div class="flex flex-wrap gap-1 mt-2">
+        ${p.choices.map((c, i) => `<button data-action="prompt" data-id="${p.id}" data-choice="${c}" class="${i ? btn : btnPrimary} text-xs">${CHOICE[c]}</button>`).join("")}
+        <button data-action="prompt" data-id="${p.id}" data-choice="snooze" class="${btn} text-xs">Not now</button>
+        <button data-action="prompt" data-id="${p.id}" data-choice="dismiss" class="text-xs text-slate-500 hover:underline px-1">Don't ask again</button>
+      </div>
+    </div>`;
 }
 
 function updateCaptureBadge() {
@@ -171,14 +225,16 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
   }).catch(() => {});
   try {
     const skills = await api.skills(q, area, state.host && state.hostOnly ? state.host : "");
-    document.getElementById("results").innerHTML = skills.length ? skills.map((s) => `
+    const results = document.getElementById("results");
+    if (!results) return; // the person moved to another tab while this loaded
+    results.innerHTML = skills.length ? skills.map((s) => `
       <button data-skill="${esc(s.name)}" class="block w-full text-left border rounded p-2 hover:bg-slate-50">
         <div class="font-medium">${esc(s.title)}</div>
         <div class="text-xs text-slate-500">${stageLabel(s.stage)} · ${esc(s.domain || "")}${s.domain ? " · " : ""}v${s.version}</div>
         ${s.field_label || s.apps?.length ? `<div class="text-xs text-slate-700 mt-0.5">${esc(s.field_label || "")}${s.field_label && s.apps?.length ? " · " : ""}${esc((s.apps || []).join(", "))}</div>` : ""}
         <div class="text-slate-600 mt-1">${esc(s.description.slice(0, 160))}${s.description.length > 160 ? "…" : ""}</div>
       </button>`).join("") : '<p class="text-slate-500">No skills match.</p>';
-  } catch (e) { document.getElementById("results").innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
+  } catch (e) { const r = document.getElementById("results"); if (r) r.innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
 }
 
 async function renderSkill(name) {
@@ -246,6 +302,16 @@ function renderMemoryItem(name) {
 
 function renderRecord() {
   const s = state.capture.state();
+  if (!s.recording && state.recovered) {
+    const r = state.recovered;
+    panel().innerHTML = `
+      <div class="space-y-2 rounded border border-sky-200 bg-sky-50 p-2">
+        <p><strong>Recovered ${r.steps.length} unsaved step${r.steps.length === 1 ? "" : "s"}</strong> from a recording that didn't finish${r.savedAt ? ` (${new Date(r.savedAt).toLocaleString()})` : ""}.</p>
+        <ol class="list-decimal ml-5 text-slate-600">${r.steps.map((st) => `<li>${esc(st.label)}</li>`).join("")}</ol>
+        <div class="flex gap-1"><button data-action="resume-recording" class="${btnPrimary} flex-1">Resume</button><button data-action="discard-recovered" class="${btn}">Discard</button></div>
+      </div>`;
+    return;
+  }
   if (!s.recording) {
     panel().innerHTML = `
       <div class="space-y-2">
@@ -384,15 +450,26 @@ document.addEventListener("click", async (ev) => {
       document.getElementById("vote-box").innerHTML = voteHtml(state.openSkill);
     }
     else if (a === "insert-skill") { await insertText(toPlainSteps(state.openSkill)); flash("Steps inserted."); render(); }
+    else if (a === "prompt") {
+      const choice = t.dataset.choice;
+      const title = document.getElementById("prompt-title")?.value || "";
+      const r = await api.respondPrompt(t.dataset.id, choice, title);
+      state.prompts = state.prompts.filter((p) => String(p.id) !== t.dataset.id);
+      flash(r.candidate ? `Sent “${r.candidate.title}” to the reviewers. Nothing changes until it's approved, and a rest stop keeps the current version.`
+        : choice === "snooze" ? "OK, I'll ask again in a few days." : "Got it. I won't ask about this again.");
+      render();
+    }
+    else if (a === "resume-recording") { state.capture.restoreRecording(state.recovered.steps); state.recovered = null; renderRecord(); updateCaptureBadge(); }
+    else if (a === "discard-recovered") { state.recovered = null; settings.set(DRAFT_KEY, null); renderRecord(); }
     else if (a === "start-recording") { state.capture.startRecording(); renderRecord(); updateCaptureBadge(); }
-    else if (a === "discard-recording") { state.capture.stopRecording(); renderRecord(); }
+    else if (a === "discard-recording") { state.capture.stopRecording(); settings.set(DRAFT_KEY, null); renderRecord(); }
     else if (a === "remove-step") { state.capture.removeStep(Number(t.dataset.index)); }
     else if (a === "finish-recording") {
       const steps = state.capture.stopRecording();
       if (!steps.length) { flash("No steps were recorded.", "error"); return render(); }
       renderFinish(steps);
     }
-    else if (a === "discard-finish") { state.pendingSteps = null; renderRecord(); }
+    else if (a === "discard-finish") { state.pendingSteps = null; settings.set(DRAFT_KEY, null); renderRecord(); }
     else if (a === "approve") {
       const r = await api.approve(t.dataset.id);
       state.me.open_reviews = Math.max(0, (state.me.open_reviews || 1) - 1);
@@ -432,6 +509,7 @@ document.addEventListener("submit", async (ev) => {
     if (f.dataset.form === "procedure") {
       await api.submitProcedure({ host: state.host, title: data.title, domain: data.domain, description: data.description, steps: state.pendingSteps });
       state.pendingSteps = null;
+      settings.set(DRAFT_KEY, null);
       flash("Submitted. A reviewer for that area has been notified.");
       state.tab = "record"; render();
     }

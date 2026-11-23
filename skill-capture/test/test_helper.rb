@@ -1,5 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 ENV["SKILL_CAPTURE_LLM"] = "off" # tests never call a real model
+require "tmpdir"
+ENV["SKILL_CAPTURE_REST_STOP_DIR"] = Dir.mktmpdir("rest-stops") # rest stop mirrors stay out of the project
 require_relative "../config/environment"
 require "rails/test_help"
 require "minitest/mock"

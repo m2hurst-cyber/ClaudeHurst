@@ -121,3 +121,18 @@ test("markdown renderer escapes HTML", () => {
   assert.ok(html.includes("&lt;script&gt;"));
   assert.match(toPlainSteps({ title: "T", body: "## Steps\n1. **Do** it" }), /^T\n\nSteps\n1. Do it$/);
 });
+
+test("an autosaved recording can be restored after the pane closes, and keeps recording from there", () => {
+  const { cap } = setup();
+  const saved = [];
+  cap.onChange((s) => { if (s.recording) saved.splice(0, saved.length, ...s.recording.steps); });
+  cap.startRecording();
+  cap.record("excel.data.sorted");
+  cap.addNote(manualStep("Excel", "Check totals"));
+  const draft = JSON.parse(JSON.stringify(saved)); // what localStorage would hold
+
+  const { cap: fresh } = setup(); // a new pane
+  fresh.restoreRecording([...draft, { bogus: true }]);
+  fresh.record("excel.format.changed");
+  assert.deepEqual(fresh.stopRecording().map((s) => s.label), ["Sort data", "Check totals", "Format cells"]);
+});

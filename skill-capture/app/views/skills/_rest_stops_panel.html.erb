@@ -1,0 +1,30 @@
+<% stops = RestStop.where(skill_name: s.name).recent.limit(8).to_a %>
+<% total = RestStop.where(skill_name: s.name).count %>
+<% can_revert = Capture::RestStops.can_revert?(current_user, Skill.current(s.name)) %>
+<div class="bg-white border rounded p-4" id="rest-stops">
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">🅿 Rest stops</h2>
+    <span class="text-xs text-slate-500"><%= pluralize(total, "snapshot") %></span>
+  </div>
+  <p class="text-xs text-slate-500 mt-0.5">Saved automatically before and after every change, daily, and when a branch starts. Reverting publishes a new version.</p>
+  <% if stops.any? %>
+    <ul class="mt-2 space-y-1.5">
+      <% stops.each do |r| %>
+        <li class="flex items-baseline gap-2">
+          <span class="flex-1 min-w-0">
+            <%= link_to rest_stop_path(r), class: "text-sky-700 hover:underline" do %><%= r.label.presence || r.reason_label %><% end %>
+            <span class="text-xs text-slate-500">v<%= r.skill_version %> · <%= time_ago_in_words(r.created_at) %> ago<%= " · #{r.created_by.name}" if r.created_by %><%= " · 📌" if r.pinned %></span>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-slate-500 mt-1">None yet.</p>
+  <% end %>
+  <% if Capture::RestStops.can_capture?(current_user, s) && s.status == "published" %>
+    <%= form_with url: skill_rest_stops_path(s), method: :post, class: "flex gap-1 mt-3" do %>
+      <input name="label" maxlength="120" placeholder="Label (optional)" class="border rounded px-2 py-1 text-xs flex-1 min-w-0" aria-label="Rest stop label">
+      <button class="<%= btn %> text-xs">Save a rest stop</button>
+    <% end %>
+  <% end %>
+</div>

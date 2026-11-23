@@ -9,6 +9,7 @@ class User < ApplicationRecord
 
   def credits = credit_entries.sum(:amount)
   has_many :skill_votes, dependent: :destroy
+  has_many :skill_prompts, dependent: :delete_all
 
   validates :name, presence: true
   validates :role, inclusion: { in: ROLES }

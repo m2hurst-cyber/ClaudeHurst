@@ -59,6 +59,8 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
 - **Resource library.** Customer contracts, NDAs, the brand hex key worksheet (brand colors for Excel, PowerPoint and Word), workbooks and decks sit in callable folders (firm-wide or restricted to areas), each with a key like `resource:legal/templates/mutual-nda-template` that agents and the add-in fetch. Attach them to skills.
 - **Bridges.** Skills and roads that cross apps (collect the charts from an Excel workbook into a PowerPoint appendix or a Word report) or domains (Finance → Legal) are drawn as ⇄ bridges and have their own map filter.
 - **Click a road, send it to the AI.** From the map, send a skill or a whole route to your running Office add-in, a colleague's, or an agent. The add-in loads it, with its directions and resources, into its local memory (Memory tab, "Copy for AI").
+- **Save · Extend · Branch prompts.** Protocols watch each person's own work in the add-in and ask before it's lost: *save* a workflow you keep repeating, *extend* a skill you keep adding the same steps to (its next version), or *branch* a skill you keep doing your own way (a variant that starts in the sandbox). Answer in the add-in or on **Prompts**; accepted prompts go to the area's reviewers. Admins tune the triggers on **Admin → Protocols**.
+- **Rest stops.** Every skill gets restorable snapshots (text, steps, directions, resources, fields): before and after every change, when a branch starts, daily, and on demand. Revert to any rest stop (it publishes as the next version, never rewriting history), and branches can always go back to where they started. Each rest stop is checksummed and mirrored to disk; `bin/rails capture:rest_stops:verify` repairs either copy from the other. The add-in also autosaves unfinished recordings.
 - **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 
 The add-in is a set of web pages plus a manifest, all hosted by this Rails app. The same app is the **web console** for admins: people, add-in deployment, the full review workflow and the audit log. The design is in [docs/design.md](docs/design.md).
@@ -100,6 +102,7 @@ To run separate dev, test and production add-ins side by side, give each its own
 
 | Command | What it does |
 |---|---|
+| `bin/rails capture:rest_stops:verify` | Check every rest stop against its checksum and disk mirror; repair (`DRY_RUN=1` to report only) |
 | `bin/rails test` | Rails tests (API, manifest, detection, publishing, privacy) |
 | `npm test` | Tests for the add-in's JavaScript capture engine (Node) |
 | `bin/addin-dev` | HTTPS dev server for sideloading |

@@ -16,6 +16,7 @@ module Capture
         attrs = attrs.merge(title: @candidate.draft_title, name: Naming.skill_name(@candidate.draft_title))
         attrs[:description] = @candidate.draft_description if @candidate.draft_description.present?
       end
+      attrs = attrs.merge(name: proposed_name(attrs[:name])) if @candidate.base_skill
       @candidate.update!(
         draft_name: attrs[:name], draft_title: attrs[:title], draft_description: attrs[:description],
         draft_tags: attrs[:tags], draft_inputs: attrs[:inputs], draft_outputs: attrs[:outputs],
@@ -27,6 +28,21 @@ module Capture
     end
 
     private
+
+    # Extending keeps the skill's name (it publishes as the next version); a branch gets its own.
+    def proposed_name(drafted)
+      base = @candidate.base_skill
+      return base.name if @candidate.proposal_kind == "extend"
+      name = drafted.presence && drafted != base.name ? drafted : "#{base.name}-variant"
+      name = Naming.skill_name(name)
+      candidate = name
+      n = 2
+      while Skill.exists?(name: candidate) || SkillCandidate.open.where.not(id: @candidate.id).exists?(draft_name: candidate)
+        candidate = Naming.skill_name("#{name.first(60)}-#{n}")
+        n += 1
+      end
+      candidate
+    end
 
     def generate
       return [@drafter.call(@candidate), "custom"] if @drafter

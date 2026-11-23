@@ -19,16 +19,18 @@ module Capture
       candidate.assign_attributes(attrs.slice(*DRAFT_KEYS)) if attrs.present?
       raise Error, "Generate or write a draft first" unless candidate.drafted?
 
+      previous = Skill.current(candidate.draft_name)
+      branch_of = candidate.proposal_kind == "branch" && !previous ? candidate.base_skill : nil
+      RestStops.capture!(previous, reason: "before_update", user: @user) if previous
       skill = nil
       Skill.transaction do
-        previous = Skill.current(candidate.draft_name)
         skill = Skill.create!(
           name: candidate.draft_name, version: next_version(candidate.draft_name),
           title: candidate.draft_title.presence || candidate.display_title,
           description: candidate.draft_description, body: candidate.draft_body,
           domain: candidate.domain, tags: candidate.draft_tags,
           inputs: candidate.draft_inputs, outputs: candidate.draft_outputs,
-          parent_skill: previous, published_by: @user, published_at: Time.current,
+          parent_skill: previous || branch_of, published_by: @user, published_at: Time.current,
           source: provenance(candidate),
           stage: previous&.stage || PromotionPolicy.current.initial_stage, stage_changed_at: previous&.stage_changed_at || Time.current
         )
@@ -38,15 +40,21 @@ module Capture
       after_publish(skill, "skill.published", candidate_id: candidate.id)
       notify_contributors(candidate, skill)
       Bounties.new.register_fix(skill, solver: candidate.requested_by || @user) if skill.version > 1
+      Bounties.new.register_fix(skill, solver: candidate.requested_by || @user, branch_of: branch_of.name) if branch_of
+      rest_stops_after(skill, branch_of: branch_of, reason: previous ? "revised" : "published")
       skill
     end
 
     def revise!(skill, attrs)
-      raise Error, "You can't revise skills in the #{skill.domain.presence || 'unassigned'} area" unless SkillPolicy.new(@user, skill).update?
+      # authorized: the caller already checked (a rest stop revert by a sandbox skill's own publisher)
+      unless attrs[:authorized] || SkillPolicy.new(@user, skill).update?
+        raise Error, "You can't revise skills in the #{skill.domain.presence || 'unassigned'} area"
+      end
       raise Error, "Only the current version can be revised" unless skill.status == "published"
 
       name = attrs[:name].presence || skill.name
       fork = name != skill.name
+      RestStops.capture!(skill, reason: "before_update", user: @user) unless fork
       new_skill = nil
       Skill.transaction do
         new_skill = Skill.create!(
@@ -56,22 +64,34 @@ module Capture
           body: attrs[:body].presence || skill.body,
           domain: skill.domain,
           tags: attrs.key?(:tags) ? Array(attrs[:tags]) : skill.tags,
-          inputs: skill.inputs, outputs: skill.outputs, license: skill.license,
+          inputs: attrs.key?(:inputs) ? Array(attrs[:inputs]) : skill.inputs,
+          outputs: attrs.key?(:outputs) ? Array(attrs[:outputs]) : skill.outputs, license: skill.license,
           parent_skill: skill, published_by: @user, published_at: Time.current,
           # A new version keeps its stage (fixes go live); a branch starts in the sandbox.
           stage: fork ? PromotionPolicy.current.initial_stage : skill.stage,
           stage_changed_at: fork ? Time.current : skill.stage_changed_at,
           source: skill.source.merge("revised_from" => "#{skill.name}@#{skill.version}",
-                                     "change_note" => attrs[:change_note].presence).compact
+                                     "change_note" => attrs[:change_note].presence,
+                                     "workflow" => attrs[:workflow].presence || skill.source["workflow"]).compact
         )
         skill.update!(status: "superseded") unless fork
       end
       after_publish(new_skill, fork ? "skill.forked" : "skill.revised", from: "#{skill.name}@#{skill.version}")
       Bounties.new.register_fix(new_skill, solver: @user, branch_of: fork ? skill.name : nil)
+      rest_stops_after(new_skill, branch_of: fork ? skill : nil, reason: "revised")
       new_skill
     end
 
     private
+
+    def rest_stops_after(skill, branch_of:, reason:)
+      if branch_of
+        RestStops.branch_point!(skill, branch_of, user: @user)
+        RestStops.capture!(skill, reason: "branched", user: @user)
+      else
+        RestStops.capture!(skill, reason: reason, user: @user)
+      end
+    end
 
     # Contributors who are people in this system (captured through the Office add-in) hear about it.
     def notify_contributors(candidate, skill)

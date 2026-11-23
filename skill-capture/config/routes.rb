@@ -28,6 +28,9 @@ Rails.application.routes.draw do
           end
         end
         resources :procedures, only: :create
+        resources :prompts, only: :index do
+          member { post :respond }
+        end
         resources :commands, only: :index
         resources :bundles, only: :show, constraints: { id: /[a-z0-9-]+/ }
         resources :resources, only: [] do
@@ -36,7 +39,10 @@ Rails.application.routes.draw do
       end
 
       resources :events, only: :create
-      resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
+      resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
+        resources :rest_stops, only: :index
+      end
+      resources :rest_stops, only: :show
       get :route, to: "routes#show"
       get :market, to: "skills#market"
       get :fields, to: "skills#fields"
@@ -79,11 +85,18 @@ Rails.application.routes.draw do
         post :reinfer
       end
       resources :promotions, only: :create
+      resources :rest_stops, only: :create
       member do
         get :compare
         get :download
         post :deprecate
       end
+    end
+    resources :rest_stops, only: %i[show update] do
+      member { post :revert }
+    end
+    resources :prompts, only: :index do
+      member { post :respond }
     end
     resources :connected_apps, only: %i[index destroy]
     resources :resources, only: %i[index show create update destroy] do
@@ -120,6 +133,7 @@ Rails.application.routes.draw do
       get :deploy, to: "deploy#show"
       resource :pricing, only: %i[show update], controller: :pricing
       resource :gates, only: %i[show update]
+      resource :protocols, only: %i[show update]
       resources :fields, only: %i[index create update destroy]
     end
   end
