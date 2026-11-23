@@ -4,6 +4,9 @@ class ApplicationController < ActionController::Base
 
   before_action :authenticate_user!
   before_action :touch_last_seen
+  # Skill capture: log the *structure* of state-changing requests (never values)
+  # so repeated workflows can be detected. See app/services/skill_capture/.
+  after_action :capture_usage_event
 
   helper_method :current_notifications_count
 
@@ -20,6 +23,10 @@ class ApplicationController < ActionController::Base
     return unless current_user
     return if current_user.last_seen_at && current_user.last_seen_at > 5.minutes.ago
     current_user.update_column(:last_seen_at, Time.current)
+  end
+
+  def capture_usage_event
+    SkillCapture::Collector.record(self)
   end
 
   def user_not_authorized

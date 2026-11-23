@@ -1,0 +1,29 @@
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Skill library</h1>
+  <p class="text-sm text-slate-500">Documented procedures captured from how the team actually works. Download any skill as an Agent Skills <code>SKILL.md</code>.</p>
+</div>
+
+<%= form_with url: skills_path, method: :get, class: "mb-4 flex flex-wrap gap-2" do |f| %>
+  <%= search_field_tag :q, params[:q], placeholder: "Search skills", class: "border rounded px-2 py-1 text-sm w-full sm:w-72" %>
+  <%= select_tag :domain, options_for_select([["All areas", ""], "sales", "ops", "finance", "general"], params[:domain]), class: "border rounded px-2 py-1 text-sm" %>
+  <label class="text-sm flex items-center gap-1"><%= check_box_tag :all, "1", params[:all] == "1" %> include old versions</label>
+  <%= f.submit "Search", class: "border px-3 py-1 rounded text-sm bg-white" %>
+<% end %>
+
+<div class="grid md:grid-cols-2 gap-3">
+  <% @skills.each do |s| %>
+    <%= link_to skill_path(s), class: "block bg-white border rounded p-4 hover:shadow-sm" do %>
+      <div class="flex justify-between gap-2">
+        <div class="font-semibold"><%= s.title %></div>
+        <%= status_badge(s.status == "published" ? "active" : s.status) %>
+      </div>
+      <div class="font-mono text-xs text-slate-500"><%= s.name %> · v<%= s.version %> · <%= s.domain %></div>
+      <p class="text-sm text-slate-700 mt-2"><%= s.description.truncate(220) %></p>
+      <div class="mt-2 flex flex-wrap gap-1"><% s.tags.each do |t| %><span class="text-xs bg-slate-100 rounded px-1.5 py-0.5"><%= t %></span><% end %></div>
+    <% end %>
+  <% end %>
+</div>
+<% if @skills.empty? %>
+  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No skills yet. Approved workflows from Skill review appear here.</p>
+<% end %>
+<div class="mt-3"><%== pagy_nav(@pagy) %></div>

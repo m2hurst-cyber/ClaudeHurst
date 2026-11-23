@@ -1,0 +1,18 @@
+<% c = @candidate %>
+<h1 class="text-2xl font-bold mb-1">Request a skill</h1>
+<p class="text-sm text-slate-500 mb-4">Know a procedure worth writing down? Describe it and a process owner will review and publish it.</p>
+
+<%= form_with(model: c, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-3xl") do |f| %>
+  <% if c.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= c.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :draft_title, "Title" %><%= f.text_field :draft_title, required: true, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :domain, "Area" %><%= f.select :domain, %w[sales ops finance general], {}, class: "border rounded px-2 py-1 w-full" %></div>
+  <div><%= f.label :draft_description, "What it does and when to use it" %><%= f.text_area :draft_description, rows: 3, maxlength: 1024, class: "border rounded px-2 py-1 w-full" %></div>
+  <div>
+    <%= f.label :steps, "App actions involved (optional)" %>
+    <%= f.select :steps, SkillCapture::Catalog::STEPS.map { |k, v| [v, k] }, {}, multiple: true, size: 8, class: "border rounded px-2 py-1 w-full text-sm" %>
+  </div>
+  <div><%= f.label :draft_body, "Steps (Markdown, optional — leave blank to have one drafted)" %><%= f.text_area :draft_body, rows: 10, class: "border rounded px-2 py-1 w-full font-mono text-sm" %></div>
+  <div><%= f.submit "Submit for review", class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %></div>
+<% end %>

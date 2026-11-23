@@ -1,0 +1,31 @@
+<% c = @candidate %>
+<h1 class="text-2xl font-bold mb-1">Edit draft</h1>
+<p class="text-sm text-slate-500 mb-4"><%= link_to c.display_title, skill_candidate_path(c), class: "hover:underline" %></p>
+
+<%= form_with(model: c, class: "space-y-3 bg-white p-4 rounded shadow-sm border max-w-3xl") do |f| %>
+  <% if c.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= c.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div><%= f.label :draft_title, "Title" %><%= f.text_field :draft_title, class: "border rounded px-2 py-1 w-full" %></div>
+  <div>
+    <%= f.label :draft_name, "Skill name" %>
+    <%= f.text_field :draft_name, class: "border rounded px-2 py-1 w-full font-mono", placeholder: "release-and-complete-production-run" %>
+    <p class="text-xs text-slate-500">Lowercase letters, digits and hyphens; max 64. Reusing a published name creates a new version of it.</p>
+  </div>
+  <div>
+    <%= f.label :draft_description, "Description" %>
+    <%= f.text_area :draft_description, rows: 3, maxlength: 1024, class: "border rounded px-2 py-1 w-full" %>
+    <p class="text-xs text-slate-500">What it does and when to use it. People and agents pick skills from this text.</p>
+  </div>
+  <div><%= f.label :draft_tags, "Tags (comma separated)" %><%= f.text_field :draft_tags, value: c.draft_tags.join(", "), class: "border rounded px-2 py-1 w-full" %></div>
+  <div class="grid md:grid-cols-2 gap-3">
+    <div><%= f.label :draft_inputs, "Inputs (one per line)" %><%= f.text_area :draft_inputs, value: Array(c.draft_inputs).join("\n"), rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+    <div><%= f.label :draft_outputs, "Outputs (one per line)" %><%= f.text_area :draft_outputs, value: Array(c.draft_outputs).join("\n"), rows: 3, class: "border rounded px-2 py-1 w-full" %></div>
+  </div>
+  <div><%= f.label :draft_body, "Instructions (Markdown)" %><%= f.text_area :draft_body, rows: 18, class: "border rounded px-2 py-1 w-full font-mono text-sm" %></div>
+  <div><%= f.label :review_notes, "Reviewer notes" %><%= f.text_area :review_notes, rows: 2, class: "border rounded px-2 py-1 w-full" %></div>
+  <div class="flex gap-2">
+    <%= f.submit "Save draft", class: "bg-slate-900 text-white px-3 py-1.5 rounded text-sm" %>
+    <%= link_to "Cancel", skill_candidate_path(c), class: "border px-3 py-1.5 rounded text-sm" %>
+  </div>
+<% end %>
