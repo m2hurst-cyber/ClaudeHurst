@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000006) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -403,6 +403,36 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000006) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "waypoint_revisions", force: :cascade do |t|
+    t.bigint "waypoint_id", null: false
+    t.integer "version", null: false
+    t.text "body", null: false
+    t.string "note"
+    t.bigint "editor_id"
+    t.datetime "created_at", null: false
+    t.index ["editor_id"], name: "index_waypoint_revisions_on_editor_id"
+    t.index ["waypoint_id"], name: "index_waypoint_revisions_on_waypoint_id"
+  end
+
+  create_table "waypoints", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "kind", null: false
+    t.string "from_name", null: false
+    t.string "to_name"
+    t.string "title", null: false
+    t.text "body", null: false
+    t.string "tags", default: [], null: false, array: true
+    t.integer "version", default: 1, null: false
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "to_tsvector('english'::regconfig, (((COALESCE(title, ''::character varying))::text || ' '::text) || COALESCE(body, ''::text)))", name: "index_waypoints_on_search", using: :gin
+    t.index ["from_name"], name: "index_waypoints_on_from_name"
+    t.index ["key"], name: "index_waypoints_on_key", unique: true
+    t.index ["to_name"], name: "index_waypoints_on_to_name"
+    t.index ["updated_by_id"], name: "index_waypoints_on_updated_by_id"
+  end
+
   add_foreign_key "action_definitions", "sources"
   add_foreign_key "addin_tokens", "users"
   add_foreign_key "audit_logs", "sources"
@@ -428,4 +458,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000006) do
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "sources", "users", column: "created_by_id"
   add_foreign_key "usage_events", "sources"
+  add_foreign_key "waypoint_revisions", "users", column: "editor_id"
+  add_foreign_key "waypoint_revisions", "waypoints"
+  add_foreign_key "waypoints", "users", column: "updated_by_id"
 end

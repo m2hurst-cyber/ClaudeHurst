@@ -159,6 +159,10 @@ async function renderSkill(name) {
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
       </div>
       <article class="border-t pt-2">${renderMarkdown(s.body)}</article>
+      ${s.directions?.written ? `<details class="border-t mt-3 pt-2"><summary class="cursor-pointer font-medium">Directions for this road</summary>
+        <article class="mt-1 text-xs">${renderMarkdown(s.directions.markdown)}</article></details>` : ""}
+      ${s.junction ? `<details class="border-t mt-3 pt-2" ${s.junction.written ? "open" : ""}><summary class="cursor-pointer font-medium">At the end of this road: which way next</summary>
+        <article class="mt-1 text-xs">${renderMarkdown(s.junction.markdown)}</article></details>` : ""}
       ${s.next_up?.length ? `<div class="border-t mt-3 pt-2"><div class="text-xs text-slate-500 mb-1">When you're done, people usually continue with</div>
         ${s.next_up.map((n) => `<button data-skill="${esc(n.name)}" class="block text-left text-sky-700 hover:underline">→ ${esc(n.title)}${n.traffic ? ` <span class="text-xs text-slate-500">(${n.traffic} trips)</span>` : ""}</button>`).join("")}</div>` : ""}`;
   } catch (e) { panel().innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }

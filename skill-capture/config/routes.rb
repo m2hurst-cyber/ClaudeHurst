@@ -31,6 +31,8 @@ Rails.application.routes.draw do
       resources :events, only: :create
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
       get :route, to: "routes#show"
+      get :search, to: "places#search"
+      get "places/:key", to: "places#show", as: :place, constraints: { key: /[^\/]+?/ }, format: /json|md/
     end
   end
 
@@ -39,6 +41,12 @@ Rails.application.routes.draw do
     get "map", to: "skill_maps#show", as: :skill_map
     get "map/route", to: "skill_maps#route", as: :skill_map_route
     get "map/areas", to: "skill_maps#areas", as: :skill_map_areas
+    get "map/search", to: "places#search", as: :map_search
+    scope "map/places", constraints: { key: /[^\/]+?/ }, format: /html|json|md/ do
+      get ":key", to: "places#show", as: :place
+      get ":key/edit", to: "places#edit", as: :edit_place
+      patch ":key", to: "places#update"
+    end
 
     resources :skill_candidates, except: :destroy do
       member do

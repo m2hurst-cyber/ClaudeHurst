@@ -1,0 +1,15 @@
+<% p = @place %>
+<% content_for :title, "Edit #{p.title}" %>
+<h1 class="text-2xl font-bold mb-1"><%= p.written ? "Edit" : "Write" %> directions</h1>
+<p class="text-sm text-slate-500 mb-4"><%= p.label %> · <span class="font-mono"><%= p.key %></span>. Written for agents and people traversing this <%= p.label.downcase %>. Markdown; each save is a new version.</p>
+<%= form_with url: place_path(p.key), method: :patch, scope: :place, class: "space-y-3 bg-white p-4 rounded border max-w-3xl" do |f| %>
+  <div><%= f.label :title %><%= f.text_field :title, value: p.title, class: input_css %></div>
+  <div>
+    <%= f.label :body, "Directions (Markdown)" %>
+    <%= f.text_area :body, value: p.body, rows: 22, class: input_css + " font-mono text-sm" %>
+    <% if p.kind == "junction" %><p class="text-xs text-slate-500 mt-1">Tip: state each exit's rule as "If …, take …". Agents follow these literally.</p><% end %>
+  </div>
+  <div><%= f.label :tags, "Tags (comma separated, help search)" %><%= f.text_field :tags, value: p.waypoint&.tags&.join(", "), class: input_css %></div>
+  <div><%= f.label :note, "What changed" %><%= f.text_field :note, class: input_css %></div>
+  <div class="flex gap-2"><%= f.submit "Save directions", class: btn_primary %><%= link_to "Cancel", place_path(p.key), class: btn %></div>
+<% end %>

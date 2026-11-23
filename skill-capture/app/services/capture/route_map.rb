@@ -46,7 +46,7 @@ module Capture
         edges << { from: from, to: s.name, kind: "branch", traffic: 0, manual: false } if from
       end
 
-      { nodes: nodes, edges: edges, areas: nodes.map { |n| n[:area] }.compact.uniq.sort }
+      { nodes: nodes, edges: edges, areas: nodes.map { |n| n[:area] }.compact.uniq.sort, written: Waypoint.pluck(:key) }
     end
 
     private

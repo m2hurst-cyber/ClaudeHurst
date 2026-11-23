@@ -15,12 +15,20 @@ module Api
           end
           render json: summary(skill).merge(body: skill.body, url: skill_url(skill), contributors: Array(skill.source["contributors"]),
                                             next_up: next_up.first(3), traffic: traffic(skill.name),
+                                            directions: place("road:#{skill.name}"), junction: next_up.any? ? place("junction:#{skill.name}") : nil,
                                             fix_url: new_skill_candidate_url(fix: skill.name))
         end
 
         private
 
         def summary(s) = s.slice(:name, :version, :title, :description, :domain, :tags, :published_at)
+
+        def place(key)
+          pl = Capture::Directions.find(key)
+          { key: pl.key, title: pl.title, written: pl.written, markdown: pl.body }
+        rescue Capture::Directions::NotFound
+          nil
+        end
 
         def traffic(name)
           m = SkillMetric.for(name)

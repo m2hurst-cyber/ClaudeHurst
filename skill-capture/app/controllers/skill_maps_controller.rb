@@ -16,7 +16,8 @@ class SkillMapsController < ApplicationController
     r = Capture::RoutePlanner.new(map).route(params[:from].to_s, params[:to].to_s)
     nodes = map[:nodes].index_by { |n| n[:id] }
     if r
-      render json: { found: true, keys: r.keys, legs: r.legs, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps, :tier, :price, :median_minutes) } }
+      render json: { found: true, keys: r.keys, legs: r.legs,
+                     directions: Capture::Directions.for_route(r.keys.reject { |k| k.start_with?("candidate:") }).map { |pl| pl.to_h.except(:markdown).merge(url: place_path(pl.key)) }, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps, :tier, :price, :median_minutes) } }
     else
       render json: { found: false }
     end

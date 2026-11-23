@@ -14,6 +14,12 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
   - **Find route** gives turn-by-turn directions from one skill to another, and clicking a skill shows where people go next
   - reviewers can also draw a road by hand
   - in the add-in, each skill ends with "people usually continue with…"
+- **Searchable roads and intersections, each with agent directions.** Every place on the map has its own Markdown directions:
+  - each **road** (a skill): how to drive it, including tools, guardrails and when it's done
+  - each **intersection** (the end of a skill): which exit to take, as decision rules
+  - each **handoff** (the connector between two skills): what to pass on and who to notify
+
+  Until a reviewer writes them, directions are generated from live data. Search covers titles and the full text of written directions. Agents read any place as Markdown (`GET /api/v1/places/<key>.md`), and routes come back with the full sequence of directions.
 - **Congestion pricing and bounties.**
   - Each skill is priced on a **demand schedule**: the slower it has become compared with its own free-flow time (counting the wait before it starts), the higher its price per trip.
   - On the map's **Traffic** view, roads turn green, yellow, orange or red, Waze-style.

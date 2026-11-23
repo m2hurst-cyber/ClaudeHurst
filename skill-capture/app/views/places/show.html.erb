@@ -1,0 +1,41 @@
+<% p = @place %>
+<% content_for :title, p.title %>
+<div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+  <div>
+    <div class="text-xs text-slate-500 mb-1"><%= link_to "Skill map", skill_map_path, class: "hover:underline" %> / <%= p.label %></div>
+    <h1 class="text-2xl font-bold"><%= p.title %></h1>
+    <div class="text-xs text-slate-500 font-mono break-all"><%= p.key %></div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <%= link_to "Agent Markdown", place_path(p.key, format: :md), class: btn %>
+    <% if editable? %><%= link_to (p.written ? "Edit directions" : "Write directions"), edit_place_path(p.key), class: btn_primary %><% end %>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2 bg-white border rounded p-4">
+    <% unless p.written %>
+      <p class="mb-3 text-xs rounded bg-slate-100 px-2 py-1 text-slate-700">Generated from live data. Nobody has written directions for this <%= p.label.downcase %> yet<%= editable? ? "; edit it to add the judgment calls." : "." %></p>
+    <% end %>
+    <article class="text-sm leading-relaxed" data-controller="markdown" data-markdown-source-value="<%= p.body %>"></article>
+  </div>
+  <aside class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4 space-y-1">
+      <h2 class="font-semibold mb-1">On the map</h2>
+      <div><%= p.kind == "handoff" ? "From" : "Skill" %>: <%= link_to p.skill.title, skill_path(p.skill), class: "text-sky-700 hover:underline" %></div>
+      <% if p.to_skill %><div>To: <%= link_to p.to_skill.title, skill_path(p.to_skill), class: "text-sky-700 hover:underline" %></div><% end %>
+      <% unless p.kind == "road" %><div><%= link_to "Road: #{p.skill.title}", place_path("road:#{p.skill.name}"), class: "text-sky-700 hover:underline" %></div><% end %>
+      <% unless p.kind == "junction" %><div><%= link_to "Intersection after #{(p.to_skill || p.skill).title}", place_path("junction:#{(p.to_skill || p.skill).name}"), class: "text-sky-700 hover:underline" %></div><% end %>
+    </div>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">History</h2>
+      <% if p.waypoint %>
+        <ul class="space-y-1">
+          <% p.waypoint.revisions.includes(:editor).limit(10).each do |r| %>
+            <li>v<%= r.version %> · <%= r.editor&.name || "—" %> · <%= nice_time(r.created_at) %><% if r.note.present? %><div class="text-xs text-slate-500"><%= r.note %></div><% end %></li>
+          <% end %>
+        </ul>
+      <% else %><p class="text-slate-500">Not written yet.</p><% end %>
+    </div>
+  </aside>
+</div>

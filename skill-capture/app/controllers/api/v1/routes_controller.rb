@@ -10,7 +10,8 @@ module Api
         map[:edges].select! { |e| ids.include?(e[:from]) && ids.include?(e[:to]) }
         r = Capture::RoutePlanner.new(map).route(params[:from].to_s, params[:to].to_s)
         return render(json: { error: "no known route" }, status: :not_found) unless r
-        render json: { skills: r.keys, legs: r.legs.map { |l| l.slice(:from, :to, :traffic, :manual) } }
+        render json: { skills: r.keys, legs: r.legs.map { |l| l.slice(:from, :to, :traffic, :manual) },
+                       directions: Capture::Directions.for_route(r.keys).map(&:to_h) }
       end
     end
   end

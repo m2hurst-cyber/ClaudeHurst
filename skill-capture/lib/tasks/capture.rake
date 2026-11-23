@@ -25,10 +25,28 @@ namespace :capture do
     puts "#{priced.size} skills priced; #{Bounty.active.count} active bounties"
   end
 
-  desc "Write every published skill to DIR/<name>/SKILL.md (default ./skill-repo)"
+  desc "Write the map to DIR (default ./skill-repo): <name>/SKILL.md, <name>/ROAD.md, <name>/INTERSECTION.md, handoffs/<from>--<to>.md"
   task :export, [:dir] => :environment do |_, args|
     dir = Pathname.new(args[:dir] || Rails.root.join("skill-repo"))
-    Skill.published.find_each { |s| puts "wrote #{Capture::SkillFile.export(s, dir: dir)}" }
+    write = lambda do |path, place|
+      FileUtils.mkdir_p(path.dirname)
+      front = { "key" => place.key, "kind" => place.kind, "title" => place.title, "written" => place.written, "version" => place.version }.compact
+      File.write(path, "#{front.to_yaml}---\n\n#{place.body.strip}\n")
+      puts "wrote #{path}"
+    end
+    Skill.published.find_each do |s|
+      puts "wrote #{Capture::SkillFile.export(s, dir: dir)}"
+      write.(dir.join(s.name, "ROAD.md"), Capture::Directions.find("road:#{s.name}"))
+      if SkillLink.where(from_node: s.name).exists? || Waypoint.exists?(key: "junction:#{s.name}")
+        write.(dir.join(s.name, "INTERSECTION.md"), Capture::Directions.find("junction:#{s.name}"))
+      end
+    end
+    SkillLink.distinct.pluck(:from_node, :to_node).each do |a, b|
+      place = Capture::Directions.find(Waypoint.key_for("handoff", a, b))
+      write.(dir.join("handoffs", "#{a}--#{b}.md"), place)
+    rescue Capture::Directions::NotFound
+      next
+    end
   end
 
   desc "Development demo: published skills that chain into end-to-end journeys, with a branch, an improvement and unpaved roads"
@@ -112,6 +130,52 @@ namespace :capture do
     n = Capture::ChainDetector.call.size
     result = Capture::Congestion.call
     Capture::Bounties.sweep(result)
+    # Written agent directions for a few places (the rest stay generated)
+    {
+      "junction:export-trial-balance" => <<~MD,
+        # Intersection after Export the trial balance
+
+        You have the trial balance for every entity. Pick the reconciliation road per bank account:
+
+        - **If the account holds any foreign-currency balance**, take **Reconcile a multi-currency bank account** (`reconcile-multi-currency-bank`). Rates come from the treasury rate sheet dated the last business day of the month.
+        - **Otherwise**, take **Reconcile the bank statement** (`reconcile-bank-statement`).
+        - Reconcile every account before moving on to accruals; don't split the close across roads.
+
+        If an account is new or closed this month, stop and ask the finance reviewer.
+      MD
+      "handoff:redline-contract>legal-sign-off" => <<~MD,
+        # Handoff: Redline → Legal sign-off
+
+        This is the slowest handoff on the map (contracts wait days for counsel).
+
+        ## Hand over
+        - The redlined Word file **and** a one-paragraph summary of every deviation from the clause library.
+        - The customer's requested signature date.
+
+        ## Notify
+        - Post in the legal intake queue, not by email to a person. Tag priority **high** only if signature is due within 3 business days.
+
+        ## Don't
+        - Don't send partial redlines; counsel reviews the whole document once.
+      MD
+      "road:redline-contract" => <<~MD
+        # Road: Redline a customer contract
+
+        ## Tools
+        - Word with Track Changes on; the clause library (SharePoint › Legal › Clauses).
+
+        ## Guardrails
+        - Never accept the customer's limitation-of-liability changes yourself; mark them for counsel.
+        - Keep comments factual: quote the standard clause next to each deviation.
+
+        ## Done when
+        - Every deviation is marked and listed in the summary for the handoff.
+      MD
+    }.each do |key, body|
+      place = Capture::Directions.find(key)
+      Capture::Directions.save!(place, body: body, user: admin, note: "Demo directions") unless place.written
+    end
+
     result.metrics.select(&:priced?).sort_by { |m| -m.congestion_index }.each do |m|
       puts format("  %-32s index %4.2f  %-12s %s", m.name, m.congestion_index, m.tier, m.price.to_s("F"))
     end

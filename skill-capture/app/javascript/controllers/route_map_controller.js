@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { layout, roadPath, branchPath, branchJunction, trafficWidth, DEFAULTS } from "route_map/layout"
+import { renderMarkdown } from "addin/markdown"
 
 const NS = "http://www.w3.org/2000/svg"
 const INK = "#0b0b0b", INK_2 = "#52514e", ROAD = "#b8b6b0", ROAD_LINKED = "#d6d3cc", SURFACE = "#f5f4f0", UNPAVED = "#a8a29e"
@@ -17,8 +18,8 @@ const areaName = (a) => (!a ? "No area" : a.length <= 3 ? a.toUpperCase() : a.sp
 // The route map: skills as road segments, journeys as roads between them,
 // branches as side roads, unpublished workflows as unpaved roads.
 export default class extends Controller {
-  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend"]
-  static values = { routeUrl: String, colors: Object, tiers: Object, currency: String }
+  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend", "search", "results"]
+  static values = { routeUrl: String, colors: Object, tiers: Object, currency: String, searchUrl: String, placeUrl: String }
 
   connect() {
     this.map = JSON.parse(this.dataTarget.textContent)
@@ -96,6 +97,10 @@ export default class extends Controller {
         el("path", { d, fill: "none", stroke: "transparent", "stroke-width": 1, "marker-end": "url(#rm-arrow)" }, g)
         el("path", { d, fill: "none", stroke: "transparent", "stroke-width": Math.max(14, w + 6) }, g)
       }
+      if (e.kind === "next" && !e.from.startsWith("candidate:") && !e.to.startsWith("candidate:")) {
+        g.classList.add("cursor-pointer")
+        g.addEventListener("click", () => this.selectHandoff(e.from, e.to))
+      }
       g.addEventListener("pointerenter", (ev) => this.edgeTip(ev, e))
       g.addEventListener("pointermove", (ev) => this.moveTip(ev))
       g.addEventListener("pointerleave", () => this.hideTip())
@@ -130,12 +135,38 @@ export default class extends Controller {
       g.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); this.select(n.id) } })
       this.nodeEls.set(n.id, g)
     }
+
+    // Intersections: the end of each skill road that has exits (or written directions).
+    const written = new Set(this.map.written || [])
+    this.junctionEls = new Map()
+    for (const n of this.map.nodes) {
+      if (n.kind !== "skill") continue
+      const exits = this.map.edges.filter((e) => e.from === n.id && e.kind === "next")
+      if (!exits.length && !written.has(`junction:${n.id}`)) continue
+      const p = this.geo.positions.get(n.id)
+      const g = el("g", { transform: `translate(${p.x + SEG},${p.y})`, class: "rm-node rm-junction cursor-pointer", "data-junction": n.id,
+        tabindex: 0, role: "button", "aria-label": `Intersection after ${n.title}, ${exits.length} exits` }, places)
+      el("circle", { r: 13, fill: "transparent" }, g)
+      el("circle", { r: 7, fill: "#ffffff", stroke: INK, "stroke-width": 2.5 }, g)
+      el("circle", { r: 2.5, fill: written.has(`junction:${n.id}`) ? INK : "#ffffff" }, g)
+      const show = (ev) => this.showTip(ev, [[`Intersection after ${n.title}`, "font-semibold"],
+        [`${exits.length} exit${exits.length === 1 ? "" : "s"} · ${written.has(`junction:${n.id}`) ? "directions written" : "generated directions"}`, "text-slate-600"]])
+      g.addEventListener("pointerenter", show)
+      g.addEventListener("pointermove", (ev) => this.moveTip(ev))
+      g.addEventListener("pointerleave", () => this.hideTip())
+      g.addEventListener("focus", show)
+      g.addEventListener("blur", () => this.hideTip())
+      g.addEventListener("click", (ev) => { ev.stopPropagation(); this.selectJunction(n.id) })
+      g.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); this.selectJunction(n.id) } })
+      this.junctionEls.set(n.id, g)
+    }
   }
 
   // ---------- highlight ----------
   highlight(nodeIds, edgePairs) {
     this.focus = nodeIds ? { nodes: new Set(nodeIds), edges: new Set(edgePairs || []) } : null
     for (const [id, g] of this.nodeEls) g.style.opacity = !this.focus || this.focus.nodes.has(id) ? 1 : 0.18
+    for (const [id, g] of this.junctionEls || []) g.style.opacity = !this.focus || this.focus.nodes.has(id) ? 1 : 0.18
     for (const { e, g } of this.edgeEls) {
       g.style.opacity = !this.focus || this.focus.edges.has(`${e.from}>${e.to}`) ? 1 : 0.12
     }
@@ -182,6 +213,7 @@ export default class extends Controller {
     this.list(panel, "Where people come from", inc, (e) => e.from, (e) => this.share(e.traffic, inc.reduce((s, x) => s + x.traffic, 0), e.manual))
     if (branches.length) this.list(panel, "Branches (variants)", branches, (e) => e.to)
     if (!out.length && !inc.length && !branches.length && !parent) this.append(panel, "p", "text-slate-600", "No roads yet. When people go from this skill to another, the road appears here.")
+    if (n.kind === "skill") this.directionsInto(panel, `road:${id}`)
     if (n.kind === "skill") {
       const row = this.append(panel, "div", "flex gap-1 mt-3")
       const b1 = this.append(row, "button", "px-2 py-1 rounded border bg-white hover:bg-slate-50 text-xs", "Route from here")
@@ -196,6 +228,99 @@ export default class extends Controller {
     if (m < 90) return `${Math.round(m)} min`
     if (m < 60 * 36) return `${Math.round(m / 6) / 10} h`
     return `${Math.round(m / 144) / 10} days`
+  }
+
+  // ---------- places & directions ----------
+  async directionsInto(container, key, { open = true } = {}) {
+    const box = this.append(container, "div", "mt-3 border-t pt-2")
+    const head = this.append(box, "div", "flex items-baseline justify-between gap-2")
+    this.append(head, "h3", "font-semibold text-slate-700", "Agent directions")
+    const status = this.append(box, "p", "text-xs text-slate-500", "Loading…")
+    try {
+      const res = await fetch(`${this.placeUrlValue}${encodeURIComponent(key)}.json`, { headers: { Accept: "application/json" } })
+      const p = await res.json()
+      if (!res.ok) throw new Error(p.error || "Not found")
+      status.textContent = p.written ? `Written · v${p.version}${p.updated_by ? ` · ${p.updated_by}` : ""}` : "Generated from live data (not written yet)"
+      const links = this.append(head, "span", "text-xs whitespace-nowrap")
+      const a = this.append(links, "a", "text-sky-700 hover:underline", p.editable ? (p.written ? "Edit" : "Write") : "Open")
+      a.href = p.editable ? `${p.url}/edit` : p.url
+      const md = this.append(links, "a", "text-sky-700 hover:underline ml-2", ".md")
+      md.href = `${p.url}.md`
+      const art = this.append(box, "article", "text-xs leading-relaxed mt-1 max-h-96 overflow-auto")
+      art.innerHTML = renderMarkdown(p.markdown)
+      if (!open) art.classList.add("hidden")
+    } catch (e) { status.textContent = e.message }
+  }
+
+  selectJunction(id) {
+    const n = this.byId.get(id)
+    const out = this.map.edges.filter((e) => e.from === id && e.kind === "next").sort((a, b) => b.traffic - a.traffic)
+    this.highlight([id, ...out.map((e) => e.to)], out.map((e) => `${e.from}>${e.to}`))
+    const panel = this.panelTarget
+    panel.replaceChildren()
+    this.append(panel, "div", "text-xs text-slate-500", "Intersection")
+    this.append(panel, "h2", "font-semibold text-base", `After ${n.title}`)
+    this.list(panel, "Exits", out, (e) => e.to, (e) => this.share(e.traffic, out.reduce((s, x) => s + x.traffic, 0), e.manual))
+    this.directionsInto(panel, `junction:${id}`)
+    this.centerOn(id)
+  }
+
+  selectHandoff(from, to) {
+    const a = this.byId.get(from), b = this.byId.get(to)
+    const e = this.map.edges.find((x) => x.from === from && x.to === to && x.kind === "next")
+    this.highlight([from, to], [`${from}>${to}`])
+    const panel = this.panelTarget
+    panel.replaceChildren()
+    this.append(panel, "div", "text-xs text-slate-500", "Handoff")
+    this.append(panel, "h2", "font-semibold text-base", `${a.title} → ${b.title}`)
+    this.append(panel, "p", "text-xs text-slate-600", e?.traffic ? `${e.traffic} trips` : "Linked by a reviewer")
+    this.directionsInto(panel, `handoff:${from}>${to}`)
+  }
+
+  centerOn(id) {
+    const p = this.geo.positions.get(id)
+    if (!p || !this.view) return
+    this.setView({ ...this.view, x: p.x + SEG / 2 - this.view.w / 2, y: p.y - this.view.h / 3 })
+  }
+
+  focusPlace(key) {
+    const [kind, rest] = key.split(/:(.*)/s)
+    this.resultsTarget.hidden = true
+    if (kind === "road") { this.select(rest); this.centerOn(rest) }
+    else if (kind === "junction") this.selectJunction(rest)
+    else if (kind === "handoff") { const [a, b] = rest.split(">"); this.selectHandoff(a, b); this.centerOn(a) }
+  }
+
+  searchInput() {
+    clearTimeout(this.searchTimer)
+    const q = this.searchTarget.value.trim()
+    if (q.length < 2) { this.resultsTarget.hidden = true; return }
+    this.searchTimer = setTimeout(() => this.runSearch(q), 180)
+  }
+
+  async runSearch(q) {
+    const res = await fetch(`${this.searchUrlValue}?q=${encodeURIComponent(q)}`, { headers: { Accept: "application/json" } })
+    const hits = await res.json()
+    if (q !== this.searchTarget.value.trim()) return
+    const box = this.resultsTarget
+    box.replaceChildren()
+    if (!hits.length) this.append(box, "p", "p-3 text-slate-500", `Nothing on the map matches “${q}”.`)
+    hits.forEach((h) => {
+      const b = this.append(box, "button", "w-full text-left flex items-baseline gap-3 px-3 py-2 hover:bg-slate-50 focus:bg-slate-100")
+      b.type = "button"; b.setAttribute("role", "option")
+      this.append(b, "span", "w-20 shrink-0 text-xs text-slate-500", h.label)
+      const t = this.append(b, "span", "flex-1", h.title)
+      this.append(t, "span", "text-xs text-slate-500 ml-2", h.subtitle || "")
+      this.append(b, "span", `text-xs ${h.written ? "text-slate-700" : "text-slate-400"}`, h.written ? "Written" : "Generated")
+      b.addEventListener("click", () => this.focusPlace(h.key))
+    })
+    box.hidden = false
+  }
+
+  searchKey(ev) {
+    if (ev.key === "Escape") this.resultsTarget.hidden = true
+    if (ev.key === "ArrowDown") { ev.preventDefault(); this.resultsTarget.querySelector("button")?.focus() }
+    if (ev.key === "Enter") { ev.preventDefault(); this.resultsTarget.querySelector("button")?.click() }
   }
 
   share(traffic, total, manual) {
@@ -248,6 +373,16 @@ export default class extends Controller {
       const leg = r.legs[i]
       if (leg) this.append(body, "div", "text-xs text-slate-400 mt-1", leg.traffic ? `↓ ${leg.traffic} people took this road` : "↓ linked by a reviewer")
     })
+    if (r.directions?.length) {
+      this.append(panel, "h3", "font-semibold mt-4 mb-1 text-slate-700", "Agent directions, in order")
+      const ul = this.append(panel, "ol", "list-decimal ml-5 space-y-0.5 text-xs")
+      r.directions.forEach((d) => {
+        const li = this.append(ul, "li", "")
+        const a = this.append(li, "a", "text-sky-700 hover:underline", d.title)
+        a.href = d.url
+        if (!d.written) this.append(li, "span", "text-slate-400 ml-1", "(generated)")
+      })
+    }
   }
 
   clear() {

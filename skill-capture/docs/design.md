@@ -84,6 +84,34 @@ The layout is `app/javascript/route_map/layout.js`. Each connected network is la
 
 A known limit: a fork whose steps are identical to its parent's can't be told apart from activity. Its traffic is credited to one of the two. A real variant usually adds or changes steps.
 
+## Places and agent directions (roads, intersections, handoffs)
+
+Every place on the route map is addressable by a key and carries its own Markdown directions for agents (and people):
+
+| Key | Place | Directions answer |
+|---|---|---|
+| `road:<skill>` | A skill's road | How to drive it: before you start, drive, watch for, done when |
+| `junction:<skill>` | The intersection at the end of a skill | Which exit to take: decision rules, default exit, and what to do if no exit fits |
+| `handoff:<from>><to>` | The connector between two skills | What to hand over, who to notify, typical wait |
+
+How it works:
+- **Written directions:** stored in `Waypoint` (title, body, tags, version) with a `WaypointRevision` per save, audited.
+- **Generated scaffolds:** `Capture::Directions` builds directions from live data for any place nobody has written yet: exits with their traffic share and price, predecessors, inputs and outputs, congestion and bounty, and reviewer names. It says plainly that it was generated.
+- **Who can write:** reviewers of the skill's area (for a handoff, either end) and admins. Everyone signed in can read.
+- **Search:** `Capture::MapSearch` matches skill titles, names, descriptions and tags (for roads, their intersections and their handoffs). It also runs Postgres full-text over written directions, using a GIN index on title and body, plus exact tag matches.
+- **On the map:** a search box finds and centers a place. Intersections are drawn as ringed nodes at the end of each road that has exits (filled when directions are written). Clicking a road, intersection or handoff opens its rendered directions, with Edit and `.md` links.
+- **Console pages:**
+  - `/map/places/<key>`: rendered directions, history and links
+  - `/map/places/<key>/edit`
+  - `/map/places/<key>.md`: raw Markdown
+  - `/map/search`
+- **API** (integration token):
+  - `GET /api/v1/search?q=`
+  - `GET /api/v1/places/<key>(.md)`
+  - `GET /api/v1/route` now includes `directions`: road → intersection → handoff → road … → arrival, each with its Markdown
+- **Add-in:** a skill shows its road directions (if written) and "At the end of this road: which way next" (the intersection).
+- **Export:** `capture:export` writes `<skill>/ROAD.md`, `<skill>/INTERSECTION.md` and `handoffs/<from>--<to>.md` next to each `SKILL.md`.
+
 ## Congestion pricing (demand schedule) and bounties
 
 The goal is to price congested skills higher, so there's a visible incentive to fix the bottleneck.
@@ -272,6 +300,7 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
 - `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
 - `test/integration/route_map_test.rb`: observed roads (traffic, minimum, gap), recomputation keeping manual links, branches, improvements, unpaved visibility, the planner (busier road wins, gaps), the agent route API, reviewer-drawn links and the add-in "next up".
+- `test/integration/directions_test.rb`: generated scaffolds (exits and their share, the default exit, reviewers, predecessors, done-when), not-found keys, reviewer-only versioned writing, empty bodies refused, raw Markdown, search (roads, intersections, handoffs, full text inside directions), the agent search, place and route-with-directions APIs, map data and the add-in intersection.
 - `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.
 - `test/integration/pricing_ui_test.rb`: bounties page, skill traffic panel, "Fix this" proposals, map traffic data, the admin schedule editor and its validation, and the skills API traffic object.
 - `test/javascript/route_map.test.mjs`: layout (journey order, parallel branches, loops, separate networks, loose skills) and road geometry.
