@@ -160,7 +160,7 @@ A **bridge** is where work crosses from one domain or app to another, like "coll
 
 ## Resource library
 
-Templates, worksheets and decks that skills use (customer contract, NDA, hex key worksheet…) live in **callable folders**.
+Templates, worksheets and decks that skills use (customer contract, NDA, the brand hex key worksheet…) live in **callable folders**.
 
 - `ResourceFolder` is a tree. A folder is **firm** (everyone and agents) or **restricted** to areas (its people and admins; never agents). Restriction is inherited down the tree.
 - `Resource` is a file (stored in the database, 15 MB max, checksum, versioned on replace) or an https link. Every resource has a stable key, `resource:<folder path>/<slug>`, that agents and the add-in call.

@@ -69,27 +69,27 @@ class BridgesResourcesCommandsTest < ActionDispatch::IntegrationTest
     finance = ResourceFolder.create!(name: "Finance")
     workbooks = ResourceFolder.create!(name: "Workbooks", parent: finance, audience: "restricted", areas: ["finance"])
     nda = add_file(templates, "Mutual NDA template")
-    hex = add_file(workbooks, "Hex key worksheet", "keys", filename: "hex.xlsx")
+    recs = add_file(workbooks, "Bank reconciliation workbook", "recs", filename: "recs.xlsx")
     assert_equal "resource:legal/templates/mutual-nda-template", nda.key
     assert_equal nda, Resource.find_by_key(nda.key)
     assert nda.visible_to?(@legal)
-    assert hex.visible_to?(@rev)
-    assert_not hex.visible_to?(@legal)
-    assert_not hex.agents_can_read?
+    assert recs.visible_to?(@rev)
+    assert_not recs.visible_to?(@legal)
+    assert_not recs.agents_can_read?
 
     h = { "Authorization" => "Bearer #{@token}" }
     get api_v1_resources_path, headers: h
     assert_equal ["resource:legal/templates/mutual-nda-template"], response.parsed_body.map { |r| r["key"] }
     get api_v1_resource_path("legal/templates/mutual-nda-template"), headers: h
     assert_equal "hello", response.body
-    get api_v1_resource_path("finance/workbooks/hex-key-worksheet"), headers: h
+    get api_v1_resource_path("finance/workbooks/bank-reconciliation-workbook"), headers: h
     assert_response :not_found
 
     sign_in @legal
     get resources_path
     assert_includes response.body, "Mutual NDA template"
-    refute_includes response.body, "Hex key worksheet"
-    get download_resource_path(hex)
+    refute_includes response.body, "Bank reconciliation workbook"
+    get download_resource_path(recs)
     assert_redirected_to root_path
   end
 

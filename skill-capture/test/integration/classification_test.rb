@@ -82,11 +82,11 @@ class ClassificationTest < ActionDispatch::IntegrationTest
     treasury = Field.find_by!(path: "finance/treasury")
     stats = Field.find_by!(path: "data-analysis/statistics")
     patch skill_classification_path(@recon), params: { field_ids: [recon.id, treasury.id], add_field_id: stats.id,
-                                                       new_field_name: "Hex keys", new_field_parent_id: treasury.id }
+                                                       new_field_name: "Intercompany", new_field_parent_id: treasury.id }
     c = SkillClassification.for("reconcile-bank")
-    assert_equal %w[finance/accounting/reconciliation finance/treasury data-analysis/statistics finance/treasury/hex-keys], c.field_paths
-    hex = Field.find_by!(path: "finance/treasury/hex-keys")
-    assert_equal [@rev, "Hex keys"], [hex.created_by, hex.name]
+    assert_equal %w[finance/accounting/reconciliation finance/treasury data-analysis/statistics finance/treasury/intercompany], c.field_paths
+    hex = Field.find_by!(path: "finance/treasury/intercompany")
+    assert_equal [@rev, "Intercompany"], [hex.created_by, hex.name]
     assert c.bridge?, "spans Finance and Data analysis"
     assert_equal recon, c.field, "the first field is the primary one"
 

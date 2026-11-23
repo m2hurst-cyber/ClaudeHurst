@@ -134,7 +134,13 @@ namespace :capture do
       8.times { |i| emit.(chain, "base-#{j}-#{i}", (20 + i * 5).days.ago - j.hours, false) }
       recent_times.times { |i| emit.(chain, "now-#{j}-#{i}", (i % 6 + 1).days.ago - j.hours - i.minutes * 7, true) }
     end
-    events.each_slice(400) { |b| Capture::Ingestor.call(src, b) }
+    # Journeys are relative to today with fixed demo actors, so a second run would overlap the first
+    # and invent backward roads. Seed them once; delete the "Demo journeys" source's events to re-seed.
+    if src.usage_events.exists?
+      puts "Demo journeys already seeded; keeping them."
+    else
+      events.each_slice(400) { |b| Capture::Ingestor.call(src, b) }
+    end
     n = Capture::ChainDetector.call.size
     result = Capture::Congestion.call
     Capture::Bounties.sweep(result)
@@ -162,10 +168,19 @@ namespace :capture do
               "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation" }
     library = {
       ["Legal/Templates", "firm", []] => { "Customer contract template" => "customer-contract-template.docx", "Mutual NDA template" => "mutual-nda-template.docx" },
-      ["Finance/Workbooks", "restricted", ["finance"]] => { "Hex key worksheet" => "hex-key-worksheet.xlsx", "Bank reconciliation workbook" => "bank-reconciliation-workbook.xlsx", "Variance analysis workbook" => "variance-analysis-workbook.xlsx" },
+      ["Finance/Workbooks", "restricted", ["finance"]] => { "Bank reconciliation workbook" => "bank-reconciliation-workbook.xlsx", "Variance analysis workbook" => "variance-analysis-workbook.xlsx" },
       ["Finance/Reports", "firm", []] => { "Monthly report template" => "monthly-report-template.docx" },
+      ["Design/Brand", "firm", []] => { "Hex key worksheet" => "hex-key-worksheet.xlsx" },
       ["Design/Templates", "firm", []] => { "Board deck template" => "board-deck-template.pptx", "Appendix slides template" => "appendix-slides-template.pptx" }
     }
+    descriptions = {
+      "Hex key worksheet" => "Brand colors by hex code, with the Office theme slot, chart series order and how to apply each color in Excel, PowerPoint and Word. Use it whenever a skill formats, charts or designs."
+    }
+    # Earlier demo data kept the hex key worksheet in Finance/Workbooks; it's a firm-wide brand file.
+    if (old = Resource.joins(:folder).find_by(slug: "hex-key-worksheet", resource_folders: { path: "finance/workbooks" }))
+      old.skill_resources.destroy_all
+      old.destroy!
+    end
     by_name = {}
     library.each do |(path, audience, areas), items|
       f = folder.(path, audience, areas)
@@ -173,6 +188,7 @@ namespace :capture do
         by_name[name] = f.resources.find_or_initialize_by(slug: name.parameterize).tap do |r|
           next if r.persisted?
           r.name = name
+          r.description = descriptions[name]
           r.uploaded_by = admin
           File.open(files.join(file), "rb") { |io| r.attach_file(io, filename: file, content_type: types[File.extname(file).delete(".")]) }
           r.save!
@@ -182,12 +198,13 @@ namespace :capture do
     {
       "prepare-contract" => ["Customer contract template"], "redline-contract" => ["Customer contract template"],
       "review-nda" => ["Mutual NDA template"],
-      "reconcile-bank-statement" => ["Bank reconciliation workbook", "Hex key worksheet"],
+      "reconcile-bank-statement" => ["Bank reconciliation workbook"],
       "reconcile-multi-currency-bank" => ["Bank reconciliation workbook"],
-      "variance-analysis" => ["Variance analysis workbook"],
-      "charts-to-ppt-appendix" => ["Variance analysis workbook", "Appendix slides template"],
-      "charts-to-word-report" => ["Variance analysis workbook", "Monthly report template"],
-      "board-deck-design" => ["Board deck template"]
+      "variance-analysis" => ["Variance analysis workbook", "Hex key worksheet"],
+      "charts-to-ppt-appendix" => ["Variance analysis workbook", "Appendix slides template", "Hex key worksheet"],
+      "charts-to-word-report" => ["Variance analysis workbook", "Monthly report template", "Hex key worksheet"],
+      "board-deck-design" => ["Board deck template", "Hex key worksheet"],
+      "build-quote-deck" => ["Hex key worksheet"]
     }.each do |skill, names|
       names.each { |n| SkillResource.find_or_create_by!(skill_name: skill, resource: by_name.fetch(n)) { |sr| sr.added_by = admin } }
     end

@@ -277,4 +277,6 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Resource library (`/resources`) with firm/restricted folders and `resource:` keys.
 - Bridges: cross-app and cross-domain skills and roads, a ⇄ Bridges map filter.
 - The map panel sends a skill or route to my add-in, a colleague's add-in, or an agent; the add-in keeps it in local memory (Memory tab, `window.SkillCaptureMemory`).
+- The demo "Hex key worksheet" is the brand palette (hex codes, Office theme slots, chart series order, per-app usage, contrast checks), firm-wide in Design › Brand and attached to the chart and deck skills.
+- `capture:demo` seeds journeys once; re-running keeps them (it used to invent backward roads).
 - Tests: 96 Rails runs, 21 JavaScript tests.

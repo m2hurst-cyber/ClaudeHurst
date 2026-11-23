@@ -20,7 +20,7 @@ module Capture
       "Design" => [%w[design], {
         "Presentation design" => [%w[slide deck presentation template], {}],
         "Document design" => [%w[layout format styling], {}],
-        "Brand" => [%w[brand logo style guide], {}]
+        "Brand" => [%w[brand logo style guide color colour palette hex], {}]
       }],
       "Legal" => [%w[legal counsel], {
         "Contracts" => [%w[contract redline clause nda agreement sign-off], {}],
