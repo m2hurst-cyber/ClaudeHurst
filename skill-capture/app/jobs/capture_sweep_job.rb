@@ -12,7 +12,7 @@ class CaptureSweepJob < ApplicationJob
     # Save / extend / branch prompts for everyone who worked through the add-in recently.
     active = UsageEvent.where("occurred_at >= ?", 1.day.ago).where("actor_key LIKE 'user:%'").distinct.pluck(:actor_key)
     User.active.where(id: active.map { |k| k.delete_prefix("user:").to_i }).find_each do |u|
-      Capture::Prompter.call(u)
+      PromptCheckJob.perform_now(u.id)
     rescue => e
       Rails.logger.warn("Prompts for user #{u.id} failed: #{e.class}: #{e.message}")
     end

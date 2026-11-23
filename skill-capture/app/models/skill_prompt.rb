@@ -2,7 +2,8 @@
 # or branch a skill they keep doing their own way. Created by Capture::Prompter.
 class SkillPrompt < ApplicationRecord
   KINDS = %w[save extend branch].freeze
-  STATUSES = %w[open snoozed accepted dismissed].freeze
+  # evaluating: found by a trigger, being judged by the AI; filtered: the AI judged it not worth a skill
+  STATUSES = %w[evaluating filtered open snoozed accepted dismissed].freeze
 
   belongs_to :user
   belongs_to :candidate, class_name: "SkillCandidate", optional: true
@@ -28,6 +29,8 @@ class SkillPrompt < ApplicationRecord
     end
   end
 
+  def ai = evidence["ai"] || {}
+
   def headline
     s = skill
     case kind
@@ -40,6 +43,7 @@ class SkillPrompt < ApplicationRecord
   def to_api
     { id: id, kind: kind, headline: headline, skill: skill_name, skill_title: skill&.title, occurrences: occurrences,
       steps: steps.zip(step_labels).map { |k, l| { action: k, label: l } },
-      added: added_labels, removed: removed_labels, choices: choices }
+      added: added_labels, removed: removed_labels, choices: choices,
+      suggested_title: ai["title"], suggested_description: ai["description"], why: ai["rationale"], evaluated_by: ai["by"] }
   end
 end

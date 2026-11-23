@@ -90,16 +90,19 @@ namespace :capture do
     skills.each do |name, (area, title, steps)|
       next created[name] = Skill.current(name) if Skill.current(name)
       steps.each { |key, label| ActionDefinition.find_or_create_by!(key: key) { |d| d.label = label; d.domain = area } }
-      c = SkillCandidate.create!(signature: "demo:#{name}", steps: steps.map(&:first), domain: area, origin: "detected", status: "drafted",
-                                 occurrence_count: 4, distinct_actor_count: 3, draft_name: name, draft_title: title,
-                                 draft_description: "#{title} (demo skill).", draft_body: "# #{title}\n\n" + steps.each_with_index.map { |(_, l), i| "#{i + 1}. #{l}" }.join("\n"),
+      lower = ->(t) { t.sub(/\A./) { |ch| ch.downcase } }
+      c = SkillCandidate.create!(signature: "demo:#{name}", steps: steps.map(&:first), domain: area, origin: "manual", status: "detected",
+                                 occurrence_count: 4, distinct_actor_count: 3, draft_title: title,
+                                 draft_description: "Walks through how the #{area} team does it: #{steps.map { |_, l| lower.(l) }.join('; ')}.",
                                  contributors: [{ "key" => "demo-1", "name" => "Analyst A" }, { "key" => "demo-2", "name" => "Analyst B" }],
                                  first_seen_at: 20.days.ago, last_seen_at: 2.days.ago)
+      Capture::DraftGenerator.call(c, drafter: ->(x) { Capture::TemplateDrafter.call(x) }) # the same Agent Skills formatting as real drafts
+      c.update!(draft_name: name, status: "drafted")
       created[name] = Capture::Publisher.publish!(c, reviewer: admin)
     end
     # An improvement and a branch
     if Skill.where(name: "reconcile-bank-statement").count == 1
-      Capture::Publisher.revise!(created["reconcile-bank-statement"], editor: admin, attrs: { body: created["reconcile-bank-statement"].body + "\n4. Sign off the reconciliation", change_note: "Added sign-off" })
+      Capture::Publisher.revise!(created["reconcile-bank-statement"], editor: admin, attrs: { body: created["reconcile-bank-statement"].body.sub("## Outputs", "4. Sign off the reconciliation.\n\n## Outputs"), change_note: "Added sign-off" })
       Capture::Publisher.revise!(Skill.current("reconcile-bank-statement"), editor: admin,
                                  attrs: { name: "reconcile-multi-currency-bank", title: "Reconcile a multi-currency bank account" })
       # A real variant differs in its steps; give the demo fork its own currency step.
@@ -289,7 +292,7 @@ namespace :capture do
     if deck.version == 1
       Capture::RestStops.capture!(deck, reason: "manual", kind: "manual", user: admin, label: "Before the brand refresh")
       Capture::Publisher.revise!(deck, editor: admin, attrs: {
-        body: deck.body + "\n\nBrand refresh: set the theme colors from the hex key worksheet before laying out slides; titles in Navy (#1F3A5F), charts in Accent 1–6 order.",
+        body: deck.body.sub("## Outputs", "3. Set the theme colors from the hex key worksheet before laying out slides: titles in Navy (#1F3A5F), charts in Accent 1–6 order.\n\n## Outputs"),
         change_note: "Brand refresh: theme colors from the hex key"
       })
     end

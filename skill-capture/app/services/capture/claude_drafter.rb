@@ -15,14 +15,21 @@ module Capture
 
       You receive the ordered steps people repeated, a short label for each step
       as reported by the tool it came from, and how often it was seen. Write the
-      skill for someone who has the tools but has never done this task:
-      - name: kebab-case, at most 64 characters, names the outcome.
-      - description: one or two sentences saying what the skill does AND when to use
-        it, at most 1024 characters. Agents choose skills from this text alone.
-      - body: Markdown with sections "When to use", "Inputs", "Steps" (numbered, one
-        action per step, saying what to check before moving on), "Outputs" and
-        "Checks". Do not invent tools, fields or business rules beyond the step
-        labels; where a detail is unknown, tell the reader what to confirm.
+      skill for someone who has the tools but has never done this task, in
+      Anthropic's Agent Skills SKILL.md format:
+      - name: lowercase letters, digits and single hyphens, at most 64 characters,
+        names the outcome (a gerund like "reconciling-bank-statements" reads well).
+        Never use the words "anthropic" or "claude".
+      - description: third person, one or two sentences, at most 1024 characters, no
+        XML tags. Say what the skill does AND when to use it ("Reconciles … Use when
+        …"). Agents choose skills from this text alone, so name the trigger words a
+        person would use.
+      - body: Markdown under 500 lines, no frontmatter. Start with "# <title>", then
+        "## When to use", "## Inputs", "## Steps" (a numbered list, one action per
+        step in the imperative, saying what to check before moving on), "## Outputs"
+        and "## Checks". Be concise: assume a capable reader and include only what
+        they couldn't guess. Do not invent tools, fields or business rules beyond the
+        step labels; where a detail is unknown, tell the reader what to confirm.
       - tags: 2-6 lowercase tags.
     PROMPT
 

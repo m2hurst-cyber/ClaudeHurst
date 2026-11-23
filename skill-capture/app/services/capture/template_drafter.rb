@@ -37,7 +37,7 @@ module Capture
     def description
       return @c.draft_description if @c.origin == "manual" && @c.draft_description.present?
       area = @c.domain.present? ? " (#{@c.domain})" : ""
-      "#{@c.steps.size}-step procedure#{area}: #{lower_first(title)}. Use when you need to do this task end to end; " \
+      "Performs a #{@c.steps.size}-step procedure#{area}: #{lower_first(title)}. Use when you need to do this task end to end; " \
         "captured from a workflow repeated #{@c.occurrence_count} times by #{@c.distinct_actor_count} " \
         "#{'person'.pluralize(@c.distinct_actor_count)}.".first(1024)
     end
@@ -58,11 +58,13 @@ module Capture
                  "#{@c.distinct_actor_count} #{'person'.pluralize(@c.distinct_actor_count)}" \
                  "#{seen.present? ? " (#{seen})" : ''} before being captured."
       end
+      lines += ["", "## Inputs", "", "- The files and systems the steps below open. Confirm which ones with the person who requested this skill."]
       lines += ["", "## Steps", ""]
       @c.steps.each_with_index do |s, i|
         lines << "#{i + 1}. #{label(s)}.  "
         lines << "   _Action: `#{s}`_"
       end
+      lines += ["", "## Outputs", "", "- The result of the last step: #{lower_first(label(@c.steps.last))}."]
       lines += ["", "## Checks", "",
                 "- Confirm each step finished successfully before starting the next.",
                 "- If a step fails, fix its input and repeat only that step.",

@@ -94,8 +94,10 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 15. **Commands respect visibility.** `POST /map/send` refuses skills the target can't see; agents receive firm and market skills only. A command has exactly one target and expires after a day.
 16. **Fields are many.** Classification writes go through `SkillClassification#set_fields!`, which keeps `field_id` equal to the primary field. Don't write `field_id` directly.
 17. **History is never rewritten.** Reverting a rest stop publishes a new version; the state before the revert is saved (pinned) first. Manual, pinned and branch-point rest stops are never pruned. New code that changes a skill's content, directions, resources or fields should take a rest stop (`Capture::RestStops.capture!`, which skips unchanged states).
-18. **Prompts only read a person's own events** (`actor_key = user:<id>`), never other people's, and only propose: every accepted prompt goes through review. A dismissed prompt is never raised again.
-19. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+18. **Skills meet the Agent Skills format.** `Publisher` refuses names, descriptions or instructions that break `SkillStandard`'s required rules; drafts go through `SkillStandard.normalize`. `SKILL.md` metadata stays a flat map of strings.
+19. **Prompts are judged before they're shown.** Triggers run at most every `evaluation.interval_minutes` per person in `PromptCheckJob`; nothing reaches a person until the evaluator opens it.
+20. **Prompts only read a person's own events** (`actor_key = user:<id>`), never other people's, and only propose: every accepted prompt goes through review. A dismissed prompt is never raised again.
+21. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -180,7 +182,7 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 |---|---|---|
 | `GET /api/v1/addin/prompts` | add-in | Open save/extend/branch prompts: `[{id, kind, headline, skill, skill_title, occurrences, steps: [{action, label}], added, removed, choices}]` |
 | `POST /api/v1/addin/prompts/:id/respond` | add-in | `{choice: save\|extend\|branch\|snooze\|dismiss, title?}` → `{status, candidate?: {id, title, name, url}}` |
-| `POST /api/v1/addin/events` | add-in | Response now also carries `prompts` raised by what was just sent |
+| `POST /api/v1/addin/events` | add-in | Response carries `prompt_check: queued\|not_due` (triggers run in the background, at most every 10 minutes per person) |
 | `GET /api/v1/skills/:name/rest_stops`, `GET /api/v1/rest_stops/:id` | integration | Rest stops of shared skills; `:id` includes the snapshot |
 
 **Action keys** match `^[\w.:\-/#]{1,160}$`. Add-in keys come from `vocabulary.js`. Typed steps are `<host>.step:<slug>`.
@@ -297,4 +299,9 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Candidates carry `proposal_kind` and `base_skill`; publishing an extend makes the next version, a branch a linked sandbox variant.
 - Rest stops (`RestStop`, `Capture::RestStops`): automatic and manual snapshots, revert as a new version, branch start points, disk mirror with `capture:rest_stops:verify`, daily `RestStopSweepJob`. The map panel links each skill's rest stops.
 - Add-in: prompt card, autosaved recordings, a fix for a library render race.
-- Tests: 107 Rails runs, 22 JavaScript tests.
+
+## Changelog: AI-evaluated prompts and the Agent Skills format
+
+- Triggers run in the background at most every 10 minutes per person (`PromptCheckJob`, Protocol `evaluation`); Claude judges each pattern (worthwhile, kind, title, description, confidence) before it is shown; rules without an AI key.
+- `Capture::SkillStandard`: Anthropic Agent Skills rules enforced at publish/revise, drafts normalized, checklist in review, badge on skills; `SKILL.md` metadata is a flat string map.
+- Tests: 109 Rails runs, 22 JavaScript tests.

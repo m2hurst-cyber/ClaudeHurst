@@ -23,7 +23,9 @@ class DraftAndPublishTest < ActiveSupport::TestCase
     c.reload
     assert c.draft_body.start_with?("# Reconcile the bank\n")
     assert_includes c.draft_body, "Recorded by Person A and Person B"
-    assert_equal ["Reconcile the bank", "Monthly.", "reconcile-the-bank"], [c.draft_title, c.draft_description, c.draft_name]
+    assert_equal ["Reconcile the bank", "reconcile-the-bank"], [c.draft_title, c.draft_name]
+    assert_equal "Monthly. Use when you need to reconcile the bank.", c.draft_description, "the author's words, plus the when-to-use clause the format asks for"
+    assert Capture::SkillStandard.check_candidate(c).clean?, Capture::SkillStandard.check_candidate(c).warnings.map(&:message).inspect
   end
 
   test "claude drafter sends workflow structure only and parses structured output" do
@@ -106,7 +108,8 @@ class DraftAndPublishTest < ActiveSupport::TestCase
     meta = YAML.safe_load(front)
     assert_equal [skill.name, skill.description], meta.values_at("name", "description")
     assert_equal "1", meta.dig("metadata", "version")
-    assert_nil meta.dig("metadata", "source", "contributor_keys")
+    assert meta["metadata"].values.all?(String), "Agent Skills metadata is a flat map of strings"
+    assert_equal %w[name description license metadata], meta.keys
     assert_includes body, "# Bill a new order"
 
     Dir.mktmpdir do |dir|

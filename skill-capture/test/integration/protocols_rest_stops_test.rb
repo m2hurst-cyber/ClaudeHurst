@@ -143,10 +143,20 @@ class ProtocolsRestStopsTest < ActionDispatch::IntegrationTest
     events = [1.day.ago, 2.hours.ago].flat_map { |t| [A, B, C, X].each_with_index.map { |k, i| ev.(k, t + i.minutes, "pane-#{t.to_i}") } }
     post api_v1_addin_events_path, params: { host: "Excel", events: events }, headers: h, as: :json
     assert_response :accepted
-    assert_equal ["extend"], response.parsed_body["prompts"].map { |p| p["kind"] }
+    assert_equal "queued", response.parsed_body["prompt_check"], "the triggers run in the background"
+    assert_enqueued_jobs 1, only: PromptCheckJob
+    get api_v1_addin_prompts_path, headers: h
+    assert_empty response.parsed_body, "nothing until the check (and its AI evaluation) has run"
+
+    post api_v1_addin_events_path, params: { host: "Excel", events: [ev.(A, 1.minute.ago, "pane-x")] }, headers: h, as: :json
+    assert_equal "not_due", response.parsed_body["prompt_check"], "at most one check per person every 10 minutes"
+    assert_enqueued_jobs 1, only: PromptCheckJob
+    perform_enqueued_jobs(only: PromptCheckJob)
 
     get api_v1_addin_prompts_path, headers: h
     item = response.parsed_body.sole
+    assert_equal ["rules", "Reconcile the bank statement"], [item["evaluated_by"], item["skill_title"]]
+    assert_match(/added the same step after this skill 2 times/, item["why"])
     assert_equal [%w[extend branch], ["Flag old items"]], [item["choices"], item["added"]]
     assert_equal [A, B, C, X], item["steps"].map { |s| s["action"] }
 
@@ -155,6 +165,84 @@ class ProtocolsRestStopsTest < ActionDispatch::IntegrationTest
     assert_equal "reconcile-and-flag", response.parsed_body.dig("candidate", "name")
     get api_v1_addin_prompts_path, headers: h
     assert_empty response.parsed_body
+
+    travel 11.minutes do
+      post api_v1_addin_events_path, params: { host: "Excel", events: [ev.(B, Time.current, "pane-y")] }, headers: h, as: :json
+      assert_equal "queued", response.parsed_body["prompt_check"]
+    end
+  end
+
+  class FakeClaude
+    attr_reader :req
+    Msg = Struct.new(:stop_reason, :content)
+    Block = Struct.new(:type, :text)
+    def initialize(**json) = @json = json
+    def beta = self
+    def messages = self
+    def create(**req)
+      @req = req
+      Msg.new(:end_turn, [Block.new(:text, @json.to_json)])
+    end
+  end
+
+  test "the AI judges each pattern first: it can pass over noise, change the kind, and names the skill" do
+    work(@me, [A, B, C, X, Y], times: 2)
+    noise = FakeClaude.new(worthwhile: false, kind: "extend", confidence: 80, title: "x", description: "x", rationale: "Flagging and emailing are a separate follow-up, not reconciliation.")
+    assert_empty Capture::Prompter.call(@me, client: noise)
+    p = @me.skill_prompts.sole
+    assert_equal ["filtered", 2], [p.status, p.evidence["filtered_at"]]
+    assert_empty @me.skill_prompts.live
+    assert_empty @me.notifications.where(kind: "prompt")
+    payload = JSON.parse(noise.req[:messages].first[:content])
+    assert_equal "extend", payload["kind"]
+    assert_match(/flag old items/, payload["added_steps"].first)
+    assert_equal "Reconcile the bank statement", payload.dig("existing_skill", "title")
+    refute_includes noise.req[:messages].to_json, @me.name, "the AI never learns who did the work"
+
+    work(@me, [A, B, C, X, Y], times: 1)
+    assert_empty Capture::Prompter.call(@me, client: noise), "passed over until it has happened twice as often"
+    good = FakeClaude.new(worthwhile: true, kind: "save", confidence: 85, title: "Chase old unmatched items",
+                          description: "You flag bank items older than 30 days and email the controller.", rationale: "A distinct follow-up task.")
+    work(@me, [A, B, C, X, Y], times: 1)
+    p = Capture::Prompter.call(@me, client: good).sole
+    assert_equal ["open", "save", %w[save], "ai"], [p.status, p.kind, p.choices, p.ai["by"]]
+    assert_equal "Flag bank items older than 30 days and email the controller. Use when you need to chase old unmatched items.", p.ai["description"],
+                 "the AI's description is put into the Agent Skills format (third person, says when)"
+    c = Capture::Prompter.respond!(p, choice: "save", user: @me)
+    assert_equal ["Chase old unmatched items", p.ai["description"]], [c.draft_title, c.draft_description]
+
+    other = make_user(domains: %w[finance])
+    work(other, [A, Z, C], times: 2)
+    Protocol.for("evaluation").update!(settings: { "interval_minutes" => 10, "min_confidence" => 95 })
+    assert_empty Capture::Prompter.call(other, client: FakeClaude.new(worthwhile: true, kind: "branch", confidence: 90, title: "t", description: "Does t. Use when t.", rationale: "r")),
+                 "below the admins' confidence bar"
+  end
+
+  test "every skill follows Anthropic's Agent Skills format: drafts are formatted, and publishing enforces the rules" do
+    std = Capture::SkillStandard
+    ok = std.check(name: "reconciling-bank-statements", description: "Reconciles the bank statement against the ledger. Use when the monthly statement arrives.",
+                   body: "# Reconcile\n\n## When to use\nMonthly.\n\n## Inputs\n- Statement\n\n## Steps\n1. Import\n\n## Outputs\n- Report\n\n## Checks\n- Totals tie")
+    assert ok.clean?, ok.warnings.map(&:message).inspect
+    bad = std.check(name: "Claude-Helper--x", description: "<b>You</b> do things", body: "---\nname: x\n---\n" + "line\n" * 501)
+    assert_equal %w[name name_reserved description_xml body_frontmatter body_length], bad.errors.map(&:rule)
+    assert_includes bad.warnings.map(&:rule), "when_to_use"
+
+    n = std.normalize(name: "claude-reconcile-bank", title: "Reconcile the bank", description: "We match <i>payments</i>.", body: "---\nx: 1\n---\nSteps here")
+    assert_equal ["reconcile-bank", "Match payments. Use when you need to reconcile the bank.", "# Reconcile the bank\n\nSteps here"], n.values_at(:name, :description, :body)
+
+    c = SkillCandidate.create!(signature: "x>y", steps: %w[x y], domain: "finance", status: "drafted", draft_name: "claude-tool",
+                               draft_title: "T", draft_description: "Does T. Use when T.", draft_body: "# T\n1. x")
+    e = assert_raises(Capture::Publisher::Error) { Capture::Publisher.publish!(c, reviewer: @admin) }
+    assert_match(/Agent Skills format: Name can't contain the reserved words/, e.message)
+    e = assert_raises(Capture::Publisher::Error) { Capture::Publisher.revise!(@skill, editor: @rev, attrs: { description: "<script>x</script> Use when." }) }
+    assert_match(/XML tags/, e.message)
+
+    c.update!(draft_name: "t-procedure")
+    sign_in @rev
+    get skill_candidate_path(c)
+    assert_includes response.body, "Agent Skills format"
+    get skill_path(Capture::Publisher.publish!(c, reviewer: @admin))
+    assert_includes response.body, "Has a &quot;## Steps&quot; section"
   end
 
   test "admins tune protocols; settings are validated" do

@@ -69,7 +69,7 @@ module Capture
         snap = stop.snapshot
         capture!(skill, reason: "before_revert", user: user, pinned: true, label: "Before reverting to rest stop ##{stop.id}")
         attrs = REVERTABLE.to_h { |k| [k.to_sym, snap[k]] }.merge(
-          workflow: snap["workflow"], authorized: true,
+          workflow: snap["workflow"], authorized: true, restoring: true,
           change_note: "Reverted to rest stop ##{stop.id} (#{stop.reason_label.downcase}, v#{stop.skill_version}, #{stop.created_at.to_date})"
         )
         new_skill = Publisher.revise!(skill, editor: user, attrs: attrs)

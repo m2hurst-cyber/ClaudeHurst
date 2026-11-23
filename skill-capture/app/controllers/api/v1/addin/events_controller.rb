@@ -12,25 +12,12 @@ module Api
           return render(json: { error: "events must be an array" }, status: :unprocessable_entity) unless events.is_a?(Array)
 
           result = Capture::Ingestor.call(source, events, actor: current_user)
-          prompts = result.accepted.positive? ? raise_prompts : []
-          render json: { accepted: result.accepted, rejected: result.rejected, dropped_fields: result.dropped_fields, prompts: prompts },
+          # Triggers run in the background, at most every few minutes per person, so the AI has time to judge.
+          checking = result.accepted.positive? && PromptCheckJob.request(current_user)
+          render json: { accepted: result.accepted, rejected: result.rejected, dropped_fields: result.dropped_fields, prompt_check: checking ? "queued" : "not_due" },
                  status: result.accepted.zero? && result.rejected.any? ? :unprocessable_entity : :accepted
         rescue ArgumentError => e
           render json: { error: e.message }, status: :unprocessable_entity
-        end
-
-        private
-
-        # Triggers run as the person works: a new save / extend / branch prompt comes back with the response.
-        def raise_prompts
-          key = "prompter:user:#{current_user.id}"
-          return [] if Rails.cache.read(key) # at most once a minute per person
-          Rails.cache.write(key, true, expires_in: 1.minute)
-          Capture::Prompter.call(current_user).map(&:to_api)
-        rescue => e
-          raise if Rails.env.test?
-          Rails.logger.warn("Prompts failed for user #{current_user.id}: #{e.class}: #{e.message}")
-          []
         end
       end
     end

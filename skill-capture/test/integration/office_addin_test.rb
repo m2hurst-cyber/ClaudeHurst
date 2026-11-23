@@ -175,7 +175,7 @@ class OfficeAddinTest < ActionDispatch::IntegrationTest
     assert_equal %w[excel.data.sorted excel.step:check-totals], c.steps
     assert_equal ["finance", "manual", @member], [c.domain, c.origin, c.requested_by]
     assert_equal ["drafted", "Reconcile the bank statement", "reconcile-the-bank-statement"], [c.status, c.draft_title, c.draft_name]
-    assert_equal "Monthly, after the statement arrives.", c.draft_description
+    assert_equal "Monthly, after the statement arrives. Use when you need to reconcile the bank statement.", c.draft_description
     assert_includes c.draft_body, "Check totals match the bank statement"
     assert Notification.exists?(user: @reviewer, subject: c)
   end

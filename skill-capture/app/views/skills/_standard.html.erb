@@ -1,0 +1,18 @@
+<%# Anthropic Agent Skills format checklist. Locals: report (SkillStandard::Report), compact (bool) %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<div class="bg-white border rounded p-4 text-sm" id="format">
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">Agent Skills format</h2>
+    <% if report.clean? %><span class="text-xs text-emerald-700">✓ Meets the standard</span>
+    <% elsif report.ok? %><span class="text-xs text-amber-700"><%= pluralize(report.warnings.size, "suggestion") %></span>
+    <% else %><span class="text-xs text-red-700"><%= pluralize(report.errors.size, "problem") %>: can't publish</span><% end %>
+  </div>
+  <p class="text-xs text-slate-500 mt-0.5">Anthropic's SKILL.md format: a name and description agents choose from, and concise instructions.</p>
+  <ul class="mt-2 space-y-0.5 text-xs">
+    <% (compact ? report.errors + report.warnings : report.checks).each do |c| %>
+      <li class="<%= c.ok ? 'text-slate-600' : (c.level == :error ? 'text-red-700' : 'text-amber-800') %>">
+        <%= c.ok ? "✓" : (c.level == :error ? "✗" : "!") %> <%= c.message %>
+      </li>
+    <% end %>
+  </ul>
+</div>

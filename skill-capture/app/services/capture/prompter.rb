@@ -17,11 +17,12 @@ module Capture
     MAX_OPEN = 5
     MAX_SAVE_STEPS = 6
 
-    def self.call(user) = new(user).call
+    def self.call(user, client: nil) = new(user, client: client).call
     def self.respond!(prompt, choice:, user:, title: nil, description: nil) = new(user).respond!(prompt, choice, title, description)
 
-    def initialize(user)
+    def initialize(user, client: nil)
       @user = user
+      @client = client # an Anthropic client for the evaluator (tests pass a stub)
       @protocols = %w[save extend branch].to_h { |k| [k, Protocol.for(k)] }
     end
 
@@ -78,6 +79,7 @@ module Capture
     def respond!(prompt, choice, title, description)
       raise Error, "Not your prompt" unless prompt.user_id == @user.id
       raise Error, "Already answered" if %w[accepted dismissed].include?(prompt.status)
+      raise Error, "Not open" unless %w[open snoozed].include?(prompt.status)
       case choice
       when "snooze"
         days = @protocols[prompt.kind]["snooze_days"]
@@ -195,21 +197,46 @@ module Capture
       digest = Digest::SHA256.hexdigest(fingerprint)
       prompt = @user.skill_prompts.find_by(fingerprint: digest)
       if prompt
-        prompt.update!(occurrences: occurrences, last_seen_at: Time.current) if %w[open snoozed].include?(prompt.status)
+        prompt.update!(occurrences: occurrences, last_seen_at: Time.current) if %w[open snoozed filtered].include?(prompt.status)
+        # A pattern the AI passed over gets another look once it has happened twice as often.
+        if prompt.status == "filtered" && occurrences >= 2 * prompt.evidence.fetch("filtered_at", occurrences).to_i
+          prompt.update!(status: "evaluating")
+          return evaluate!(prompt)
+        end
         return nil
       end
       # One open nudge per skill and kind; a dismissed one for the same skill keeps it quiet for a while.
       scope = @user.skill_prompts.where(kind: kind, skill_name: skill&.name)
-      return nil if skill && scope.where(status: %w[open snoozed]).exists?
+      return nil if skill && scope.where(status: %w[evaluating open snoozed]).exists?
       return nil if skill && scope.where(status: "dismissed").where("responded_at > ?", @protocols[kind]["lookback_days"].days.ago).exists?
       return nil if @user.skill_prompts.where(status: "open").count >= MAX_OPEN
 
-      prompt = @user.skill_prompts.create!(kind: kind, skill_name: skill&.name, steps: steps, evidence: evidence,
+      prompt = @user.skill_prompts.create!(kind: kind, skill_name: skill&.name, steps: steps, evidence: evidence, status: "evaluating",
                                            occurrences: occurrences, fingerprint: digest, last_seen_at: Time.current)
-      Notification.create!(user: @user, subject: prompt, kind: "prompt", title: prompt.headline,
-                           url: Rails.application.routes.url_helpers.prompts_path)
-      AuditLog.record("prompt.raised", user: @user, subject: prompt, kind: kind, skill: skill&.name, occurrences: occurrences)
-      prompt
+      evaluate!(prompt)
+    end
+
+    # The AI (or rules) decides whether this is worth asking about, and suggests a name and description.
+    # Returns the prompt when it was opened, nil when it was filtered out.
+    def evaluate!(prompt)
+      r = PromptEvaluator.call(prompt, client: @client)
+      min = Protocol.for("evaluation")["min_confidence"]
+      ai = { "title" => r.title, "description" => r.description, "rationale" => r.rationale, "confidence" => r.confidence,
+             "by" => r.by, "kind_found" => prompt.kind, "at" => Time.current.iso8601 }
+      if r.worthwhile && r.confidence >= min
+        kind = r.kind == "save" || prompt.skill_name ? r.kind : prompt.kind
+        prompt.update!(status: "open", kind: kind, evidence: prompt.evidence.merge("ai" => ai))
+        Notification.create!(user: @user, subject: prompt, kind: "prompt", title: prompt.headline,
+                             url: Rails.application.routes.url_helpers.prompts_path)
+        AuditLog.record("prompt.raised", user: @user, subject: prompt, kind: prompt.kind, skill: prompt.skill_name,
+                        occurrences: prompt.occurrences, evaluated_by: r.by, confidence: r.confidence)
+        prompt
+      else
+        prompt.update!(status: "filtered", evidence: prompt.evidence.merge("ai" => ai, "filtered_at" => prompt.occurrences))
+        AuditLog.record("prompt.filtered", user: @user, subject: prompt, kind: prompt.kind, skill: prompt.skill_name,
+                        evaluated_by: r.by, confidence: r.confidence, reason: r.rationale)
+        nil
+      end
     end
 
     def build_candidate(prompt, choice, base, title, description)
@@ -217,20 +244,23 @@ module Capture
       sig = sig(steps)
       if choice == "save" && (existing = SkillCandidate.open.find_by(signature: sig))
         existing.update!(requested_by: existing.requested_by || @user, origin: "manual", proposal_kind: "save",
-                         draft_title: title.presence || existing.draft_title, draft_description: description.presence || existing.draft_description)
+                         draft_title: title.presence || prompt.ai["title"].presence || existing.draft_title,
+                         draft_description: description.presence || prompt.ai["description"].presence || existing.draft_description)
         return existing
       end
+      ai = prompt.ai
       default_title = case choice
-                      when "save" then "Untitled workflow"
+                      when "save" then ai["title"].presence || "Untitled workflow"
                       when "extend" then base.title
-                      when "branch" then "#{base.title} (#{@user.name.split.first}'s way)"
+                      when "branch" then (prompt.kind == "branch" && ai["title"].presence) || "#{base.title} (#{@user.name.split.first}'s way)"
                       end
+      default_description = choice == prompt.kind ? ai["description"].presence : nil
       SkillCandidate.create!(
         signature: "prompt:#{choice}:#{SecureRandom.hex(8)}", steps: steps, origin: "manual", proposal_kind: choice,
         base_skill: choice == "save" ? nil : base,
         domain: base&.domain || @user.domains.first,
         draft_title: title.to_s.squish.first(200).presence || default_title,
-        draft_description: description.to_s.squish.first(1024).presence || (choice == "extend" ? base.description : nil),
+        draft_description: description.to_s.squish.first(1024).presence || default_description || (choice == "extend" ? base.description : nil),
         requested_by: @user, occurrence_count: prompt.occurrences, distinct_actor_count: 1,
         contributors: [{ "key" => @user.actor_key, "name" => @user.name }],
         first_seen_at: prompt.created_at, last_seen_at: prompt.last_seen_at || Time.current,

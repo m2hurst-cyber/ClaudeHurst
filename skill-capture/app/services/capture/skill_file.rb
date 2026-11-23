@@ -3,26 +3,24 @@ module Capture
   module SkillFile
     module_function
 
+    # Frontmatter per the Agent Skills format: name and description (required), license, and
+    # metadata as a flat map of strings. Provenance stays in the console and the API, not here.
     def render(skill)
-      src = skill.source.except("contributor_keys")
-      front = {
-        "name" => skill.name,
-        "description" => skill.description,
-        "license" => skill.license,
-        "metadata" => {
-          "title" => skill.title,
-          "version" => skill.version.to_s,
-          "domain" => skill.domain,
-          "tags" => skill.tags,
-          "inputs" => skill.inputs,
-          "outputs" => skill.outputs,
-          "status" => skill.status,
-          "parent" => skill.parent_skill && "#{skill.parent_skill.name}@#{skill.parent_skill.version}",
-          "published_at" => skill.published_at&.iso8601,
-          "published_by" => skill.published_by&.name,
-          "source" => src
-        }.compact
-      }
+      src = skill.source
+      metadata = {
+        "title" => skill.title,
+        "version" => skill.version.to_s,
+        "area" => skill.domain,
+        "stage" => skill.stage,
+        "tags" => skill.tags.presence&.join(", "),
+        "inputs" => skill.inputs.presence&.join("; "),
+        "outputs" => skill.outputs.presence&.join("; "),
+        "parent" => skill.parent_skill && "#{skill.parent_skill.name}@#{skill.parent_skill.version}",
+        "published-at" => skill.published_at&.iso8601,
+        "published-by" => skill.published_by&.name,
+        "captured-from" => src["occurrences"] && "#{src['occurrences']} runs by #{src['distinct_people'] || 1} people"
+      }.compact.transform_values(&:to_s)
+      front = { "name" => skill.name, "description" => skill.description, "license" => skill.license, "metadata" => metadata }
       "#{front.to_yaml}---\n\n#{skill.body.strip}\n"
     end
 

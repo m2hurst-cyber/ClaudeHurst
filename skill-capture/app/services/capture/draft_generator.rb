@@ -17,6 +17,7 @@ module Capture
         attrs[:description] = @candidate.draft_description if @candidate.draft_description.present?
       end
       attrs = attrs.merge(name: proposed_name(attrs[:name])) if @candidate.base_skill
+      attrs = SkillStandard.normalize(attrs) # Anthropic Agent Skills format, whichever drafter wrote it
       @candidate.update!(
         draft_name: attrs[:name], draft_title: attrs[:title], draft_description: attrs[:description],
         draft_tags: attrs[:tags], draft_inputs: attrs[:inputs], draft_outputs: attrs[:outputs],

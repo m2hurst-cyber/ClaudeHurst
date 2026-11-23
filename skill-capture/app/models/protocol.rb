@@ -4,16 +4,20 @@
 #   extend   you finish a skill, then keep doing the same steps    → "Extend the skill (new version)"
 #   branch   you start and end a skill but do the middle your way  → "Branch it (a variant)"
 #   rest_stop  automatic snapshots of skills, so any version or branch can be reverted
+#   evaluation how often the triggers run per person, and the AI's bar for raising a prompt
 class Protocol < ApplicationRecord
   DEFAULTS = {
     "save" => { "min_repeats" => 3, "min_steps" => 3, "lookback_days" => 14, "snooze_days" => 3 },
     "extend" => { "min_repeats" => 2, "max_added_steps" => 4, "lookback_days" => 14, "snooze_days" => 3 },
     "branch" => { "min_repeats" => 2, "max_extra_steps" => 3, "lookback_days" => 14, "snooze_days" => 3 },
-    "rest_stop" => { "daily" => true, "keep_auto" => 30 }
+    "rest_stop" => { "daily" => true, "keep_auto" => 30 },
+    # How often the triggers run per person, and how sure the AI must be before anyone is prompted.
+    "evaluation" => { "interval_minutes" => 10, "min_confidence" => 60 }
   }.freeze
-  LABELS = { "save" => "Save", "extend" => "Extend", "branch" => "Branch", "rest_stop" => "Rest stops" }.freeze
+  LABELS = { "save" => "Save", "extend" => "Extend", "branch" => "Branch", "rest_stop" => "Rest stops", "evaluation" => "AI evaluation" }.freeze
   LIMITS = { "min_repeats" => 1..50, "min_steps" => 2..20, "lookback_days" => 1..90, "snooze_days" => 1..90,
-             "max_added_steps" => 1..10, "max_extra_steps" => 1..10, "keep_auto" => 1..1000 }.freeze
+             "max_added_steps" => 1..10, "max_extra_steps" => 1..10, "keep_auto" => 1..1000,
+             "interval_minutes" => 1..1440, "min_confidence" => 0..100 }.freeze
 
   validates :key, inclusion: { in: DEFAULTS.keys }, uniqueness: true
   validate :settings_in_range

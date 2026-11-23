@@ -18,6 +18,7 @@ module Capture
       raise Error, "Candidate is already #{candidate.status}" unless candidate.open?
       candidate.assign_attributes(attrs.slice(*DRAFT_KEYS)) if attrs.present?
       raise Error, "Generate or write a draft first" unless candidate.drafted?
+      enforce_standard!(SkillStandard.check(name: candidate.draft_name, description: candidate.draft_description, body: candidate.draft_body))
 
       previous = Skill.current(candidate.draft_name)
       branch_of = candidate.proposal_kind == "branch" && !previous ? candidate.base_skill : nil
@@ -54,6 +55,11 @@ module Capture
 
       name = attrs[:name].presence || skill.name
       fork = name != skill.name
+      # A revert restores what was published before, as it was; everything else must meet the format.
+      unless attrs[:restoring]
+        enforce_standard!(SkillStandard.check(name: name, description: attrs[:description].presence || skill.description,
+                                              body: attrs[:body].presence || skill.body))
+      end
       RestStops.capture!(skill, reason: "before_update", user: @user) unless fork
       new_skill = nil
       Skill.transaction do
@@ -83,6 +89,11 @@ module Capture
     end
 
     private
+
+    def enforce_standard!(report)
+      return if report.ok?
+      raise Error, "Doesn't meet the Agent Skills format: #{report.errors.map(&:message).join('; ')}"
+    end
 
     def rest_stops_after(skill, branch_of:, reason:)
       if branch_of

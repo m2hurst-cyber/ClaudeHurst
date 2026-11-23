@@ -187,10 +187,20 @@ Triggers that turn a person's own repeated work into proposals, before it's lost
 | **Extend** | The skill's exact workflow, then the same 1..*max added* steps, ≥ *min repeats* times (longest repeated tail wins) | The skill's workflow + those steps, as its **next version** (same name) |
 | **Branch** | Starts with the skill's first step, ends with its last, keeps at least half its steps, differs in between (≤ *max extra* steps longer), ≥ *min repeats* times. A run that fits several skills belongs to the closest one | The person's way as a **branch** (new name, parent link, starts at the policy's initial stage) |
 
-- **When:** after the add-in posts events (at most once a minute per person; new prompts come back in the response), and in the hourly sweep for everyone active that day.
+- **When:** in the background (`PromptCheckJob`), queued by the add-in's event uploads at most every *interval* minutes per person (default 10; the slot is claimed atomically so concurrent uploads queue one job), and in the hourly sweep for everyone active that day. The add-in polls for open prompts every 30 seconds.
+- **AI evaluation first** (`Capture::PromptEvaluator`): every pattern a trigger finds starts as `evaluating`. Claude (structured output, low effort) gets only the step keys and labels, counts, and the base skill's title, description and steps, and answers whether it's a real skill, which kind fits (it can turn an extend into a save, or a branch into an extend), a title and an Agent Skills description, a confidence and a one-line rationale. Below the protocol's minimum confidence, or not worthwhile, the prompt is `filtered`: never shown, looked at again once it has happened twice as often. Without an AI key (or with the evaluation protocol unticked) the rules judge it, with confidence rising with repeats. The suggestion becomes the draft's title and description if the person accepts.
 - **Answers:** the choices offered (Extend prompts also offer Branch and vice versa), **Not now** (snoozed for the protocol's days), **Don't ask again** (never re-raised; other prompts for that skill and kind stay quiet for the lookback). One open prompt per skill and kind; at most five open per person.
 - **Accepting** creates a `SkillCandidate` with `origin: manual`, `proposal_kind` and `base_skill`, drafted like any recorded procedure. Extend drafts keep the skill's name; branch drafts get a unique new name. Publishing an extend makes version N+1; publishing a branch links `parent_skill` to the base and registers the branch against the base's bounty.
 - **Where:** the add-in shows the first prompt as a card above every tab; the console has **Prompts** (link in the header when any are open) with a before/after of the steps; notifications link there. Admins edit thresholds at **Admin → Protocols**.
+
+## Skill format: Anthropic Agent Skills
+
+Every skill is a `SKILL.md` in Anthropic's Agent Skills format (`Capture::SkillStandard`, `Capture::SkillFile`).
+
+- **Frontmatter:** `name`, `description`, `license`, and `metadata` as a flat map of strings (title, version, area, stage, tags, inputs, outputs, parent, published-at, published-by, captured-from). Provenance stays in the console and APIs.
+- **Required, enforced at publish and revise** (errors): name of 1-64 lowercase letters, digits and single hyphens without "anthropic" or "claude"; description of 1-1024 characters without XML tags; non-empty instructions under 500 lines with no frontmatter of their own. Reverting to a rest stop restores old content as it was and is exempt.
+- **Best practice** (warnings to reviewers): description in the third person that says what the skill does and when to use it; instructions open with `# Title` and have `## When to use`, `## Inputs`, `## Steps` (numbered), `## Outputs` and `## Checks`.
+- **Drafts are formatted** whichever drafter wrote them: the Claude drafter is instructed in the format, the template writes all sections, and `normalize` fixes names (reserved words), descriptions (XML, first person, a missing "Use when…") and stray frontmatter. Review shows the checklist; skills that meet it carry a "✓ Agent Skills format" badge.
 
 ## Rest stops (version snapshots and revert)
 

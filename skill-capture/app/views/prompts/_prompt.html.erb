@@ -9,6 +9,12 @@
         <%= Protocol::LABELS[p.kind] %> protocol · seen <%= p.occurrences %>× in your recent work<%= " · last #{time_ago_in_words(p.last_seen_at)} ago" if p.last_seen_at %>
         <% if s %> · based on <%= link_to "#{s.title} v#{s.version}", skill_path(s), class: "text-sky-700 hover:underline" %><% end %>
       </div>
+      <% if p.ai["rationale"].present? %>
+        <div class="mt-2 text-xs bg-slate-50 border rounded px-2 py-1">
+          <%= p.ai["by"] == "ai" ? "✨ AI" : "Rules" %> (<%= p.ai["confidence"] %>% sure): <%= p.ai["rationale"] %>
+          <% if p.ai["kind_found"] && p.ai["kind_found"] != p.kind %> Suggested <strong><%= p.kind %></strong> rather than <%= p.ai["kind_found"] %>.<% end %>
+        </div>
+      <% end %>
       <div class="grid sm:grid-cols-2 gap-3 mt-3">
         <% if s %>
           <div>
@@ -33,7 +39,8 @@
         <%= form_with url: respond_prompt_path(p), method: :post, class: "mt-3 space-y-2" do %>
           <% if p.choices.include?("save") || p.choices.include?("branch") %>
             <label class="block"><span class="text-xs text-slate-500">Name it (optional)</span>
-              <input name="title" class="<%= input_css %>" placeholder="<%= p.kind == 'save' ? 'e.g. Format the variance table' : "#{s&.title} (my way)" %>"></label>
+              <input name="title" class="<%= input_css %>" value="<%= p.kind == 'extend' ? '' : p.ai['title'] %>" placeholder="<%= p.kind == 'save' ? 'e.g. Format the variance table' : "#{s&.title} (my way)" %>"></label>
+            <% if p.ai["description"].present? && p.kind != "extend" %><p class="text-xs text-slate-500">Description: <%= p.ai["description"] %></p><% end %>
           <% end %>
           <div class="flex flex-wrap gap-2">
             <% p.choices.each_with_index do |choice, i| %>

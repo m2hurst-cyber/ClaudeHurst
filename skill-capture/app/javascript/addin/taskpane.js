@@ -59,11 +59,7 @@ async function boot() {
   state.host = info.host ? String(info.host) : null;
   document.getElementById("host-label").textContent = state.host || "Not in Office";
 
-  state.capture = createCapture({ host: state.host, send: async (p) => {
-    const r = await api.sendEvents(p);
-    if (r?.prompts?.length) { mergePrompts(r.prompts); render(); } // a trigger fired on what was just sent
-    return r;
-  } });
+  state.capture = createCapture({ host: state.host, send: (p) => api.sendEvents(p) });
   state.capture.onChange(() => {
     if (state.tab === "record") renderRecordSteps();
     updateCaptureBadge();
@@ -108,10 +104,6 @@ function startInbox() {
 }
 
 let inboxTicks = 0;
-function mergePrompts(list) {
-  const seen = new Set(state.prompts.map((p) => p.id));
-  state.prompts = state.prompts.concat(list.filter((p) => !seen.has(p.id)));
-}
 
 async function checkInbox() {
   if (!api.connected) return;
@@ -171,7 +163,8 @@ function renderPromptCard() {
         ${state.prompts.length > 1 ? `<span class="text-xs text-slate-500 whitespace-nowrap">1 of ${state.prompts.length}</span>` : ""}</div>
       <ol class="list-decimal ml-5 mt-1 text-xs">${p.steps.map((s) => `<li class="${added.has(s.label) ? "text-emerald-800 font-semibold" : "text-slate-600"}">${esc(s.label)}${added.has(s.label) ? " (new)" : ""}</li>`).join("")}</ol>
       ${p.removed.length ? `<div class="text-xs text-red-700 mt-1">You skip: ${p.removed.map(esc).join(", ")}</div>` : ""}
-      ${naming ? `<input id="prompt-title" class="${input} mt-2 text-xs" placeholder="${p.kind === "save" ? "Name it (optional)" : `${esc(p.skill_title || "")} (my way)`}" aria-label="Name">` : ""}
+      ${p.why ? `<div class="text-xs text-slate-600 mt-1">${p.evaluated_by === "ai" ? "✨ " : ""}${esc(p.why)}</div>` : ""}
+      ${naming ? `<input id="prompt-title" value="${p.kind === "extend" ? "" : esc(p.suggested_title || "")}" class="${input} mt-2 text-xs" placeholder="${p.kind === "save" ? "Name it (optional)" : `${esc(p.skill_title || "")} (my way)`}" aria-label="Name">` : ""}
       <div class="flex flex-wrap gap-1 mt-2">
         ${p.choices.map((c, i) => `<button data-action="prompt" data-id="${p.id}" data-choice="${c}" class="${i ? btn : btnPrimary} text-xs">${CHOICE[c]}</button>`).join("")}
         <button data-action="prompt" data-id="${p.id}" data-choice="snooze" class="${btn} text-xs">Not now</button>
