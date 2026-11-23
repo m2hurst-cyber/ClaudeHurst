@@ -19,6 +19,10 @@ namespace :capture do
     result.patterns.each { |p| puts "  #{p.occurrences}x by #{p.actors.size}: #{p.steps.join(' → ')}" }
     chains = Capture::ChainDetector.call
     puts "#{chains.size} skill-to-skill transitions observed"
+    result = Capture::Congestion.call
+    Capture::Bounties.sweep(result)
+    priced = result.metrics.select(&:priced?)
+    puts "#{priced.size} skills priced; #{Bounty.active.count} active bounties"
   end
 
   desc "Write every published skill to DIR/<name>/SKILL.md (default ./skill-repo)"
@@ -76,27 +80,41 @@ namespace :capture do
     end
 
     # End-to-end journeys (traffic). The integration source stands in for the add-in here.
+    # Baseline: 2 months at normal speed. Last week: legal redlines queue up (jammed),
+    # accruals slow down (heavy), the close pack is a little slow.
     src = Source.find_by(name: "Demo journeys") || Source.issue!(name: "Demo journeys", kind: "integration").first
     journeys = [
-      [%w[export-trial-balance reconcile-bank-statement post-month-end-accruals month-end-close-pack], 6],
-      [%w[export-trial-balance reconcile-multi-currency-bank post-month-end-accruals], 2],
-      [%w[build-quote-deck write-proposal prepare-contract redline-contract legal-sign-off], 4],
+      [%w[export-trial-balance reconcile-bank-statement post-month-end-accruals month-end-close-pack], 7],
+      [%w[export-trial-balance reconcile-multi-currency-bank post-month-end-accruals], 3],
+      [%w[build-quote-deck write-proposal prepare-contract redline-contract legal-sign-off], 6],
       [%w[build-quote-deck write-proposal prepare-contract], 2],
-      [%w[review-nda legal-sign-off], 3]
+      [%w[review-nda legal-sign-off], 5]
     ]
+    slowdown = { "redline-contract" => 6.0, "post-month-end-accruals" => 2.2, "month-end-close-pack" => 1.5 }
     events = []
-    journeys.each_with_index do |(chain, times), j|
-      times.times do |i|
-        t = (i + 1).days.ago - j.hours
-        chain.each_with_index do |name, k|
-          Array(Skill.current(name)&.source&.dig("workflow")).each_with_index do |key, m|
-            events << { action: key, actor: { id: "demo-#{j}-#{i}" }, session: "j#{j}-#{i}-#{k}", occurred_at: (t + k.hours + m.minutes).utc.iso8601 }
-          end
+    emit = lambda do |chain, actor, start, recent|
+      t = start
+      chain.each do |name|
+        factor = recent ? slowdown.fetch(name, 1.0) : 1.0
+        t += (30.minutes * factor)                       # wait before this skill (handoff)
+        steps = Array(Skill.current(name)&.source&.dig("workflow"))
+        steps.each_with_index do |key, m|
+          events << { action: key, actor: { id: actor }, session: "#{actor}-#{name}", occurred_at: (t + m * 8.minutes * factor).utc.iso8601 }
         end
+        t += (steps.size - 1) * 8.minutes * factor
       end
+    end
+    journeys.each_with_index do |(chain, recent_times), j|
+      8.times { |i| emit.(chain, "base-#{j}-#{i}", (20 + i * 5).days.ago - j.hours, false) }
+      recent_times.times { |i| emit.(chain, "now-#{j}-#{i}", (i % 6 + 1).days.ago - j.hours - i.minutes * 7, true) }
     end
     events.each_slice(400) { |b| Capture::Ingestor.call(src, b) }
     n = Capture::ChainDetector.call.size
-    puts "Demo ready: #{Skill.published.count} skills, #{n} roads observed. Open /map."
+    result = Capture::Congestion.call
+    Capture::Bounties.sweep(result)
+    result.metrics.select(&:priced?).sort_by { |m| -m.congestion_index }.each do |m|
+      puts format("  %-32s index %4.2f  %-12s %s", m.name, m.congestion_index, m.tier, m.price.to_s("F"))
+    end
+    puts "Demo ready: #{Skill.published.count} skills, #{n} roads, #{Bounty.active.count} bounties. Open /map (Traffic) and /bounties."
   end
 end

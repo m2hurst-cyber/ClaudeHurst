@@ -14,12 +14,23 @@ module Api
             (s = Skill.current(l[:name])) && { name: s.name, title: s.title, traffic: l[:traffic] }
           end
           render json: summary(skill).merge(body: skill.body, url: skill_url(skill), contributors: Array(skill.source["contributors"]),
-                                            next_up: next_up.first(3))
+                                            next_up: next_up.first(3), traffic: traffic(skill.name),
+                                            fix_url: new_skill_candidate_url(fix: skill.name))
         end
 
         private
 
         def summary(s) = s.slice(:name, :version, :title, :description, :domain, :tags, :published_at)
+
+        def traffic(name)
+          m = SkillMetric.for(name)
+          return nil unless m&.priced?
+          sched = PricingSchedule.current
+          b = Bounty.active_for(name)
+          { tier: m.tier, label: sched.tier(m.tier)["label"], rank: sched.rank(m.tier), tiers: sched.tiers.size,
+            price: m.price.to_f, currency: sched.currency, median_minutes: m.median_minutes, freeflow_minutes: m.freeflow_minutes,
+            bounty: b && { status: b.status, pool: b.pool.to_f } }
+        end
       end
     end
   end

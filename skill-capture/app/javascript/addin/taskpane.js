@@ -27,6 +27,19 @@ function flashHtml() {
   return html;
 }
 
+// Traffic tiers wear the fixed status colors, always with an icon and a label.
+const STATUS = [["#0ca30c", "●"], ["#fab219", "▲"], ["#ec835a", "▲"], ["#d03b3b", "■"]];
+function trafficHtml(s) {
+  const t = s.traffic;
+  const [color, icon] = STATUS[t.tiers <= 1 ? 0 : Math.round((t.rank * (STATUS.length - 1)) / (t.tiers - 1))];
+  const money = (v) => `${Math.round(v * 100) / 100} ${esc(t.currency)}`;
+  return `<div class="border rounded p-2 mb-2">
+    <div><span style="color:${color}" aria-hidden="true">${icon}</span> <strong>${esc(t.label)} traffic</strong> · ${money(t.price)} per trip</div>
+    ${t.bounty ? `<div class="mt-1">💰 ${money(t.bounty.pool)} bounty for whoever removes this bottleneck.
+      ${t.bounty.status === "open" ? `<button data-action="open-url" data-url="${esc(s.fix_url)}" class="text-sky-700 hover:underline">Propose a faster way</button>` : `<span class="text-slate-500">(${esc(t.bounty.status.replace("_", " "))})</span>`}</div>` : ""}
+  </div>`;
+}
+
 // ---------- boot ----------
 async function boot() {
   const info = window.Office?.onReady ? await Office.onReady() : { host: null };
@@ -140,6 +153,7 @@ async function renderSkill(name) {
       <h2 class="text-base font-semibold">${esc(s.title)}</h2>
       <div class="text-xs text-slate-500 mb-2">${esc(s.name)} · v${s.version}${s.contributors.length ? ` · from ${esc(s.contributors.join(", "))}` : ""}</div>
       <p class="mb-2">${esc(s.description)}</p>
+      ${s.traffic ? trafficHtml(s) : ""}
       <div class="flex gap-1 mb-3">
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>

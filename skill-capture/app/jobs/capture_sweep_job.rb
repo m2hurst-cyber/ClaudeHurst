@@ -8,6 +8,7 @@ class CaptureSweepJob < ApplicationJob
     result = Capture::WorkflowDetector.call
     result.created.each { |c| SkillDraftJob.perform_later(c.id) }
     Capture::ChainDetector.call
+    Capture::Bounties.sweep(Capture::Congestion.call)
     Rails.logger.info("Capture sweep: #{result.patterns.size} patterns, #{result.created.size} new, #{result.updated.size} updated")
   end
 end

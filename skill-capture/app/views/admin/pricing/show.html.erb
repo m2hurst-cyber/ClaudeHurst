@@ -1,0 +1,93 @@
+<% content_for :title, "Pricing" %>
+<%
+  s = @schedule
+  tiers = s.sorted_tiers
+  cw, ch, pl, pr, pt, pb = 720, 300, 56, 16, 24, 44
+  max_index = [4.0, (@priced.map(&:congestion_index).max || 0) * 1.1, tiers.last["min_index"].to_f * 1.3].max
+  x_min = 1.0
+  max_price = [tiers.map { |t| s.base_price.to_f * t["multiplier"].to_f }.max, 1].max * 1.15
+  sx = ->(v) { pl + ([v, x_min].max - x_min) / (max_index - x_min) * (cw - pl - pr) }
+  sy = ->(v) { pt + (1 - v / max_price) * (ch - pt - pb) }
+  steps = tiers.each_with_index.map do |t, i|
+    from = [t["min_index"].to_f, x_min].max
+    to = tiers[i + 1] ? [tiers[i + 1]["min_index"].to_f, x_min].max : max_index
+    [from, to, s.base_price.to_f * t["multiplier"].to_f, t]
+  end.select { |from, to, *| to > from }
+  path = steps.each_with_index.map { |(from, to, price, _), i| "#{i.zero? ? 'M' : 'L'}#{sx.(from).round(1)},#{sy.(price).round(1)} L#{sx.(to).round(1)},#{sy.(price).round(1)}" }.join(" ")
+%>
+<h1 class="text-2xl font-bold mb-1">Demand schedule</h1>
+<p class="text-sm text-slate-500 mb-4">Each skill's price per trip follows its congestion: recent median travel time divided by its free-flow time. The premium above the base price funds that skill's bounty.</p>
+
+<section class="bg-white border rounded p-4 mb-4" data-controller="tip">
+  <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+    <h2 class="font-semibold">Price per trip by congestion</h2>
+    <span class="text-xs text-slate-500">Dots are skills at their current congestion</span>
+  </div>
+  <div class="relative">
+    <svg viewBox="0 0 <%= cw %> <%= ch %>" class="w-full h-auto" role="img" aria-label="Demand schedule: price per trip rises in steps as congestion rises">
+      <% tiers.map { |t| s.base_price.to_f * t["multiplier"].to_f }.uniq.each do |p| %>
+        <line x1="<%= pl %>" x2="<%= cw - pr %>" y1="<%= sy.(p).round(1) %>" y2="<%= sy.(p).round(1) %>" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="<%= pl - 8 %>" y="<%= sy.(p).round(1) + 4 %>" font-size="11" text-anchor="end" fill="#52514e"><%= number_with_delimiter(p.round(2).to_s.sub(/\.0\z/, "")) %></text>
+      <% end %>
+      <line x1="<%= pl %>" x2="<%= cw - pr %>" y1="<%= ch - pb %>" y2="<%= ch - pb %>" stroke="#d6d3d1" stroke-width="1"/>
+      <% steps.each do |from, _, price, t| %>
+        <line x1="<%= sx.(from).round(1) %>" x2="<%= sx.(from).round(1) %>" y1="<%= ch - pb %>" y2="<%= ch - pb + 4 %>" stroke="#a8a29e" stroke-width="1"/>
+        <text x="<%= sx.(from).round(1) %>" y="<%= ch - pb + 16 %>" font-size="11" text-anchor="middle" fill="#52514e"><%= from.round(2).to_s.sub(/\.0\z/, "") %></text>
+        <text x="<%= sx.(from).round(1) + 4 %>" y="<%= sy.(price).round(1) - 8 %>" font-size="11" fill="#0b0b0b"><%= t["label"] %> · ×<%= t["multiplier"].to_s.sub(/\.0\z/, "") %></text>
+      <% end %>
+      <text x="<%= (pl + cw - pr) / 2 %>" y="<%= ch - 6 %>" font-size="11" text-anchor="middle" fill="#52514e">Congestion index (recent travel time ÷ free-flow time)</text>
+      <text x="4" y="<%= pt - 8 %>" font-size="11" fill="#52514e">Price (<%= s.currency %> per trip)</text>
+      <path d="<%= path %>" fill="none" stroke="#2a78d6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <% @priced.each do |m| %>
+        <% x = sx.(m.congestion_index.to_f).round(1); y = sy.(m.price.to_f).round(1) %>
+        <g tabindex="0" role="img" aria-label="<%= @titles[m.name] || m.name %>: index <%= m.congestion_index %>, <%= credits(m.price) %> per trip"
+           data-tip="<%= @titles[m.name] || m.name %>&#10;Index <%= m.congestion_index %> · <%= s.tier(m.tier)&.dig("label") %>&#10;<%= credits(m.price) %> per trip · <%= m.trips %> trips"
+           data-action="pointerenter->tip#show pointermove->tip#move pointerleave->tip#hide focus->tip#show blur->tip#hide">
+          <circle cx="<%= x %>" cy="<%= y %>" r="10" fill="transparent"/>
+          <circle cx="<%= x %>" cy="<%= y %>" r="5" fill="#0b0b0b" stroke="#ffffff" stroke-width="2"/>
+        </g>
+      <% end %>
+    </svg>
+    <div data-tip-target="tip" role="tooltip" hidden class="absolute z-10 pointer-events-none bg-white border rounded shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
+  </div>
+  <details class="mt-2 text-sm">
+    <summary class="cursor-pointer text-slate-600">Show priced skills as a table</summary>
+    <table class="w-full mt-2">
+      <thead class="text-left text-slate-500"><tr><th class="py-1 font-medium">Skill</th><th class="py-1 font-medium">Traffic</th><th class="py-1 font-medium text-right">Index</th><th class="py-1 font-medium text-right">Trips</th><th class="py-1 font-medium text-right">Price</th></tr></thead>
+      <tbody class="divide-y">
+        <% @priced.reverse_each do |m| %><tr><td class="py-1"><%= @titles[m.name] || m.name %></td><td class="py-1"><%= tier_badge(m.tier) %></td><td class="py-1 text-right tabular-nums"><%= m.congestion_index %></td><td class="py-1 text-right tabular-nums"><%= m.trips %></td><td class="py-1 text-right tabular-nums"><%= credits(m.price) %></td></tr><% end %>
+      </tbody>
+    </table>
+  </details>
+</section>
+
+<%= form_with model: s, url: admin_pricing_path, method: :patch, class: "bg-white border rounded p-4 space-y-4 text-sm max-w-3xl" do |f| %>
+  <% if s.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded"><%= s.errors.full_messages.to_sentence %></div><% end %>
+  <div class="grid sm:grid-cols-3 gap-3">
+    <div><%= f.label :base_price, "Base price per trip" %><%= f.number_field :base_price, step: "0.01", min: 0, class: input_css %></div>
+    <div><%= f.label :currency, "Unit" %><%= f.text_field :currency, class: input_css %></div>
+    <div><%= f.label :window_days, "Pricing window (days)" %><%= f.number_field :window_days, min: 1, class: input_css %></div>
+    <div><%= f.label :min_trips, "Trips needed to price" %><%= f.number_field :min_trips, min: 1, class: input_css %></div>
+    <div><%= f.label :pool_share, "Share of premium to bounty (0–1)" %><%= f.number_field :pool_share, step: "0.05", min: 0, max: 1, class: input_css %></div>
+    <div><%= f.label :bounty_tier, "Open bounties at" %><%= f.select :bounty_tier, s.sorted_tiers.map { |t| [t["label"], t["key"]] }, {}, class: input_css %></div>
+    <div><%= f.label :measure_min_trips, "Trips to measure a fix" %><%= f.number_field :measure_min_trips, min: 1, class: input_css %></div>
+    <div><%= f.label :measure_max_days, "Give up measuring after (days)" %><%= f.number_field :measure_max_days, min: 1, class: input_css %></div>
+  </div>
+  <div>
+    <h2 class="font-semibold mb-1">Tiers</h2>
+    <p class="text-xs text-slate-500 mb-2">A skill is in the highest tier whose congestion index it reaches. The first tier starts at 0. Multipliers can't fall as congestion rises. Leave a label blank to remove a tier.</p>
+    <table class="w-full">
+      <thead class="text-left text-xs text-slate-500"><tr><th class="font-medium">Label</th><th class="font-medium">From index</th><th class="font-medium">Price multiplier</th></tr></thead>
+      <tbody>
+        <% (s.sorted_tiers + [{}]).each do |t| %>
+          <tr>
+            <td class="pr-2 py-1"><%= hidden_field_tag "pricing_schedule[tiers][][key]", t["key"] %><%= text_field_tag "pricing_schedule[tiers][][label]", t["label"], class: input_css, placeholder: ("Add a tier" if t.empty?), "aria-label": "Tier label" %></td>
+            <td class="pr-2 py-1"><%= number_field_tag "pricing_schedule[tiers][][min_index]", t["min_index"], step: "0.05", min: 0, class: input_css, "aria-label": "From index" %></td>
+            <td class="py-1"><%= number_field_tag "pricing_schedule[tiers][][multiplier]", t["multiplier"], step: "0.1", min: 0, class: input_css, "aria-label": "Price multiplier" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= f.submit "Save schedule", class: btn_primary %>
+<% end %>

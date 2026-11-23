@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -53,6 +53,40 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
     t.index ["user_id"], name: "index_audit_logs_on_user_id"
   end
 
+  create_table "bounties", force: :cascade do |t|
+    t.string "skill_name", null: false
+    t.string "status", default: "open", null: false
+    t.decimal "pool", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "accrued_until"
+    t.float "opened_index"
+    t.float "baseline_index"
+    t.datetime "fix_at"
+    t.string "fix_skill_name"
+    t.integer "fix_version"
+    t.bigint "solver_id"
+    t.float "result_index"
+    t.float "improvement"
+    t.decimal "payout", precision: 12, scale: 2
+    t.bigint "approved_by_id"
+    t.datetime "approved_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_id"], name: "index_bounties_on_approved_by_id"
+    t.index ["skill_name", "status"], name: "index_bounties_on_skill_name_and_status"
+    t.index ["solver_id"], name: "index_bounties_on_solver_id"
+  end
+
+  create_table "credit_entries", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "bounty_id"
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.string "reason", null: false
+    t.datetime "created_at", null: false
+    t.index ["bounty_id"], name: "index_credit_entries_on_bounty_id"
+    t.index ["user_id"], name: "index_credit_entries_on_user_id"
+  end
+
   create_table "notifications", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "subject_type"
@@ -66,6 +100,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
     t.datetime "updated_at", null: false
     t.index ["subject_type", "subject_id"], name: "index_notifications_on_subject"
     t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
+  create_table "pricing_schedules", force: :cascade do |t|
+    t.string "currency", default: "credits", null: false
+    t.decimal "base_price", precision: 12, scale: 2, default: "10.0", null: false
+    t.jsonb "tiers", default: [], null: false
+    t.integer "window_days", default: 7, null: false
+    t.integer "min_trips", default: 5, null: false
+    t.decimal "pool_share", precision: 5, scale: 2, default: "1.0", null: false
+    t.string "bounty_tier", default: "heavy", null: false
+    t.integer "measure_min_trips", default: 5, null: false
+    t.integer "measure_max_days", default: 21, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "skill_candidates", force: :cascade do |t|
@@ -114,6 +162,24 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
     t.index ["created_by_id"], name: "index_skill_links_on_created_by_id"
     t.index ["from_node", "to_node", "origin"], name: "index_skill_links_on_from_node_and_to_node_and_origin", unique: true
     t.index ["to_node"], name: "index_skill_links_on_to_node"
+  end
+
+  create_table "skill_metrics", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "trips", default: 0, null: false
+    t.integer "people", default: 0, null: false
+    t.float "median_minutes"
+    t.float "median_wait_minutes"
+    t.float "freeflow_minutes"
+    t.float "congestion_index"
+    t.float "delay_hours", default: 0.0, null: false
+    t.string "tier"
+    t.decimal "price", precision: 12, scale: 2
+    t.jsonb "history", default: [], null: false
+    t.datetime "computed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_skill_metrics_on_name", unique: true
   end
 
   create_table "skills", force: :cascade do |t|
@@ -341,6 +407,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000005) do
   add_foreign_key "addin_tokens", "users"
   add_foreign_key "audit_logs", "sources"
   add_foreign_key "audit_logs", "users"
+  add_foreign_key "bounties", "users", column: "approved_by_id"
+  add_foreign_key "bounties", "users", column: "solver_id"
+  add_foreign_key "credit_entries", "bounties"
+  add_foreign_key "credit_entries", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"

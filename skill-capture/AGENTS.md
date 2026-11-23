@@ -43,6 +43,9 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 | `lib/tasks/capture.rake` | `users:create`, `capture:sweep`, `capture:export`, `capture:demo` |
 | `app/services/capture/route_map.rb`, `chain_detector.rb`, `route_planner.rb` | Route map: skills as roads, observed and manual links between them, branches, improvements, turn-by-turn planner |
 | `app/models/skill_link.rb` | Roads between skills (by name; `observed` with traffic, or `manual`) |
+| `app/services/capture/trip_matcher.rb` | Finds trips (a person doing a whole skill) with timing and the previous trip. Shared by chain detection and congestion |
+| `app/services/capture/congestion.rb`, `bounties.rb`; `app/models/pricing_schedule.rb`, `skill_metric.rb`, `bounty.rb`, `credit_entry.rb` | Congestion pricing: travel time vs free-flow, the demand schedule, bounty lifecycle, credits ledger |
+| `app/views/bounties/*`, `app/views/admin/pricing/*` | Bounties page; admin demand-schedule editor and chart |
 | `app/javascript/route_map/layout.js`, `app/javascript/controllers/route_map_controller.js` | Map layout (pure, tested) and SVG renderer (console `/map`) |
 | `app/services/capture/skill_map.rb`, `app/views/skill_maps/areas.html.erb` | By-area view: where skills live, per area, with gaps (console `/map/areas`) |
 | `docs/design.md` | Full design: architecture, data model, detection, privacy, tests |
@@ -51,11 +54,11 @@ This is **Step 1 (Skill Capture & Institutional Memory)** of a larger program. L
 
 ```bash
 bundle install && bin/rails db:prepare
-bin/rails test                      # expected: 53 runs, 0 failures
+bin/rails test                      # expected: 66 runs, 0 failures
 npm install && npm test             # expected: 18 pass, 0 fail
 bin/rails users:create EMAIL=a@example.org NAME="A" ROLE=admin   # prints a one-time password; no accounts are seeded
 bin/addin-dev                       # https://localhost:3000 with Office dev cert (web + Tailwind + jobs)
-bin/rails capture:demo              # development only: 10 chained skills (finance close, sales→legal), a branch, an improvement, unpaved roads
+bin/rails capture:demo              # development only: chained skills, a branch, an improvement, unpaved roads, 2 months of traffic with a jammed and a heavy skill (2 bounties)
 npm run manifest && npm run validate   # Microsoft's online manifest validation (NOT yet run; see §8)
 ```
 
@@ -99,6 +102,7 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | Tagging and categorization | ✅ | Tags and area (domain) |
 | Linking to related documentation | ⛔ | Not modeled |
 | Visual map of how skills connect (journeys, branches, improvements) | ✅ | Console **Map → Routes** (`/map`, `/map.json`, `/map/route`), skill-page "On the map" panel, add-in "people usually continue with". `route_map_test.rb`, `route_map.test.mjs` |
+| Demand-schedule (congestion) pricing with incentives to fix bottlenecks | ✅ | `Congestion`, `PricingSchedule`, `Bounties`; Bounties page, map Traffic view, Admin → Pricing. `congestion_pricing_test.rb`, `pricing_ui_test.rb` |
 | Visual of where skills live (by area) | ✅ | **Map → By area** (`/map/areas`) and add-in area chips. `skill_map_test.rb` |
 | Institutional memory (discoverable, origin preserved) | ✅ | Library (console and pane), `GET /api/v1/skills`, provenance, contributors notified when published |
 | Data storage | ✅ | PostgreSQL. No knowledge graph (not needed at MVP scale) |
@@ -183,6 +187,11 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
     - Chain detection, like workflow detection, runs in memory.
     - The layout is built for tens of skills per network. Hundreds will need clustering by area, or zoom levels.
 11. **Template drafts are generic.** For real use, Claude or a human edit is expected.
+12. **Congestion pricing assumptions.**
+    - Free-flow is each skill's own 20th-percentile travel time over 90 days, so a skill that has always been slow reads as free-flowing.
+    - The index needs at least 5 trips in the 7-day window.
+    - Credits are internal points; nothing converts them to money.
+    - The payout formula, tiers and accrual rules are first-pass defaults, all admin-tunable, and need validating against real traffic.
 
 ## 9. Decisions the planner needs to make
 
@@ -190,6 +199,8 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - **Manifest format.** Stay on the XML manifest, or move to the unified JSON manifest (needed for Outlook, Teams and Copilot surfaces).
 - **Distribution.** Centralized deployment only, or also AppSource.
 - **Background capture default.** Is per-person opt-in enough, or should admins be able to turn it on for everyone (with notice)?
+- **What credits are worth.** Recognition only, redeemable (training, time off, budget), or linked to compensation? And who funds them: is the pool notional, or charged to the teams that use the congested skill (a true toll)?
+- **Pricing levers.** Should Step 2 routing actively divert work, people or agents to cheaper parallel branches (like Waze rerouting), and should prices ever be shown to the people doing the work, or only to process owners?
 - **Journeys.** Should end-to-end processes become first-class (named journeys such as "Procure to pay", with owners and target routes), or stay emergent from traffic? This affects how Step 2 routes work.
 - **Area taxonomy.** Areas are free text today (set on reviewers, events and requests). Should they become a managed list, a hierarchy (for example Finance → AP / AR), or come from Entra groups?
 - **Governance.** Is there a knowledge-council review on top of per-area reviewers? What is the licensing or contributor agreement for published skills?

@@ -84,6 +84,55 @@ The layout is `app/javascript/route_map/layout.js`. Each connected network is la
 
 A known limit: a fork whose steps are identical to its parent's can't be told apart from activity. Its traffic is credited to one of the two. A real variant usually adds or changes steps.
 
+## Congestion pricing (demand schedule) and bounties
+
+The goal is to price congested skills higher, so there's a visible incentive to fix the bottleneck.
+
+**Measurement** (`Capture::Congestion`, runs in the hourly sweep after chain detection). `Capture::TripMatcher` finds each *trip* (a person doing a whole skill). Then:
+
+| Measure | Definition |
+|---|---|
+| Travel time | Wait before starting (since the person's previous, different skill ended, within the chain gap) plus time doing it. Waits matter because handoffs, such as waiting on legal, are typical bottlenecks |
+| Free-flow time | The 20th percentile of travel time over all retained activity (90 days), with a floor of 1 minute |
+| Congestion index | Median travel time over the pricing window (7 days) ÷ free-flow |
+| Delay | The excess over free-flow, summed over the window |
+| Pricing threshold | A skill isn't priced until it has `min_trips` (5) trips in the window |
+
+**Demand schedule** (`PricingSchedule`, one row, edited at **Admin → Pricing**). The price per trip is the base price × the multiplier of the highest tier the index reaches. Defaults:
+
+| Index | Tier | Multiplier |
+|---|---|---|
+| 0 and up | Free-flowing | ×1 |
+| 1.25 and up | Slow | ×1.5 |
+| 1.75 and up | Heavy | ×2.5 |
+| 3 and up | Jammed | ×4 |
+
+The schedule is validated: the first tier starts at 0, tier keys are unique, and multipliers never fall as congestion rises. Tiers wear the fixed status palette with an icon and a label (green ●, yellow ▲, orange ▲, red ■).
+
+**Bounties** (`Capture::Bounties`):
+
+| Status | What happens |
+|---|---|
+| `open` | The skill reached `bounty_tier` (Heavy). The pool is seeded with the window's trips × premium (price − base) × `pool_share`, then each newly *received* trip adds its premium. Accrual counts arrival time, so late uploads still count, once. If the skill returns to free-flowing before any fix, the bounty closes |
+| `measuring` | A new version of the skill, or a branch of it, was published. This happens automatically through `Publisher`. The solver is the requester of a "Fix this" proposal, otherwise the reviewer who revised or branched the skill. The baseline is the index at that moment |
+| `awaiting_approval` | After `measure_min_trips` (5) trips on the skill or its branch (or `measure_max_days`, 21), the new index is computed. Improvement = (baseline − new) ÷ (baseline − 1), clamped to 0–1. Payout = pool × improvement. No improvement, or no traffic, reopens the bounty |
+| `paid` | A reviewer of the area who is **not the solver** approves, and a `CreditEntry` is written. If the skill is still congested, the leftover pool carries into a new open bounty. Reviewers can reject a fix (reopens), and admins can close a bounty |
+
+**Routing.** `RoutePlanner` adds 0.3 of a hop per tier above free-flowing when entering a skill. Among equally short routes, the less congested one wins, then the busier one.
+
+**Where it shows:**
+- the **Bounties** page (open bounties, measuring and approval, leaderboard, most congested)
+- the map's **Traffic** mode, tooltips and panel
+- the skill page's "Traffic & price" panel
+- **Admin → Pricing** (schedule editor, a step chart of price against index with each skill plotted, and a table)
+- the add-in's skill detail (tier, price, bounty, "Propose a faster way")
+- `GET /api/v1/skills` (a `traffic` object per skill)
+
+**Limits:**
+- Free-flow comes from the skill's own history. A skill that has always been slow looks free-flowing; comparing across similar skills is a possible next step.
+- Credits are internal points with no money attached.
+- The person who caused delay isn't penalized, by design: prices signal *where* to invest, not who to blame.
+
 ## Skill map by area (where skills live)
 
 Skills, candidates and reviewers all carry an **area** (`domain`). `Capture::SkillMap` rolls them up per area:
@@ -223,6 +272,8 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
 - `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
 - `test/integration/route_map_test.rb`: observed roads (traffic, minimum, gap), recomputation keeping manual links, branches, improvements, unpaved visibility, the planner (busier road wins, gaps), the agent route API, reviewer-drawn links and the add-in "next up".
+- `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.
+- `test/integration/pricing_ui_test.rb`: bounties page, skill traffic panel, "Fix this" proposals, map traffic data, the admin schedule editor and its validation, and the skills API traffic object.
 - `test/javascript/route_map.test.mjs`: layout (journey order, parallel branches, loops, separate networks, loose skills) and road geometry.
 - **Manual browser check during development:** the real task pane in Chromium at 350 px wide, with Office.js replaced by a simulated Excel host (Microsoft's CDN isn't reachable from the build environment). It covered dialog sign-in, opting in (startup behavior set to `Load`), local versus remote events, recording and submitting, approving in the pane, and inserting steps.
 - **Not yet done:** the manifest has been parsed by Microsoft's `office-addin-manifest` and `office-addin-manifest-converter`, but not run through Microsoft's online validation service. Run `npm run validate` before deploying, then sideload into real Excel, Word and PowerPoint.

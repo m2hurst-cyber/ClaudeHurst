@@ -29,48 +29,19 @@ module Capture
 
     # => { [from_node, to_node] => count }
     def detect
-      routes = Skill.published.pluck(:name, :source).map { |n, s| [n, Array(s["workflow"])] } +
-               SkillCandidate.open.where(origin: "detected").map { |c| [SkillLink.candidate_key(c), c.steps] }
-      routes.reject! { |_, steps| steps.size < 2 }
-      return {} if routes.empty?
-
       counts = Hash.new(0)
-      timelines.each do |events|
-        keys = events.map(&:action_key)
-        matches = routes.flat_map do |key, steps|
-          occurrences(keys, steps).map { |i| [i, i + steps.size - 1, key] }
-        end
-        matches = non_overlapping(matches)
-        matches.each_cons(2) do |(_, end_a, a), (start_b, _, b)|
-          next if a == b
-          next if events[start_b].occurred_at - events[end_a].occurred_at > @gap
-          counts[[a, b]] += 1
-        end
+      TripMatcher.call(self.class.routes, since: @since).each do |trip|
+        prev = trip.prev
+        next unless prev && prev.key != trip.key && trip.started_at - prev.ended_at <= @gap
+        counts[[prev.key, trip.key]] += 1
       end
       counts
     end
 
-    private
-
-    def timelines
-      UsageEvent.where("occurred_at >= ?", @since).order(:actor_key, :occurred_at, :id)
-                .select(:id, :actor_key, :action_key, :occurred_at).to_a
-                .chunk_while { |a, b| a.actor_key == b.actor_key }
-                .map { |evs| evs.chunk_while { |a, b| a.action_key == b.action_key }.map(&:first) }
-    end
-
-    def occurrences(keys, steps)
-      (0..keys.size - steps.size).select { |i| keys[i, steps.size] == steps }
-    end
-
-    # Prefer the longest match at each position; drop matches overlapping an earlier one.
-    def non_overlapping(matches)
-      taken_until = -1
-      matches.sort_by { |s, e, _| [s, -(e - s)] }.each_with_object([]) do |m, out|
-        next if m[0] <= taken_until
-        out << m
-        taken_until = m[1]
-      end
+    # Every published skill and open detected workflow, as [key, steps].
+    def self.routes
+      Skill.published.pluck(:name, :source).map { |n, s| [n, Array(s["workflow"])] } +
+        SkillCandidate.open.where(origin: "detected").map { |c| [SkillLink.candidate_key(c), c.steps] }
     end
   end
 end

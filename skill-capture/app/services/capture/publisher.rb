@@ -36,6 +36,7 @@ module Capture
       end
       after_publish(skill, "skill.published", candidate_id: candidate.id)
       notify_contributors(candidate, skill)
+      Bounties.new.register_fix(skill, solver: candidate.requested_by || @user) if skill.version > 1
       skill
     end
 
@@ -62,6 +63,7 @@ module Capture
         skill.update!(status: "superseded") unless fork
       end
       after_publish(new_skill, fork ? "skill.forked" : "skill.revised", from: "#{skill.name}@#{skill.version}")
+      Bounties.new.register_fix(new_skill, solver: @user, branch_of: fork ? skill.name : nil)
       new_skill
     end
 

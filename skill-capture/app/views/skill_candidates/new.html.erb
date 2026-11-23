@@ -1,7 +1,12 @@
 <% c = @candidate %>
 <% content_for :title, "Request a skill" %>
-<h1 class="text-2xl font-bold mb-1">Request a skill</h1>
-<p class="text-sm text-slate-500 mb-4">Know a procedure worth writing down? Describe it and a reviewer for that area will refine and publish it.</p>
+<% if @fix %>
+  <h1 class="text-2xl font-bold mb-1">Propose a faster way</h1>
+  <p class="text-sm text-slate-500 mb-4">Edit the steps of <strong><%= @fix.title %></strong> to remove the bottleneck. Once a reviewer publishes it as the next version, traffic is measured and the bounty pays out by how much congestion it removes.</p>
+<% else %>
+  <h1 class="text-2xl font-bold mb-1">Request a skill</h1>
+  <p class="text-sm text-slate-500 mb-4">Know a procedure worth writing down? Describe it and a reviewer for that area will refine and publish it.</p>
+<% end %>
 
 <%= form_with(model: c, class: "space-y-3 bg-white p-4 rounded border max-w-3xl") do |f| %>
   <% if c.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= c.errors.full_messages.to_sentence %></div><% end %>
@@ -13,5 +18,6 @@
   </div>
   <div><%= f.label :draft_description, "What it does and when to use it" %><%= f.text_area :draft_description, rows: 3, maxlength: 1024, class: input_css %></div>
   <div><%= f.label :draft_body, "Steps (Markdown, optional; leave blank to have one drafted)" %><%= f.text_area :draft_body, rows: 10, class: input_css + " font-mono text-sm" %></div>
+  <% if @fix %><%= hidden_field_tag "skill_candidate[fix]", @fix.name %><% end %>
   <%= f.submit "Submit for review", class: btn_primary %>
 <% end %>

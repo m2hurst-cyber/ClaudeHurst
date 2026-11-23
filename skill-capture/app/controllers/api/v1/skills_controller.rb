@@ -17,7 +17,10 @@ module Api
       private
 
       def summary(s)
+        m = SkillMetric.for(s.name)
         s.slice(:name, :version, :title, :description, :domain, :tags, :license, :published_at)
+         .merge(traffic: m&.priced? ? { tier: m.tier, congestion_index: m.congestion_index, price: m.price.to_f,
+                                        currency: PricingSchedule.current.currency, bounty_pool: Bounty.active_for(s.name)&.pool&.to_f } : nil)
       end
     end
   end

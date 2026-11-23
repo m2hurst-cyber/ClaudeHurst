@@ -16,13 +16,15 @@ module Capture
     def call
       skills = Skill.published.includes(:parent_skill).to_a
       versions = Skill.group(:name).count
+      metrics = SkillMetric.where(name: skills.map(&:name)).index_by(&:name)
+      bounties = Bounty.active.where(skill_name: skills.map(&:name)).index_by(&:skill_name)
       names = skills.map(&:name).to_set
 
       nodes = skills.map do |s|
         { id: s.name, title: s.title, area: s.domain, kind: "skill", version: s.version,
           improvements: versions[s.name].to_i - 1, steps: Array(s.source["workflow"]).size,
           apps: apps(Array(s.source["workflow"])), url: url_helpers.skill_path(s),
-          contributors: Array(s.source["contributors"]).size }
+          contributors: Array(s.source["contributors"]).size }.merge(traffic(metrics[s.name], bounties[s.name]))
       end
       scope = @user ? SkillCandidatePolicy::Scope.new(@user, SkillCandidate).resolve : SkillCandidate
       candidates = scope.open.to_a
@@ -48,6 +50,12 @@ module Capture
     end
 
     private
+
+    def traffic(m, bounty)
+      return {} unless m
+      { tier: m.tier, index: m.congestion_index, price: m.price&.to_f, median_minutes: m.median_minutes,
+        freeflow_minutes: m.freeflow_minutes, trips: m.trips, bounty: bounty && { status: bounty.status, pool: bounty.pool.to_f } }.compact
+    end
 
     def apps(steps)
       steps.map { |k| SkillMap::APPS[k.to_s.split(/[.:]/).first] }.compact.uniq

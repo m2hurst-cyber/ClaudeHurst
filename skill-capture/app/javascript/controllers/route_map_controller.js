@@ -17,8 +17,8 @@ const areaName = (a) => (!a ? "No area" : a.length <= 3 ? a.toUpperCase() : a.sp
 // The route map: skills as road segments, journeys as roads between them,
 // branches as side roads, unpublished workflows as unpaved roads.
 export default class extends Controller {
-  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to"]
-  static values = { routeUrl: String, colors: Object }
+  static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend"]
+  static values = { routeUrl: String, colors: Object, tiers: Object, currency: String }
 
   connect() {
     this.map = JSON.parse(this.dataTarget.textContent)
@@ -26,12 +26,37 @@ export default class extends Controller {
     this.geo = layout(this.map.nodes, this.map.edges)
     this.maxTraffic = Math.max(1, ...this.map.edges.map((e) => e.traffic || 0))
     this.focus = null
+    this.mode = "area"
     this.draw()
     this.sizeViewport()
     this.fit()
   }
 
-  color(node) { return node.kind === "unpaved" ? UNPAVED : (this.colorsValue[node.area] || "#8a8985") }
+  color(node) {
+    if (node.kind === "unpaved") return UNPAVED
+    if (this.mode === "traffic") return node.tier ? this.tiersValue[node.tier]?.color || "#d6d3d1" : "#d6d3d1"
+    return this.colorsValue[node.area] || "#8a8985"
+  }
+
+  setMode(event) {
+    this.mode = event.currentTarget.dataset.mode
+    this.modeBtnTargets.forEach((b) => {
+      const on = b.dataset.mode === this.mode
+      b.setAttribute("aria-pressed", on); b.classList.toggle("bg-slate-900", on); b.classList.toggle("text-white", on); b.classList.toggle("bg-white", !on)
+    })
+    this.areaLegendTarget.hidden = this.mode === "traffic"
+    this.trafficLegendTarget.hidden = this.mode !== "traffic"
+    const view = this.view
+    this.draw(); this.setView(view)
+    if (this.focus) this.highlight([...this.focus.nodes], [...this.focus.edges])
+  }
+
+  money(v) { return `${Math.round(v * 100) / 100} ${this.currencyValue}` }
+  trafficText(n) {
+    if (!n.tier) return null
+    const t = this.tiersValue[n.tier]
+    return `${t.icon} ${t.label} traffic · ${this.money(n.price)} per trip`
+  }
 
   // ---------- drawing ----------
   draw() {
@@ -90,8 +115,10 @@ export default class extends Controller {
       for (const x of [0, SEG]) el("circle", { cx: x, cy: 0, r: 5, fill: "#ffffff", stroke: c, "stroke-width": 3 }, g)
       const title = el("text", { x: 0, y: -15, "font-size": 15, "font-weight": 600, fill: INK }, g)
       title.textContent = truncate(n.title, 26)
-      const meta = [n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
-        n.improvements ? `improved ×${n.improvements}` : null].filter(Boolean).join(" · ")
+      const meta = this.mode === "traffic" && n.tier
+        ? [`${this.tiersValue[n.tier].icon} ${this.tiersValue[n.tier].label}`, this.money(n.price), n.bounty ? `💰 ${this.money(n.bounty.pool)}` : null].filter(Boolean).join(" · ")
+        : [n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
+           n.improvements ? `improved ×${n.improvements}` : null, n.bounty ? "💰 bounty" : null].filter(Boolean).join(" · ")
       const m = el("text", { x: 0, y: 26, "font-size": 12.5, fill: INK_2 }, g)
       m.textContent = meta
       g.addEventListener("pointerenter", (ev) => this.nodeTip(ev, n))
@@ -143,6 +170,12 @@ export default class extends Controller {
     h.href = n.url
     this.append(panel, "div", "text-xs text-slate-500 mb-2",
       [areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, n.improvements ? `improved ×${n.improvements}` : null, n.apps?.join(", ")].filter(Boolean).join(" · "))
+    if (n.tier) {
+      const box = this.append(panel, "div", "border rounded p-2 mb-2 text-xs space-y-0.5")
+      this.append(box, "div", "font-semibold text-sm", this.trafficText(n))
+      this.append(box, "div", "text-slate-600", `Travel time ${this.duration(n.median_minutes)} vs ${this.duration(n.freeflow_minutes)} free-flow · index ${n.index} · ${n.trips} trips`)
+      if (n.bounty) this.append(box, "div", "text-slate-900", `💰 Bounty: ${this.money(n.bounty.pool)} (${n.bounty.status.replace("_", " ")}) for whoever removes the bottleneck`)
+    }
     if (parent) this.list(panel, "Branched from", [parent], (e) => e.from)
     const total = out.reduce((s, e) => s + e.traffic, 0)
     this.list(panel, "Where people go next", out, (e) => e.to, (e) => this.share(e.traffic, total, e.manual))
@@ -156,6 +189,13 @@ export default class extends Controller {
       const b2 = this.append(row, "button", "px-2 py-1 rounded border bg-white hover:bg-slate-50 text-xs", "Route to here")
       b2.type = "button"; b2.addEventListener("click", () => { this.toTarget.value = id; this.maybePlan() })
     }
+  }
+
+  duration(m) {
+    if (m == null) return "—"
+    if (m < 90) return `${Math.round(m)} min`
+    if (m < 60 * 36) return `${Math.round(m / 6) / 10} h`
+    return `${Math.round(m / 144) / 10} days`
   }
 
   share(traffic, total, manual) {
@@ -204,6 +244,7 @@ export default class extends Controller {
       const a = this.append(body, "a", "text-sky-700 hover:underline", s.title)
       a.href = s.url
       this.append(body, "div", "text-xs text-slate-500", [areaName(s.area), s.apps?.join(", "), `${s.steps} steps`].filter(Boolean).join(" · "))
+      if (s.tier) this.append(body, "div", "text-xs text-slate-700", this.trafficText(s))
       const leg = r.legs[i]
       if (leg) this.append(body, "div", "text-xs text-slate-400 mt-1", leg.traffic ? `↓ ${leg.traffic} people took this road` : "↓ linked by a reviewer")
     })
@@ -228,6 +269,8 @@ export default class extends Controller {
   // ---------- tooltips ----------
   nodeTip(ev, n) {
     const lines = [[n.title, "font-semibold"], [[areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`].join(" · "), "text-slate-600"],
+      ...(n.tier ? [[this.trafficText(n), "text-slate-900"]] : []),
+      ...(n.bounty ? [[`💰 Bounty ${this.money(n.bounty.pool)}`, "text-slate-900"]] : []),
       [[n.apps?.join(", "), `${n.steps} steps`, n.improvements ? `improved ×${n.improvements}` : null, n.contributors ? `${n.contributors} contributors` : null].filter(Boolean).join(" · "), "text-slate-600"]]
     this.showTip(ev, lines)
   }

@@ -38,6 +38,31 @@
       <% if s.source_candidate && policy(s.source_candidate).show? %><div><%= link_to "Review record", skill_candidate_path(s.source_candidate), class: "text-sky-700 hover:underline" %></div><% end %>
       <div>License: <%= s.license %></div>
     </div>
+    <% metric = SkillMetric.for(s.name); bounty = Bounty.active_for(s.name) %>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">Traffic &amp; price</h2>
+      <% if metric&.priced? %>
+        <div class="mb-1"><%= tier_badge(metric.tier) %> <span class="text-xs text-slate-500">· index <%= metric.congestion_index %></span></div>
+        <dl class="grid grid-cols-[7rem_1fr] gap-y-0.5">
+          <dt class="text-slate-500">Price per trip</dt><dd><%= credits(metric.price) %></dd>
+          <dt class="text-slate-500">Travel time</dt><dd><%= minutes_text(metric.median_minutes) %> <span class="text-xs text-slate-500">(free-flow <%= minutes_text(metric.freeflow_minutes) %>)</span></dd>
+          <dt class="text-slate-500">Wait before</dt><dd><%= minutes_text(metric.median_wait_minutes) %></dd>
+          <dt class="text-slate-500">Trips</dt><dd><%= metric.trips %> by <%= metric.people %> <%= "person".pluralize(metric.people) %> in <%= schedule.window_days %> days</dd>
+          <dt class="text-slate-500">Delay</dt><dd><%= metric.delay_hours %> h above free-flow</dd>
+        </dl>
+      <% else %>
+        <p class="text-slate-500">Not enough traffic to price yet (needs <%= schedule.min_trips %> trips).</p>
+      <% end %>
+      <% if bounty %>
+        <div class="mt-2 border-t pt-2">
+          <div>💰 <strong><%= credits(bounty.pool) %></strong> bounty <span class="text-xs text-slate-500">(<%= bounty.status.humanize.downcase %>)</span></div>
+          <% if bounty.status == "open" && s.status == "published" %>
+            <%= link_to "Fix this", new_skill_candidate_path(fix: s.name), class: "#{btn_primary} mt-1" %>
+          <% end %>
+          <%= link_to "See bounties", bounties_path, class: "text-xs text-sky-700 hover:underline ml-1" %>
+        </div>
+      <% end %>
+    </div>
     <% nexts = SkillLink.neighbours(s.name, direction: :next).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
     <% prevs = SkillLink.neighbours(s.name, direction: :previous).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
     <% manual_next = SkillLink.manual.where(from_node: s.name).pluck(:to_node) %>

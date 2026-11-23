@@ -7,9 +7,14 @@
   skills = @map[:nodes].select { |n| n[:kind] == "skill" }.sort_by { |n| n[:title].downcase }
   nodes_by_id = @map[:nodes].index_by { |n| n[:id] }
 %>
+<%
+  tier_colors = @schedule.sorted_tiers.to_h { |t| [t["key"], tier_status(t["key"])] }
+%>
 <div data-controller="route-map"
      data-route-map-route-url-value="<%= skill_map_route_path %>"
-     data-route-map-colors-value="<%= area_colors.to_json %>">
+     data-route-map-colors-value="<%= area_colors.to_json %>"
+     data-route-map-tiers-value="<%= tier_colors.transform_values { |v| v.slice(:color, :icon, :label) }.to_json %>"
+     data-route-map-currency-value="<%= @schedule.currency %>">
   <script type="application/json" data-route-map-target="data"><%= raw json_escape(@map.to_json) %></script>
 
   <%= render "tabs", subtitle: "How skills connect end to end: roads people travel from one skill to the next, branches where a variant splits off, and roads not yet paved." %>
@@ -36,7 +41,21 @@
     </div>
   </form>
 
-  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mb-2" aria-label="Legend">
+  <div class="flex flex-wrap items-center gap-2 mb-2 text-xs">
+    <span class="text-slate-500">Color roads by</span>
+    <div class="flex border rounded overflow-hidden" role="group" aria-label="Color roads by">
+      <button type="button" class="px-2 py-1 bg-slate-900 text-white" data-route-map-target="modeBtn" data-mode="area" data-action="route-map#setMode" aria-pressed="true">Area</button>
+      <button type="button" class="px-2 py-1 border-l bg-white" data-route-map-target="modeBtn" data-mode="traffic" data-action="route-map#setMode" aria-pressed="false">Traffic</button>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mb-2" aria-label="Traffic legend" data-route-map-target="trafficLegend" hidden>
+    <% tier_colors.each do |key, st| %>
+      <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-1.5 rounded-full" style="background: <%= st[:color] %>"></span><span style="color: <%= st[:color] %>" aria-hidden="true"><%= st[:icon] %></span><%= st[:label] %> <span class="text-slate-400">×<%= @schedule.tier(key)["multiplier"] %></span></span>
+    <% end %>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-1.5 rounded-full bg-[#d6d3d1]"></span>Not enough traffic to price</span>
+    <span class="flex items-center gap-1.5">💰 Open bounty</span>
+  </div>
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mb-2" aria-label="Legend" data-route-map-target="areaLegend">
     <% area_colors.each do |area, color| %>
       <button type="button" class="flex items-center gap-1.5 hover:text-slate-900" data-action="route-map#focusArea" data-area="<%= area %>" aria-pressed="false">
         <span class="inline-block w-5 h-1.5 rounded-full" style="background: <%= color %>"></span><%= area_name(area) %>
@@ -71,7 +90,7 @@
         <% branches = @map[:edges].select { |e| e[:from] == n[:id] && e[:kind] == "branch" } %>
         <li>
           <%= link_to n[:title], n[:url], class: "text-sky-700 hover:underline" %>
-          <span class="text-slate-500">· <%= area_name(n[:area]) %><%= " · unpaved (in review)" if n[:kind] == "unpaved" %><%= " · improved ×#{n[:improvements]}" if n[:improvements].to_i.positive? %></span>
+          <span class="text-slate-500">· <%= area_name(n[:area]) %><%= " · unpaved (in review)" if n[:kind] == "unpaved" %><%= " · improved ×#{n[:improvements]}" if n[:improvements].to_i.positive? %><%= " · #{@schedule.tier(n[:tier])&.dig('label')} traffic, #{credits(n[:price])} per trip" if n[:tier] %><%= " · bounty #{credits(n.dig(:bounty, :pool))}" if n[:bounty] %></span>
           <% if nexts.any? %><div class="text-slate-600">Next: <%= nexts.map { |e| "#{nodes_by_id[e[:to]][:title]} (#{e[:traffic]} trips#{', linked by a reviewer' if e[:manual]})" }.join("; ") %></div><% end %>
           <% if branches.any? %><div class="text-slate-600">Branches: <%= branches.map { |e| nodes_by_id[e[:to]][:title] }.join("; ") %></div><% end %>
         </li>

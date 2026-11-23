@@ -3,6 +3,7 @@ class SkillMapsController < ApplicationController
   # GET /map: road network of skills, with journeys, branches and improvements
   def show
     @map = Capture::RouteMap.call(user: current_user)
+    @schedule = PricingSchedule.current
     respond_to do |format|
       format.html
       format.json { render json: @map }
@@ -15,7 +16,7 @@ class SkillMapsController < ApplicationController
     r = Capture::RoutePlanner.new(map).route(params[:from].to_s, params[:to].to_s)
     nodes = map[:nodes].index_by { |n| n[:id] }
     if r
-      render json: { found: true, keys: r.keys, legs: r.legs, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps) } }
+      render json: { found: true, keys: r.keys, legs: r.legs, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps, :tier, :price, :median_minutes) } }
     else
       render json: { found: false }
     end

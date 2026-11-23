@@ -1,0 +1,92 @@
+<% content_for :title, "Bounties" %>
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Bounties</h1>
+  <p class="text-sm text-slate-500">Congested skills cost more per trip. The extra funds a bounty for whoever removes the bottleneck, paid by how much congestion the fix actually removes.</p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 text-sm">
+  <% [["Open bounties", @active.count { |b| b.status == "open" }],
+      ["In the pools", credits(@active.sum(&:pool))],
+      ["Paid out", credits(CreditEntry.sum(:amount))],
+      ["Your credits", credits(current_user.credits)]].each do |label, value| %>
+    <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500"><%= label %></div><div class="text-xl font-semibold"><%= value %></div></div>
+  <% end %>
+</div>
+
+<div class="grid lg:grid-cols-[1fr_18rem] gap-4">
+  <div class="space-y-3">
+    <% @active.each do |b| %>
+      <% m = @metrics[b.skill_name]; s = @skills[b.skill_name] %>
+      <section class="bg-white border rounded p-4 text-sm">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <%= s ? link_to(s.title, skill_path(s), class: "font-semibold text-base text-sky-700 hover:underline") : tag.span(b.skill_name, class: "font-semibold") %>
+            <div class="text-xs text-slate-500"><%= area_name(s&.domain) %> · bounty #<%= b.id %> · opened <%= nice_date(b.created_at) %></div>
+          </div>
+          <div class="text-right">
+            <div class="text-xl font-semibold"><%= credits(b.pool) %></div>
+            <div class="text-xs text-slate-500">in the pool</div>
+          </div>
+        </div>
+        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+          <div><dt class="text-xs text-slate-500">Traffic</dt><dd><%= tier_badge(m&.tier) %></dd></div>
+          <div><dt class="text-xs text-slate-500">Travel time</dt><dd><%= minutes_text(m&.median_minutes) %> <span class="text-xs text-slate-500">vs <%= minutes_text(m&.freeflow_minutes) %> free-flow</span></dd></div>
+          <div><dt class="text-xs text-slate-500">Trips (<%= @schedule.window_days %> days)</dt><dd><%= m&.trips || 0 %></dd></div>
+          <div><dt class="text-xs text-slate-500">Price per trip</dt><dd><%= m&.price ? credits(m.price) : "—" %></dd></div>
+        </dl>
+        <% case b.status %>
+        <% when "open" %>
+          <div class="flex flex-wrap items-center gap-2 mt-3">
+            <% if s %><%= link_to "Fix this", new_skill_candidate_path(fix: s.name), class: btn_primary %><% end %>
+            <span class="text-xs text-slate-500">Propose a faster version, or reviewers can revise it or publish a faster branch directly. <%= b.notes %></span>
+          </div>
+        <% when "measuring" %>
+          <p class="mt-3 text-slate-700">⏱ Measuring the fix by <strong><%= b.solver&.name %></strong> (<%= b.fix_skill_name %> v<%= b.fix_version %>, since <%= nice_date(b.fix_at) %>). Baseline index <%= b.baseline_index %>; needs <%= @schedule.measure_min_trips %> trips.</p>
+        <% when "awaiting_approval" %>
+          <div class="mt-3 border-t pt-3">
+            <p class="text-slate-700">Fix by <strong><%= b.solver&.name %></strong>: congestion index <%= b.baseline_index %> → <%= b.result_index %>, <strong><%= (b.improvement * 100).round %>%</strong> of the congestion removed. Payout <strong><%= credits(b.payout) %></strong> of <%= credits(b.pool) %>.</p>
+            <% if current_user.reviews?(s&.domain) && b.solver_id != current_user.id %>
+              <%= form_with url: approve_bounty_path(b), method: :post, class: "flex flex-wrap gap-2 mt-2" do |f| %>
+                <%= text_field_tag :notes, nil, placeholder: "Note (optional)", class: "border rounded px-2 py-1 text-sm flex-1 min-w-40" %>
+                <%= f.submit "Approve payout", class: btn_primary %>
+                <%= f.submit "Don't accept", formaction: reject_bounty_path(b), class: btn %>
+              <% end %>
+            <% else %>
+              <p class="text-xs text-slate-500 mt-1">Waiting for a reviewer of this area (other than the solver) to approve.</p>
+            <% end %>
+          </div>
+        <% end %>
+        <% if current_user.admin? %>
+          <%= button_to "Close bounty", close_bounty_path(b), method: :post, params: { notes: "Closed by admin" }, class: "text-xs text-slate-400 hover:text-red-700 mt-2", data: { turbo_confirm: "Close this bounty? The pool is released." } %>
+        <% end %>
+      </section>
+    <% end %>
+    <% if @active.empty? %>
+      <p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No congested skills right now. Bounties open automatically when a skill reaches <strong><%= @schedule.tier(@schedule.bounty_tier)&.dig("label") %></strong> traffic.</p>
+    <% end %>
+  </div>
+
+  <aside class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-2">Leaderboard</h2>
+      <% if @leaders.any? %>
+        <ol class="space-y-1"><% @leaders.each_with_index do |(u, amt), i| %><li class="flex justify-between gap-2"><span><%= i + 1 %>. <%= u.name %></span><span class="tabular-nums"><%= credits(amt) %></span></li><% end %></ol>
+      <% else %><p class="text-slate-500">No payouts yet.</p><% end %>
+    </div>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-2">Most congested</h2>
+      <ul class="space-y-1">
+        <% @congested.each do |m| %>
+          <li class="flex justify-between gap-2"><span class="truncate"><%= Skill.current(m.name)&.title || m.name %></span><span class="shrink-0"><%= tier_badge(m.tier) %></span></li>
+        <% end %>
+      </ul>
+      <% if @congested.empty? %><p class="text-slate-500">Not enough traffic to price yet.</p><% end %>
+    </div>
+    <% if @paid.any? %>
+      <div class="bg-white border rounded p-4">
+        <h2 class="font-semibold mb-2">Recently paid</h2>
+        <ul class="space-y-1"><% @paid.each do |b| %><li><%= b.solver&.name %>: <%= credits(b.payout) %> <span class="text-xs text-slate-500">· <%= b.skill_name %></span></li><% end %></ul>
+      </div>
+    <% end %>
+  </aside>
+</div>

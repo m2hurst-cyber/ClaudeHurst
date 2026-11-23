@@ -15,11 +15,15 @@ class SkillCandidatesController < ApplicationController
   # Manual "please capture this" request: same review queue as detected workflows.
   def new
     @candidate = SkillCandidate.new(domain: current_user.domains.first, origin: "manual")
+    if (@fix = Skill.current(params[:fix].to_s))
+      @candidate.assign_attributes(domain: @fix.domain, draft_title: @fix.title, draft_name: @fix.name,
+                                   draft_description: @fix.description, draft_body: @fix.body)
+    end
     authorize @candidate
   end
 
   def create
-    p = params.require(:skill_candidate).permit(:domain, :draft_title, :draft_description, :draft_body)
+    p = params.require(:skill_candidate).permit(:domain, :draft_title, :draft_description, :draft_body, :fix)
     @candidate = SkillCandidate.new(
       domain: p[:domain].to_s.strip.downcase.presence, draft_title: p[:draft_title], draft_description: p[:draft_description],
       draft_body: p[:draft_body].presence, origin: "manual", signature: "manual:#{SecureRandom.hex(8)}",
@@ -27,7 +31,9 @@ class SkillCandidatesController < ApplicationController
       contributors: [{ "key" => "user:#{current_user.id}", "name" => current_user.name }],
       first_seen_at: Time.current, last_seen_at: Time.current
     )
-    @candidate.draft_name = Capture::Naming.skill_name(@candidate.draft_title)
+    # "Fix this": publishing under the congested skill's name makes the next version, which registers the fix.
+    @fix = Skill.current(p[:fix].to_s)
+    @candidate.draft_name = @fix ? @fix.name : Capture::Naming.skill_name(@candidate.draft_title)
     @candidate.assign_attributes(status: "drafted", draft_generator: "human", drafted_at: Time.current) if @candidate.draft_body
     authorize @candidate
     if @candidate.draft_title.present? && @candidate.save

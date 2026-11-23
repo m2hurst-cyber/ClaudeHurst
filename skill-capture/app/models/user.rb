@@ -5,6 +5,9 @@ class User < ApplicationRecord
 
   has_many :notifications, dependent: :destroy
   has_many :addin_tokens, dependent: :destroy
+  has_many :credit_entries, dependent: :restrict_with_error
+
+  def credits = credit_entries.sum(:amount)
 
   validates :name, presence: true
   validates :role, inclusion: { in: ROLES }

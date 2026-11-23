@@ -17,7 +17,9 @@
           <%= nav_link "Library", skills_path %>
           <%= nav_link "Map", skill_map_path %>
           <%= nav_link "Review", skill_candidates_path %>
+          <%= nav_link "Bounties", bounties_path %>
           <% if current_user.admin? %>
+            <%= nav_link "Pricing", admin_pricing_path %>
             <%= nav_link "Add-in", admin_deploy_path %>
             <%= nav_link "Integrations", admin_sources_path %>
             <%= nav_link "Actions", admin_action_definitions_path %>

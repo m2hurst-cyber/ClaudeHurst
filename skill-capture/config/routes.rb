@@ -56,6 +56,13 @@ Rails.application.routes.draw do
       end
     end
     resources :connected_apps, only: %i[index destroy]
+    resources :bounties, only: :index do
+      member do
+        post :approve
+        post :reject
+        post :close
+      end
+    end
     resources :notifications, only: :index do
       collection { post :read_all }
     end
@@ -68,6 +75,7 @@ Rails.application.routes.draw do
       resources :action_definitions, only: %i[index edit update]
       resources :audit_logs, only: :index
       get :deploy, to: "deploy#show"
+      resource :pricing, only: %i[show update], controller: :pricing
     end
   end
 end

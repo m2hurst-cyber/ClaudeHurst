@@ -14,6 +14,14 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
   - **Find route** gives turn-by-turn directions from one skill to another, and clicking a skill shows where people go next
   - reviewers can also draw a road by hand
   - in the add-in, each skill ends with "people usually continue with…"
+- **Congestion pricing and bounties.**
+  - Each skill is priced on a **demand schedule**: the slower it has become compared with its own free-flow time (counting the wait before it starts), the higher its price per trip.
+  - On the map's **Traffic** view, roads turn green, yellow, orange or red, Waze-style.
+  - The premium above the base price funds a **bounty** for that skill. Anyone can **Fix this** by proposing a faster version, a reviewer revision, or a faster branch.
+  - After the fix, traffic is measured again, and the payout is the share of congestion actually removed. A reviewer approves it, and it can't be the solver.
+  - Credits go to a ledger with a leaderboard.
+  - The route planner steers around jammed skills when an equally short road exists.
+  - Admins tune the schedule on **Pricing**.
 - **Skill map by area.** The **By area** tab shows every area (finance, legal and so on). For each area it shows how many skills are published, awaiting review or only detected, who reviews it, who contributed, and which Office apps the work happens in. Areas with no reviewer, or with repeated work that hasn't been captured yet, are flagged as gaps. In the add-in, the Library tab filters by the same areas.
 - **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 

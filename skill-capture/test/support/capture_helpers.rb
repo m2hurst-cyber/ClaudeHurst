@@ -9,10 +9,10 @@ module CaptureHelpers
   end
 
   # Scripted workflow written straight into the event stream, one step per minute.
-  def perform_workflow(source, actor, steps, start: 3.hours.ago, session: SecureRandom.hex(6), domain: nil)
+  def perform_workflow(source, actor, steps, start: 3.hours.ago, session: SecureRandom.hex(6), domain: nil, spacing: 1.minute)
     steps.each_with_index do |key, i|
       UsageEvent.create!(source: source, actor_key: actor, actor_name: "Person #{actor}", session_key: session,
-                         action_key: key, domain: domain, occurred_at: start + i.minutes)
+                         action_key: key, domain: domain, occurred_at: start + i * spacing)
     end
   end
 
