@@ -1,0 +1,16 @@
+<% content_for :title, "Inbox" %>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-2xl font-bold">Inbox</h1>
+  <%= button_to "Mark all read", read_all_notifications_path, class: btn %>
+</div>
+<div class="bg-white border rounded divide-y">
+  <% @notifications.each do |n| %>
+    <div class="p-3 text-sm <%= 'bg-sky-50' unless n.read_at %>">
+      <div class="font-medium"><%= n.url.present? ? link_to(n.title, n.url, class: "text-sky-700 hover:underline") : n.title %></div>
+      <% if n.body.present? %><div class="text-slate-600"><%= n.body %></div><% end %>
+      <div class="text-xs text-slate-500"><%= nice_time(n.created_at) %></div>
+    </div>
+  <% end %>
+  <% if @notifications.empty? %><p class="p-6 text-center text-sm text-slate-500">Nothing yet.</p><% end %>
+</div>
+<div class="mt-3"><%== pagy_nav(@pagy) if @pagy.pages > 1 %></div>

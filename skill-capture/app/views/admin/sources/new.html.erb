@@ -1,0 +1,8 @@
+<% content_for :title, "Register source" %>
+<h1 class="text-2xl font-bold mb-4">Register source</h1>
+<%= form_with(model: [:admin, @source], class: "space-y-3 bg-white p-4 rounded border max-w-xl") do |f| %>
+  <% if @source.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= @source.errors.full_messages.to_sentence %></div><% end %>
+  <div><%= f.label :name %><%= f.text_field :name, placeholder: "Finance team Excel add-in", class: input_css %></div>
+  <div><%= f.label :kind %><%= f.select :kind, Source::KINDS, {}, class: input_css %></div>
+  <%= f.submit "Create and show token", class: btn_primary %>
+<% end %>

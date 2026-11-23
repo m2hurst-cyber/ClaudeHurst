@@ -1,0 +1,9 @@
+<% content_for :title, "Edit action" %>
+<h1 class="text-2xl font-bold mb-1">Edit action</h1>
+<p class="font-mono text-xs text-slate-500 mb-4 break-all"><%= @definition.key %></p>
+<%= form_with(model: [:admin, @definition], class: "space-y-3 bg-white p-4 rounded border max-w-xl") do |f| %>
+  <% if @definition.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded text-sm"><%= @definition.errors.full_messages.to_sentence %></div><% end %>
+  <div><%= f.label :label %><%= f.text_field :label, class: input_css %></div>
+  <div><%= f.label :domain, "Area" %><%= f.text_field :domain, class: input_css %></div>
+  <%= f.submit "Save", class: btn_primary %>
+<% end %>

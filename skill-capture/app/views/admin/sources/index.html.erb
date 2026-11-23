@@ -1,0 +1,26 @@
+<% content_for :title, "Sources" %>
+<div class="flex justify-between items-center mb-2">
+  <h1 class="text-2xl font-bold">Sources</h1>
+  <%= link_to "Register source", new_admin_source_path, class: btn_primary %>
+</div>
+<p class="text-sm text-slate-500 mb-4">Collectors (Office add-ins, Slack bots, IDE plugins, browser agents) that send activity to <code>POST /api/v1/events</code>.</p>
+<div class="bg-white border rounded overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100"><tr><th class="px-3 py-2 text-left">Name</th><th class="px-3 py-2 text-left">Kind</th><th class="px-3 py-2 text-left">Token</th><th class="px-3 py-2 text-right">Events</th><th class="px-3 py-2 text-left">Last seen</th><th class="px-3 py-2"></th></tr></thead>
+    <tbody class="divide-y">
+      <% @sources.each do |s| %>
+        <tr class="<%= 'text-slate-400' unless s.active? %>">
+          <td class="px-3 py-2"><%= s.name %></td>
+          <td class="px-3 py-2"><%= s.kind %></td>
+          <td class="px-3 py-2 font-mono text-xs"><%= s.token_prefix %>…</td>
+          <td class="px-3 py-2 text-right"><%= s.usage_events.count %></td>
+          <td class="px-3 py-2"><%= nice_time(s.last_seen_at) %></td>
+          <td class="px-3 py-2 text-right">
+            <% if s.active? %><%= button_to "Revoke", deactivate_admin_source_path(s), data: { turbo_confirm: "Revoke this token?" }, class: "text-red-700 hover:underline" %><% else %>revoked<% end %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @sources.empty? %><tr><td colspan="6" class="px-3 py-6 text-center text-slate-500">No sources yet.</td></tr><% end %>
+    </tbody>
+  </table>
+</div>

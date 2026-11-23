@@ -1,0 +1,11 @@
+<% content_for :title, "Sign in" %>
+<div class="max-w-sm mx-auto mt-16 bg-white border rounded p-6">
+  <h1 class="text-xl font-semibold mb-4">Skill Capture</h1>
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-3" }) do |f| %>
+    <div><%= f.label :email, class: "text-sm" %><%= f.email_field :email, autofocus: true, autocomplete: "email", class: input_css %></div>
+    <div><%= f.label :password, class: "text-sm" %><%= f.password_field :password, autocomplete: "current-password", class: input_css %></div>
+    <label class="flex items-center gap-2 text-sm"><%= f.check_box :remember_me %> Remember me</label>
+    <%= f.submit "Sign in", class: btn_primary + " w-full justify-center" %>
+  <% end %>
+  <p class="text-xs text-slate-500 mt-4">Accounts are created by an administrator.</p>
+</div>

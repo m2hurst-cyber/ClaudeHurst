@@ -1,0 +1,96 @@
+<% c = @candidate %>
+<% content_for :title, c.display_title %>
+<div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+  <div>
+    <div class="text-xs text-slate-500 mb-1"><%= link_to "Review", skill_candidates_path, class: "hover:underline" %> / Candidate #<%= c.id %></div>
+    <h1 class="text-2xl font-bold"><%= c.display_title %></h1>
+    <div class="mt-1 flex gap-2 items-center text-sm"><%= status_badge(c.status) %> <span class="text-slate-500"><%= c.domain || "no area" %> · <%= c.origin %></span></div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <% if policy(c).update? %>
+      <%= button_to (c.drafted? ? "Regenerate draft" : "Generate draft"), generate_draft_skill_candidate_path(c), class: btn,
+            data: (c.drafted? ? { turbo_confirm: "Replace the current draft?" } : {}) %>
+      <%= link_to "Edit draft", edit_skill_candidate_path(c), class: btn %>
+    <% end %>
+    <% if policy(c).approve? && c.drafted? %>
+      <%= button_to "Approve & publish", approve_skill_candidate_path(c), class: "inline-flex items-center px-3 py-1.5 rounded text-sm bg-emerald-700 text-white hover:bg-emerald-600" %>
+    <% end %>
+    <% if c.skill %><%= link_to "View published skill →", skill_path(c.skill), class: btn %><% end %>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2 space-y-4">
+    <% if c.steps.any? %>
+      <div class="bg-white border rounded p-4">
+        <h2 class="font-semibold mb-2">Observed steps</h2>
+        <ol class="list-decimal ml-5 space-y-1 text-sm">
+          <% c.step_labels.each do |key, label| %>
+            <li><%= label %> <code class="text-xs text-slate-500 break-all"><%= key %></code></li>
+          <% end %>
+        </ol>
+      </div>
+    <% end %>
+
+    <div class="bg-white border rounded p-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="font-semibold">Draft</h2>
+        <% if c.draft_generator %><span class="text-xs text-slate-500">by <%= c.draft_generator %> · <%= nice_time(c.drafted_at) %></span><% end %>
+      </div>
+      <% if c.drafted? %>
+        <dl class="text-sm grid grid-cols-[7rem_1fr] gap-y-1 mb-3">
+          <dt class="text-slate-500">Name</dt><dd class="font-mono break-all"><%= c.draft_name %></dd>
+          <dt class="text-slate-500">Description</dt><dd><%= c.draft_description %></dd>
+          <dt class="text-slate-500">Tags</dt><dd><%= c.draft_tags.join(", ").presence || "—" %></dd>
+          <dt class="text-slate-500">Inputs</dt><dd><%= Array(c.draft_inputs).join("; ").presence || "—" %></dd>
+          <dt class="text-slate-500">Outputs</dt><dd><%= Array(c.draft_outputs).join("; ").presence || "—" %></dd>
+        </dl>
+        <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= c.draft_body %></pre>
+      <% else %>
+        <p class="text-sm text-slate-500">No draft yet. Generate one, or write it with “Edit draft”.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4 space-y-1">
+      <h2 class="font-semibold mb-1">Evidence</h2>
+      <div>Seen <strong><%= c.occurrence_count %></strong> times by <strong><%= c.distinct_actor_count %></strong> <%= "person".pluralize(c.distinct_actor_count) %></div>
+      <div>First seen: <%= nice_time(c.first_seen_at) %></div>
+      <div>Last seen: <%= nice_time(c.last_seen_at) %></div>
+      <div>Performed by: <%= c.contributor_names.join(", ").presence || "—" %></div>
+      <div>Reviewers: <%= c.reviewers.map(&:name).join(", ").presence || "admins" %></div>
+      <% if c.example_traces.any? %>
+        <details class="pt-2">
+          <summary class="cursor-pointer text-slate-600">Example traces</summary>
+          <% c.example_traces.each do |trace| %>
+            <ul class="mt-2 text-xs font-mono text-slate-600 border-l pl-2 break-all">
+              <% trace.each do |e| %><li><%= e["at"].to_s.first(16) %> <%= e["step"] %> <%= e["resource"] %></li><% end %>
+            </ul>
+          <% end %>
+        </details>
+      <% end %>
+    </div>
+
+    <% if c.reviewed_at %>
+      <div class="bg-white border rounded p-4">
+        <h2 class="font-semibold mb-1">Review</h2>
+        <div><%= c.status.humanize %> by <%= c.reviewer&.name %> on <%= nice_time(c.reviewed_at) %></div>
+        <% if c.review_notes.present? %><p class="mt-1 text-slate-600"><%= c.review_notes %></p><% end %>
+      </div>
+    <% end %>
+
+    <% if policy(c).reject? %>
+      <div class="bg-white border rounded p-4 space-y-2">
+        <h2 class="font-semibold">Not a skill?</h2>
+        <%= form_with url: reject_skill_candidate_path(c), method: :post, class: "space-y-2" do |f| %>
+          <%= text_area_tag :review_notes, nil, rows: 2, placeholder: "Why? Helps tune detection.", class: input_css %>
+          <div class="flex gap-2">
+            <%= f.submit "Reject", class: "px-3 py-1 rounded bg-red-600 text-white" %>
+            <%= f.submit "Dismiss", formaction: dismiss_skill_candidate_path(c), class: "px-3 py-1 rounded border" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

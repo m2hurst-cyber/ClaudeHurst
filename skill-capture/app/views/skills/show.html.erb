@@ -1,0 +1,59 @@
+<% s = @skill %>
+<% content_for :title, s.title %>
+<div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+  <div>
+    <div class="text-xs text-slate-500 mb-1"><%= link_to "Library", skills_path, class: "hover:underline" %></div>
+    <h1 class="text-2xl font-bold"><%= s.title %></h1>
+    <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{s.domain}" if s.domain %> · <%= s.status %></div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <%= link_to "Download SKILL.md", download_skill_path(s), class: btn %>
+    <% if s.status == "published" && policy(s).update? %><%= link_to "Revise", edit_skill_path(s), class: btn_primary %><% end %>
+    <% if s.status == "published" && policy(s).deprecate? %>
+      <%= button_to "Deprecate", deprecate_skill_path(s), data: { turbo_confirm: "Deprecate this skill?" }, class: "px-3 py-1.5 rounded text-sm border border-red-300 text-red-700 bg-white" %>
+    <% end %>
+  </div>
+</div>
+
+<% if s.status != "published" && (current = Skill.current(s.name)) %>
+  <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-3 text-sm mb-4">
+    This version is <%= s.status %>. Current: <%= link_to "v#{current.version}", skill_path(current), class: "underline" %>.
+  </div>
+<% end %>
+
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2 bg-white border rounded p-4">
+    <p class="text-sm mb-3"><%= s.description %></p>
+    <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= s.body %></pre>
+  </div>
+  <div class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4 space-y-1">
+      <h2 class="font-semibold mb-1">Origin</h2>
+      <div>Published by <%= s.published_by&.name || "—" %> on <%= nice_time(s.published_at) %></div>
+      <% if s.source["contributors"].present? %><div>Captured from work by: <%= Array(s.source["contributors"]).join(", ") %></div><% end %>
+      <% if s.source["sources"].present? %><div>Seen in: <%= Array(s.source["sources"]).join(", ") %></div><% end %>
+      <% if s.source["occurrences"] %><div>Observed <%= s.source["occurrences"] %>× before capture</div><% end %>
+      <% if s.source["draft_generator"] %><div>Drafted by: <%= s.source["draft_generator"] %></div><% end %>
+      <% if s.source["change_note"] %><div>Change note: <%= s.source["change_note"] %></div><% end %>
+      <% if s.source_candidate && policy(s.source_candidate).show? %><div><%= link_to "Review record", skill_candidate_path(s.source_candidate), class: "text-sky-700 hover:underline" %></div><% end %>
+      <div>License: <%= s.license %></div>
+    </div>
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-1">Versions</h2>
+      <ul class="space-y-1">
+        <% s.versions.each do |v| %>
+          <li><%= link_to "v#{v.version}", skill_path(v), class: "text-sky-700 hover:underline #{'font-bold' if v == s}" %> · <%= v.status %> · <%= nice_date(v.published_at) %></li>
+        <% end %>
+      </ul>
+      <% if (origin = s.lineage.drop(1).find { |l| l.name != s.name }) %>
+        <h3 class="font-semibold mt-3 mb-1">Forked from</h3>
+        <%= link_to "#{origin.name} v#{origin.version}", skill_path(origin), class: "text-sky-700 hover:underline break-all" %>
+      <% end %>
+      <% forks = s.children.reject { |ch| ch.name == s.name } %>
+      <% if forks.any? %>
+        <h3 class="font-semibold mt-3 mb-1">Forks</h3>
+        <% forks.each do |ch| %><div><%= link_to "#{ch.name} v#{ch.version}", skill_path(ch), class: "text-sky-700 hover:underline break-all" %></div><% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

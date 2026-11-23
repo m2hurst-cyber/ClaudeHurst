@@ -1,0 +1,12 @@
+<% content_for :title, "Source token" %>
+<h1 class="text-2xl font-bold mb-2"><%= @source.name %> registered</h1>
+<div class="bg-amber-50 border border-amber-200 rounded p-4 text-sm max-w-3xl space-y-3">
+  <p><strong>Copy this token now.</strong> Only a hash is stored, so it can't be shown again.</p>
+  <pre class="bg-white border rounded p-2 font-mono break-all whitespace-pre-wrap"><%= @token %></pre>
+  <p>Send events with it:</p>
+  <pre class="bg-white border rounded p-2 font-mono text-xs whitespace-pre-wrap">curl -X POST <%= api_v1_events_url %> \
+  -H "Authorization: Bearer <%= @token %>" -H "Content-Type: application/json" \
+  -d '{"events":[{"action":"excel.run_macro:month_end","label":"Run the month-end macro","domain":"finance",
+       "actor":{"id":"u-123","name":"Sam"},"session":"s-1","occurred_at":"<%= Time.current.utc.iso8601 %>"}]}'</pre>
+</div>
+<p class="mt-4"><%= link_to "Back to sources", admin_sources_path, class: btn %></p>

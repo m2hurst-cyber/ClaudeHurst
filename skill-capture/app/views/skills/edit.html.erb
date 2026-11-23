@@ -1,0 +1,17 @@
+<% s = @skill %>
+<% content_for :title, "Revise #{s.name}" %>
+<h1 class="text-2xl font-bold mb-1">Revise skill</h1>
+<p class="text-sm text-slate-500 mb-4">Saving creates <strong>v<%= s.version + 1 %></strong> of <code><%= s.name %></code>; v<%= s.version %> stays in history. Change the name to fork it into a separate skill instead.</p>
+
+<%= form_with(model: s, class: "space-y-3 bg-white p-4 rounded border max-w-3xl") do |f| %>
+  <div><%= f.label :name %><%= f.text_field :name, class: input_css + " font-mono" %></div>
+  <div><%= f.label :title %><%= f.text_field :title, class: input_css %></div>
+  <div><%= f.label :description %><%= f.text_area :description, rows: 3, maxlength: 1024, class: input_css %></div>
+  <div><%= f.label :tags, "Tags (comma separated)" %><%= f.text_field :tags, value: s.tags.join(", "), class: input_css %></div>
+  <div><%= f.label :body, "Instructions (Markdown)" %><%= f.text_area :body, rows: 18, class: input_css + " font-mono text-sm" %></div>
+  <div><%= label_tag "skill_change_note", "What changed and why" %><%= text_field_tag "skill[change_note]", nil, id: "skill_change_note", class: input_css %></div>
+  <div class="flex gap-2">
+    <%= f.submit "Save new version", class: btn_primary %>
+    <%= link_to "Cancel", skill_path(s), class: btn %>
+  </div>
+<% end %>
