@@ -1,0 +1,11 @@
+<div class="max-w-sm mx-auto p-6 space-y-4">
+  <h1 class="text-lg font-semibold">Connect Office to Skill Capture</h1>
+  <p>Signed in as <strong><%= current_user.name %></strong> (<%= current_user.email %>).</p>
+  <p class="text-slate-600">This lets the Skill Capture add-in<%= " in #{@host}" if @host.present? %> show your team's skills and send the workflow steps you choose to share, as you.</p>
+  <%= form_with url: addin_connect_path, method: :post do |f| %>
+    <%= hidden_field_tag :host, @host %>
+    <%= hidden_field_tag :platform, @platform %>
+    <%= f.submit "Connect", class: "w-full px-3 py-2 rounded bg-slate-900 text-white" %>
+  <% end %>
+  <p class="text-xs text-slate-500">You can disconnect at any time from the add-in, or from Connected Office apps in the web console.</p>
+</div>

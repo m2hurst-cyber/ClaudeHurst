@@ -2,7 +2,6 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include Pagy::Backend
 
-  allow_browser versions: :modern
   before_action :authenticate_user!
   helper_method :unread_notifications_count
 

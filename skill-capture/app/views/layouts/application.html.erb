@@ -2,6 +2,7 @@
 <html>
   <head>
     <title><%= content_for(:title).presence ? "#{content_for(:title)} · Skill Capture" : "Skill Capture" %></title>
+    <link rel="icon" href="/addin/icon-32.png">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -16,7 +17,8 @@
           <%= nav_link "Library", skills_path %>
           <%= nav_link "Review", skill_candidates_path %>
           <% if current_user.admin? %>
-            <%= nav_link "Sources", admin_sources_path %>
+            <%= nav_link "Add-in", admin_deploy_path %>
+            <%= nav_link "Integrations", admin_sources_path %>
             <%= nav_link "Actions", admin_action_definitions_path %>
             <%= nav_link "People", admin_users_path %>
             <%= nav_link "Audit", admin_audit_logs_path %>
@@ -25,7 +27,7 @@
             <%= link_to notifications_path, class: "text-slate-300 hover:text-white" do %>
               Inbox<% if unread_notifications_count.positive? %> <span class="ml-1 bg-red-500 text-white rounded-full px-1.5 text-xs"><%= unread_notifications_count %></span><% end %>
             <% end %>
-            <span class="text-slate-400 hidden sm:inline"><%= current_user.name %></span>
+            <%= link_to current_user.name, connected_apps_path, class: "text-slate-400 hover:text-white hidden sm:inline", title: "Connected Office apps" %>
             <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-slate-300 hover:text-white" %>
           </div>
         </div>

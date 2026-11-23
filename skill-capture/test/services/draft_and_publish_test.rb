@@ -17,6 +17,15 @@ class DraftAndPublishTest < ActiveSupport::TestCase
     assert_includes c.draft_body, "1. Open the customer account."
   end
 
+  test "template keeps a recorded procedure's title and description" do
+    c = drafted_candidate.tap { |x| x.update!(origin: "manual", status: "detected", draft_body: nil, draft_title: "Reconcile the bank", draft_description: "Monthly.") }
+    Capture::DraftGenerator.call(c)
+    c.reload
+    assert c.draft_body.start_with?("# Reconcile the bank\n")
+    assert_includes c.draft_body, "Recorded by Person A and Person B"
+    assert_equal ["Reconcile the bank", "Monthly.", "reconcile-the-bank"], [c.draft_title, c.draft_description, c.draft_name]
+  end
+
   test "claude drafter sends workflow structure only and parses structured output" do
     c = drafted_candidate
     fake = FakeAnthropic.new(:end_turn, name: "Bill A New Order!", title: "Bill a new order", description: "d",

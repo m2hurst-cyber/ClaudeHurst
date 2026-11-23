@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# Run Skill Capture over HTTPS on https://localhost:3000 with Office's trusted
+# development certificate, so the add-in can be sideloaded into Excel, Word or PowerPoint.
+set -e
+cd "$(dirname "$0")/.."
+[ -d node_modules ] || npm install
+npx office-addin-dev-certs install
+export SKILL_CAPTURE_PUBLIC_URL="https://localhost:3000"
+if ! gem list foreman -i --silent; then gem install foreman; fi
+exec foreman start -f Procfile.addin "$@"

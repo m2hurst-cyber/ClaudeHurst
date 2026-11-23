@@ -1,0 +1,32 @@
+<% content_for :title, "Deploy the add-in" %>
+<h1 class="text-2xl font-bold mb-1">Deploy the Office add-in</h1>
+<p class="text-sm text-slate-500 mb-4">Skill Capture runs as an add-in in Excel, Word and PowerPoint (Windows, Mac and the web). This server hosts it.</p>
+
+<% unless @https %>
+  <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-3 text-sm mb-4">Office only loads add-ins over HTTPS. Serve this app over HTTPS (or set <code>SKILL_CAPTURE_PUBLIC_URL</code>) before deploying.</div>
+<% end %>
+
+<div class="space-y-4 text-sm max-w-3xl">
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1">1. Download the manifest</h2>
+    <p class="mb-2">Generated for this server's address.</p>
+    <%= link_to "Download manifest.xml", @manifest_url, download: "skill-capture-manifest.xml", class: btn_primary %>
+    <p class="text-xs text-slate-500 mt-2 break-all"><%= @manifest_url %></p>
+  </div>
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1">2. Deploy to your organization</h2>
+    <ol class="list-decimal ml-5 space-y-1">
+      <li>In the Microsoft 365 admin center, open <strong>Settings → Integrated apps → Upload custom apps</strong>.</li>
+      <li>Choose <strong>Office Add-in</strong>, upload the manifest, and assign the people or groups who should get it.</li>
+      <li>It appears as <strong>Skills</strong> on the Home tab of Excel, Word and PowerPoint (deployment can take up to 24 hours).</li>
+    </ol>
+  </div>
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1">Try it yourself first</h2>
+    <p>In Excel, Word or PowerPoint on the web: <strong>Home → Add-ins → More add-ins → My add-ins → Upload my add-in</strong>, then choose the manifest.</p>
+  </div>
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-1">3. Give people accounts</h2>
+    <p>Each person signs in from the add-in the first time. Add them on <%= link_to "People", admin_users_path, class: "text-sky-700 hover:underline" %> and set reviewers' areas.</p>
+  </div>
+</div>

@@ -1,0 +1,41 @@
+const KEY = "skillcapture.token";
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* storage blocked */ } },
+};
+
+export const settings = store;
+
+export function createApi(base = location.origin) {
+  let token = store.get(KEY);
+
+  async function request(method, path, body) {
+    const res = await fetch(base + path, {
+      method,
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) { setToken(null); throw Object.assign(new Error("Not connected"), { status: 401 }); }
+    const data = res.status === 204 ? null : await res.json().catch(() => null);
+    if (!res.ok) throw Object.assign(new Error(data?.error || `Request failed (${res.status})`), { status: res.status });
+    return data;
+  }
+
+  function setToken(t) { token = t; store.set(KEY, t); }
+
+  return {
+    get connected() { return !!token; },
+    setToken,
+    me: () => request("GET", "/api/v1/addin/me"),
+    disconnect: async () => { try { await request("DELETE", "/api/v1/addin/me"); } finally { setToken(null); } },
+    sendEvents: (payload) => request("POST", "/api/v1/addin/events", payload),
+    skills: (q = "") => request("GET", `/api/v1/addin/skills?q=${encodeURIComponent(q)}`),
+    skill: (name) => request("GET", `/api/v1/addin/skills/${encodeURIComponent(name)}`),
+    candidates: () => request("GET", "/api/v1/addin/candidates"),
+    candidate: (id) => request("GET", `/api/v1/addin/candidates/${id}`),
+    approve: (id) => request("POST", `/api/v1/addin/candidates/${id}/approve`),
+    reject: (id, notes) => request("POST", `/api/v1/addin/candidates/${id}/reject`, { notes }),
+    submitProcedure: (p) => request("POST", "/api/v1/addin/procedures", p),
+  };
+}

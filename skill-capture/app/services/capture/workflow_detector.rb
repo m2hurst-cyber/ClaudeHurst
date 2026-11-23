@@ -54,7 +54,7 @@ module Capture
         end
       end
       frequent = tallies.values.select { |t| t.occurrences >= @min_occurrences && t.actors.size >= @min_actors }
-      maximal(frequent)
+      stitch(maximal(frequent))
     end
 
     private
@@ -86,6 +86,37 @@ module Capture
       patterns.reject do |p|
         patterns.any? { |q| q.steps.size > p.steps.size && q.occurrences >= p.occurrences && q.steps.each_cons(p.steps.size).include?(p.steps) }
       end.sort_by { |p| [-p.occurrences, -p.steps.size] }
+    end
+
+    # A workflow longer than max_steps shows up as overlapping windows (A..F and B..G)
+    # seen equally often. Join them back into one workflow.
+    def stitch(patterns)
+      patterns = patterns.dup
+      loop do
+        # Only windows that hit the max length can be fragments, and consecutive
+        # fragments share at least max_steps - 1 steps.
+        overlap = lambda do |a, b|
+          (([a.steps.size, b.steps.size].min - 1).downto(@max_steps - 1)).find { |k| a.steps.last(k) == b.steps.first(k) }
+        end
+        a = b = k = nil
+        found = patterns.product(patterns).any? do |x, y|
+          next false if x.equal?(y) || x.occurrences != y.occurrences
+          next false unless x.steps.size >= @max_steps && y.steps.size >= @max_steps
+          k = overlap.(x, y)
+          next false unless k && (x.steps + y.steps.drop(k)).uniq.size == x.steps.size + y.steps.size - k
+          a, b = x, y
+          true
+        end
+        break unless found
+        joined = Pattern.new(steps: a.steps + b.steps.drop(k), occurrences: a.occurrences,
+                             actors: a.actors.merge(b.actors) { |_, x, y| x || y },
+                             domains: a.domains.merge(b.domains) { |_, x, y| [x, y].max },
+                             first_seen_at: [a.first_seen_at, b.first_seen_at].min,
+                             last_seen_at: [a.last_seen_at, b.last_seen_at].max, examples: a.examples)
+        patterns.delete_if { |p| p.equal?(a) || p.equal?(b) }
+        patterns << joined
+      end
+      patterns.sort_by { |p| [-p.occurrences, -p.steps.size] }
     end
 
     def domain_for(pattern)

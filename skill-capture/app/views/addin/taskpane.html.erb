@@ -1,0 +1,9 @@
+<% content_for :entry, "addin/taskpane" %>
+<div id="app" data-capture-enabled="<%= @capture_enabled %>" data-connect-url="<%= addin_connect_url %>" class="min-h-screen flex flex-col">
+  <header class="px-3 py-2 bg-slate-900 text-white flex items-center gap-2">
+    <img src="/addin/icon-32.png" alt="" width="20" height="20">
+    <span class="font-semibold">Skill Capture</span>
+    <span id="host-label" class="ml-auto text-xs text-slate-300"></span>
+  </header>
+  <div id="view" class="flex-1 p-3"><p class="text-slate-500">Loading…</p></div>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000003) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -23,6 +23,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000003) do
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_action_definitions_on_key", unique: true
     t.index ["source_id"], name: "index_action_definitions_on_source_id"
+  end
+
+  create_table "addin_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token_digest", null: false
+    t.string "host"
+    t.string "platform"
+    t.datetime "last_used_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token_digest"], name: "index_addin_tokens_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_addin_tokens_on_user_id"
   end
 
   create_table "audit_logs", force: :cascade do |t|
@@ -312,6 +325,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000003) do
   end
 
   add_foreign_key "action_definitions", "sources"
+  add_foreign_key "addin_tokens", "users"
   add_foreign_key "audit_logs", "sources"
   add_foreign_key "audit_logs", "users"
   add_foreign_key "notifications", "users"

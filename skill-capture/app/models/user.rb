@@ -4,6 +4,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :recoverable, :rememberable, :validatable
 
   has_many :notifications, dependent: :destroy
+  has_many :addin_tokens, dependent: :destroy
 
   validates :name, presence: true
   validates :role, inclusion: { in: ROLES }
@@ -20,4 +21,7 @@ class User < ApplicationRecord
   end
 
   def active_for_authentication? = super && active?
+
+  # How this person appears as an actor in captured events.
+  def actor_key = "user:#{id}"
 end

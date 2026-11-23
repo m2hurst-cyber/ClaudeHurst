@@ -5,7 +5,7 @@ module CaptureHelpers
   end
 
   def make_source(name: "Test collector")
-    Source.issue!(name: name, kind: "custom")
+    Source.issue!(name: name, kind: "integration")
   end
 
   # Scripted workflow written straight into the event stream, one step per minute.

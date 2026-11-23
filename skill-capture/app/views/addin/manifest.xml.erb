@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Skill Capture: Office add-in manifest (add-in only XML manifest) for Excel, Word and PowerPoint. Generated for <%= @base %> -->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id><%= @addin_id %></Id>
+  <Version><%= Capture::Addin.version %></Version>
+  <ProviderName><%= Capture::Addin.provider %></ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Skill Capture"/>
+  <Description DefaultValue="Turn the workflows your team repeats in Office into reviewed, reusable skills. Browse the skill library, record a procedure, and review drafts without leaving Excel, Word or PowerPoint."/>
+  <IconUrl DefaultValue="<%= @base %>/addin/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="<%= @base %>/addin/icon-64.png"/>
+  <SupportUrl DefaultValue="<%= @base %>/addin/support"/>
+  <AppDomains>
+    <AppDomain><%= @base %></AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Workbook"/>
+    <Host Name="Document"/>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="<%= @base %>/addin/taskpane"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+<% [["Workbook", "TabHome"], ["Document", "TabHome"], ["Presentation", "TabHome"]].each do |host, tab| %>
+      <Host xsi:type="<%= host %>">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" lifetime="long"/>
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="Support.Url"/>
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="<%= tab %>">
+              <Group id="SkillCapture.<%= host %>.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="SkillCapture.<%= host %>.OpenPane">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>SkillCapture.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+<% end %>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="<%= @base %>/addin/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="<%= @base %>/addin/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="<%= @base %>/addin/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="<%= @base %>/addin/taskpane"/>
+        <bt:Url id="Support.Url" DefaultValue="<%= @base %>/addin/support"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Skill Capture is ready"/>
+        <bt:String id="Group.Label" DefaultValue="Skill Capture"/>
+        <bt:String id="Button.Label" DefaultValue="Skills"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Open Skills on the Home tab to browse your team's procedures or record a new one."/>
+        <bt:String id="Button.Tooltip" DefaultValue="Browse your team's skill library, record a procedure, and review captured workflows."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

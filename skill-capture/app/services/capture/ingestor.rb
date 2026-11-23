@@ -22,10 +22,13 @@ module Capture
     TOKEN_FORMAT = /\A[\w.:\-]{1,64}\z/
     EMAILISH = /@|\s/
 
-    def self.call(source, events) = new(source).call(events)
+    def self.call(source, events, actor: nil) = new(source, actor: actor).call(events)
 
-    def initialize(source)
+    # actor: a User. When given (the Office add-in path), every event is attributed
+    # to that signed-in person and any actor in the payload is ignored.
+    def initialize(source, actor: nil)
       @source = source
+      @actor = actor
     end
 
     def call(events)
@@ -65,7 +68,11 @@ module Capture
       action = e["action"].to_s
       return ["action missing or invalid"] unless action.match?(ACTION_FORMAT)
 
-      actor = e["actor"].is_a?(Hash) ? e["actor"] : {}
+      actor = if @actor
+        { "id" => @actor.actor_key, "name" => @actor.name }
+      else
+        e["actor"].is_a?(Hash) ? e["actor"] : {}
+      end
       actor_key = actor["id"].to_s
       return ["actor.id missing or invalid"] unless actor_key.match?(TOKEN_FORMAT)
 

@@ -102,10 +102,10 @@ class CaptureFlowTest < ActionDispatch::IntegrationTest
     sign_out @member
 
     sign_in admin
-    post admin_sources_path, params: { source: { name: "Slack bot", kind: "slack" } }
+    post admin_sources_path, params: { source: { name: "Month-end flow", kind: "integration" } }
     token = response.body[/sc_[A-Za-z0-9_\-]+/]
     assert token
-    assert_equal Source.digest(token), Source.find_by!(name: "Slack bot").token_digest
+    assert_equal Source.digest(token), Source.find_by!(name: "Month-end flow").token_digest
     refute Source.where(token_digest: token).exists?
 
     post admin_users_path, params: { user: { name: "New Person", email: "new@example.test", role: "reviewer", domains: "Support, ops" } }

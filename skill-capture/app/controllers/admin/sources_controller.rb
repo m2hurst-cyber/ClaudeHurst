@@ -1,7 +1,7 @@
 module Admin
   class SourcesController < BaseController
     def index = @sources = Source.order(:name)
-    def new = @source = Source.new(kind: "custom")
+    def new = @source = Source.new(kind: "integration")
 
     def create
       @source, @token = Source.issue!(**params.require(:source).permit(:name, :kind).to_h.symbolize_keys, created_by: current_user)
@@ -13,7 +13,7 @@ module Admin
     end
 
     def deactivate
-      source = Source.find(params[:id])
+      source = Source.where.not(token_prefix: "builtin").find(params[:id])
       source.update!(active: false)
       AuditLog.record("source.deactivated", user: current_user, source: source)
       redirect_to admin_sources_path, notice: "#{source.name} can no longer send events."

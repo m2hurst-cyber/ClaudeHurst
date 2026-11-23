@@ -1,63 +1,67 @@
-# Skill Capture
+# Skill Capture for Microsoft Office
 
-This app captures institutional know-how. Collectors in the tools people already use (Office add-ins, Slack bots, IDE plugins, browser agents) report *which steps* people take, never the content they work on. Skill Capture spots multi-step workflows that people keep repeating. It drafts each one as an Agent Skills `SKILL.md` and routes it to a reviewer for that area of work. Approved skills go into a versioned library that people can search and agents can fetch over an API.
+Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns how your team works into reusable, reviewed procedures ("skills").
 
-The full design is in [docs/design.md](docs/design.md).
+- **Find and follow skills.** The **Skills** button on the Home tab opens a task pane with your team's skill library. You can read a skill there, insert its steps into the document, or open it in the browser.
+- **Record a procedure.** An expert starts recording and does the task once. The add-in lists each step Office reports, such as "Insert rows", "Sort data" or "Add a slide". The expert adds their own notes for the parts Office can't see, such as checks, decisions and where data comes from, then submits the procedure for review.
+- **Capture repeated workflows (opt-in).** Anyone can turn on *Capture my workflow*. The add-in then shares the *types* of steps they take, never file names, sheet names, values or text, and changes made by co-authors are ignored. When several people repeat the same sequence, Skill Capture proposes it as a skill.
+- **Review inside Office.** Reviewers see drafts for their areas in the pane and can approve or reject them there. Drafts are written by Claude when `ANTHROPIC_API_KEY` is set, otherwise by a built-in template.
+- **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 
-## Stack
+The add-in is a set of web pages plus a manifest, all hosted by this Rails app. The same app is the **web console** for admins: people, add-in deployment, the full review workflow and the audit log. The design is in [docs/design.md](docs/design.md).
 
-Ruby 3.3, Rails 7.2, PostgreSQL, Hotwire, Tailwind, Devise, Pundit, Solid Queue (in the main database), and the Anthropic Ruby SDK.
+## Requirements
 
-## Run it locally
+- **Office:** Microsoft 365 or Office 2021+ on Windows or Mac, or Office on the web.
+- **What each feature needs:** capture of Excel events needs ExcelApi 1.7–1.13, Word events need WordApi 1.5–1.6, and PowerPoint needs PowerPointApi 1.2. Background capture (the add-in loading with the document) needs SharedRuntime 1.1. On older clients the pane still works; it captures less, and *Settings → What this version can see* shows exactly what.
+- **Server:** Ruby 3.3, PostgreSQL, Node 18+ (Node is needed only for the Office dev tooling). The app must be served over **HTTPS**, because Office won't load add-ins over plain HTTP.
 
-Prerequisites: Ruby 3.3 and Postgres. The database settings come from `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD`, which default to localhost, postgres and postgres.
+## Run it and sideload the add-in
 
 ```bash
-bundle install
-bin/rails db:prepare
+bundle install && bin/rails db:prepare
 bin/rails users:create EMAIL=you@example.org NAME="Your Name" ROLE=admin   # prints a one-time password
-bin/dev                                                                   # web + Tailwind + job worker
+bin/addin-dev            # https://localhost:3000 with Office's trusted dev certificate (+ Tailwind + jobs)
 ```
 
-No accounts are seeded. Every account is created by an admin, either with the task above or on the **People** page, and each new account gets a generated one-time password.
+Then add the add-in to Office:
 
-**Demo data.** `bin/rails capture:demo` (development only) registers a demo collector and feeds it two repeated workflows, a finance month-end close and a support escalation. It then runs detection. Open **Review** to see the result.
+- **Office on the web:** open a workbook and go to **Home → Add-ins → More add-ins → My add-ins → Upload my add-in**. Upload the manifest from <https://localhost:3000/addin/manifest.xml>.
+- **Desktop:** `npm run manifest && npm run start:excel` (or `start:word`, `start:powerpoint`).
 
-**Drafting with Claude.** Set `ANTHROPIC_API_KEY` to have Claude draft the skills. Without it, a built-in template writes the drafts.
+Next:
+1. Click **Skills** on the Home tab and sign in. Sign-in opens in an Office dialog, and the pane then keeps its own revocable token.
+2. To see detection and review with sample data, run `bin/rails capture:demo` (development only). It feeds sample Excel and Word workflows into the built-in sources and runs detection.
 
-## Connect a collector
+No accounts are seeded. Admins create people on **People** in the web console, and each new person gets a one-time password.
 
-1. As an admin, open **Sources → Register source**. Copy the token; it is shown only once.
-2. Send batches of events to `POST /api/v1/events` with `Authorization: Bearer <token>`:
+## Deploy to your organization
 
-```json
-{ "events": [ {
-    "action": "excel.run_macro:month_end",
-    "label": "Run the month-end macro",
-    "domain": "finance",
-    "actor": { "id": "u-7f3a", "name": "Sam" },
-    "session": "b1c2",
-    "occurred_at": "2026-11-20T14:03:00Z",
-    "resource": { "type": "workbook", "ref": "wb-381" },
-    "context": { "app": "excel" }
-} ] }
-```
+1. Serve the app over HTTPS. Behind a proxy, set `SKILL_CAPTURE_PUBLIC_URL=https://your-host`.
+2. In the web console, open **Add-in**, download `manifest.xml`, and upload it in the **Microsoft 365 admin center → Settings → Integrated apps → Upload custom apps**.
+3. Assign it to the users or groups who should get it. **Skills** then appears on their Home tab in Excel, Word and PowerPoint.
 
-`examples/collector.js` is a batching browser/Office collector, and `examples/send_events.sh` sends a single event with curl.
+To run separate dev, test and production add-ins side by side, give each its own `SKILL_CAPTURE_ADDIN_ID` (a GUID) and bump `SKILL_CAPTURE_ADDIN_VERSION` when the manifest changes.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `bin/rails test` | Run the test suite |
-| `bin/rails capture:sweep` | Detect and draft now (also runs hourly through Solid Queue) |
+| `bin/rails test` | Rails tests (API, manifest, detection, publishing, privacy) |
+| `npm test` | Tests for the add-in's JavaScript capture engine (Node) |
+| `bin/addin-dev` | HTTPS dev server for sideloading |
+| `npm run validate` | Validate `manifest.xml` with Microsoft's online validator |
+| `bin/rails capture:sweep` | Detect repeated workflows and draft them now (also runs hourly) |
 | `bin/rails "capture:export[dir]"` | Write published skills to `dir/<name>/SKILL.md` |
-| `SKILL_CAPTURE_EXPORT_DIR=/path` | Also export each skill automatically when it is published |
 
 ## Roles
 
 | Role | Can do |
 |---|---|
-| member | Browse and download skills, request new ones, follow their own requests |
-| reviewer | Everything a member can, plus review, publish and revise skills in their **areas** (for example `finance`, `support`) |
-| admin | Everything, plus manage people, sources and action labels, deprecate skills, and read the audit log |
+| member | Use the library, record procedures, opt in to capture, follow their own requests |
+| reviewer | Everything a member can, plus approve, reject and revise skills in their **areas** (for example `finance`, `legal`) |
+| admin | Everything, plus manage people and integrations, deploy the add-in, deprecate skills, and read the audit log |
+
+## Integrations (optional)
+
+Server-side tools such as Power Automate flows can also report steps. They send them to `POST /api/v1/events` with their own token (web console → **Integrations**). See `examples/integration_send_events.sh`.

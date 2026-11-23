@@ -25,33 +25,38 @@ namespace :capture do
     Skill.published.find_each { |s| puts "wrote #{Capture::SkillFile.export(s, dir: dir)}" }
   end
 
-  desc "Development demo: register a demo source and feed it scripted repeated workflows, then sweep"
+  desc "Development demo: feed the add-in's built-in Excel and Word sources with repeated workflows, then sweep"
   task demo: :environment do
     abort "Development only" unless Rails.env.development?
-    source = Source.find_by(name: "Demo collector") || Source.issue!(name: "Demo collector", kind: "custom").first
     flows = {
-      "finance" => [["excel.open:month_end_workbook", "Open the month-end close workbook"],
-                    ["excel.refresh:gl_extract", "Refresh the general-ledger extract"],
-                    ["excel.run_macro:reconcile_accounts", "Run the account-reconciliation macro"],
-                    ["outlook.send:close_summary", "Email the close summary to the controller"]],
-      "support" => [["zendesk.view:escalated_ticket", "Open the escalated ticket"],
-                    ["slack.post:incident_channel", "Post the ticket in the incident channel"],
-                    ["jira.create:bug", "File a bug with reproduction steps"],
-                    ["zendesk.reply:customer_update", "Reply to the customer with the bug link and next update time"]]
+      ["Excel", "finance"] => [["excel.document.opened", nil], ["excel.worksheet.switched", nil], ["excel.rows.inserted", nil],
+                               ["excel.cells.edited", nil], ["excel.formula.changed", nil], ["excel.data.sorted", nil],
+                               ["excel.step:check-totals-match-the-bank-statement", "Check totals match the bank statement"]],
+      ["Word", "legal"] => [["word.document.opened", nil], ["word.contentcontrol.added", nil], ["word.paragraph.changed", nil],
+                            ["word.step:check-clause-library-for-current-wording", "Check the clause library for the current wording"],
+                            ["word.paragraph.deleted", nil]]
     }
-    actors = [%w[a-1001 Analyst\ A], %w[a-1002 Analyst\ B], %w[a-1003 Analyst\ C]]
-    events = []
-    flows.each_with_index do |(domain, steps), f|
+    labels = {
+      "excel.document.opened" => "Open the workbook", "excel.worksheet.switched" => "Switch to another worksheet",
+      "excel.rows.inserted" => "Insert rows", "excel.cells.edited" => "Enter or edit cell values",
+      "excel.formula.changed" => "Enter or change a formula", "excel.data.sorted" => "Sort data",
+      "word.document.opened" => "Open the document", "word.contentcontrol.added" => "Insert a form field (content control)",
+      "word.paragraph.changed" => "Edit text", "word.paragraph.deleted" => "Delete paragraphs"
+    }
+    actors = [%w[demo-1 Analyst\ A], %w[demo-2 Analyst\ B], %w[demo-3 Analyst\ C]]
+    flows.each_with_index do |((host, domain), steps), f|
+      events = []
       4.times do |i|
         actor = actors[(i + f) % actors.size]
         steps.each_with_index do |(key, label), j|
-          events << { action: key, label: label, domain: domain, actor: { id: actor[0], name: actor[1] },
-                      session: "demo-#{f}-#{i}", occurred_at: ((i + 1).days.ago + f.hours + (j * 4).minutes).utc.iso8601 }
+          events << { action: key, label: label || labels[key], domain: domain, actor: { id: actor[0], name: actor[1] },
+                      session: "demo-#{f}-#{i}", occurred_at: ((i + 1).days.ago + f.hours + (j * 3).minutes).utc.iso8601,
+                      context: { app: host.downcase } }
         end
       end
+      r = Capture::Ingestor.call(Source.for_office_host(host), events)
+      puts "#{host}: ingested #{r.accepted} events"
     end
-    r = Capture::Ingestor.call(source, events)
-    puts "Ingested #{r.accepted} events"
     Rake::Task["capture:sweep"].invoke
   end
 end

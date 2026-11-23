@@ -3,8 +3,30 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Microsoft Office add-in
+  scope :addin, controller: :addin, as: :addin do
+    get "manifest.xml", action: :manifest, as: :manifest, defaults: { format: :xml }
+    get :taskpane
+    get :support
+  end
+  get "addin/connect", to: "addin_connect#show", as: :addin_connect
+  post "addin/connect", to: "addin_connect#create"
+
   namespace :api do
     namespace :v1 do
+      namespace :addin do
+        resource :me, only: %i[show destroy], controller: :sessions
+        resources :events, only: :create
+        resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
+        resources :candidates, only: %i[index show] do
+          member do
+            post :approve
+            post :reject
+          end
+        end
+        resources :procedures, only: :create
+      end
+
       resources :events, only: :create
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
     end
@@ -27,6 +49,7 @@ Rails.application.routes.draw do
         post :deprecate
       end
     end
+    resources :connected_apps, only: %i[index destroy]
     resources :notifications, only: :index do
       collection { post :read_all }
     end
@@ -38,6 +61,7 @@ Rails.application.routes.draw do
       end
       resources :action_definitions, only: %i[index edit update]
       resources :audit_logs, only: :index
+      get :deploy, to: "deploy#show"
     end
   end
 end

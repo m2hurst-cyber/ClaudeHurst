@@ -11,6 +11,11 @@ module Capture
 
     def call
       attrs, generator = generate
+      # A person-recorded procedure keeps the title and description its author gave it.
+      if @candidate.origin == "manual" && @candidate.draft_title.present?
+        attrs = attrs.merge(title: @candidate.draft_title, name: Naming.skill_name(@candidate.draft_title))
+        attrs[:description] = @candidate.draft_description if @candidate.draft_description.present?
+      end
       @candidate.update!(
         draft_name: attrs[:name], draft_title: attrs[:title], draft_description: attrs[:description],
         draft_tags: attrs[:tags], draft_inputs: attrs[:inputs], draft_outputs: attrs[:outputs],

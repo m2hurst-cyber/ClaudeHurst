@@ -35,6 +35,7 @@ module Capture
         candidate.update!(status: "approved", skill: skill, reviewer: @user, reviewed_at: Time.current)
       end
       after_publish(skill, "skill.published", candidate_id: candidate.id)
+      notify_contributors(candidate, skill)
       skill
     end
 
@@ -65,6 +66,16 @@ module Capture
     end
 
     private
+
+    # Contributors who are people in this system (captured through the Office add-in) hear about it.
+    def notify_contributors(candidate, skill)
+      ids = candidate.contributors.filter_map { |c| c["key"].to_s[/\Auser:(\d+)\z/, 1]&.to_i }
+      User.active.where(id: ids).where.not(id: @user.id).find_each do |u|
+        Notification.create!(user: u, subject: skill, kind: "skill_published",
+                             title: "Your workflow is now a skill: #{skill.title}",
+                             url: Rails.application.routes.url_helpers.skill_path(skill))
+      end
+    end
 
     def next_version(name) = (Skill.where(name: name).maximum(:version) || 0) + 1
 

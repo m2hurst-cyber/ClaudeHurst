@@ -29,6 +29,12 @@ class WorkflowDetectorTest < ActiveSupport::TestCase
     assert_equal SCRIPTED.values.sort, found.sort, "expected exactly the scripted workflows"
   end
 
+  test "workflows longer than the step window come back as one workflow" do
+    long = %w[a.one b.two c.three d.four e.five f.six g.seven h.eight i.nine]
+    3.times { |i| perform_workflow(@source, "actor-#{i}", long, start: (i + 1).days.ago) }
+    assert_equal [long], Capture::WorkflowDetector.new(max_steps: 6).detect.map(&:steps)
+  end
+
   test "idle gaps split sessions" do
     3.times do |i|
       start = (i + 1).days.ago

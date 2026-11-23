@@ -12,3 +12,5 @@
 !/app/assets/builds/.keep
 /config/master.key
 /skill-repo
+/node_modules
+/manifest.xml

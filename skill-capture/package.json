@@ -1,0 +1,21 @@
+{
+  "name": "skill-capture-office-addin",
+  "private": true,
+  "description": "Developer tooling for the Skill Capture Office add-in (the add-in itself is served by the Rails app).",
+  "type": "module",
+  "scripts": {
+    "test": "node --import ./test/javascript/register.mjs --test \"test/javascript/*.test.mjs\"",
+    "certs": "office-addin-dev-certs install",
+    "manifest": "curl -fsSk https://localhost:3000/addin/manifest.xml -o manifest.xml",
+    "validate": "office-addin-manifest validate manifest.xml",
+    "start:excel": "office-addin-debugging start manifest.xml desktop --app excel --no-debug",
+    "start:word": "office-addin-debugging start manifest.xml desktop --app word --no-debug",
+    "start:powerpoint": "office-addin-debugging start manifest.xml desktop --app powerpoint --no-debug",
+    "stop": "office-addin-debugging stop manifest.xml"
+  },
+  "devDependencies": {
+    "office-addin-debugging": "^6.0.0",
+    "office-addin-dev-certs": "^2.0.0",
+    "office-addin-manifest": "^2.0.0"
+  }
+}
