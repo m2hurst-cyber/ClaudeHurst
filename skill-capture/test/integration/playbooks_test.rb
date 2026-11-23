@@ -105,14 +105,12 @@ class PlaybooksTest < ActionDispatch::IntegrationTest
     names = run.reload.route.map { |x| x[:name] }
     assert_equal %w[report-individual-income report-self-employment-income claim-deductions-and-credits claim-health-savings-account prepare-the-individual-return],
                  names[3..7], "branches sit right after their step; 'not sure' counts as yes"
-    assert_equal [0, 12], run.progress
+    assert_equal [0, 12], run.progress, "a step is done only when its leg verifies"
 
     get playbook_run_path(run)
     assert_includes response.body, "Report self-employment income (Schedule C)"
     assert_includes response.body, "because: Did the client have self-employment"
     assert_includes response.body, "Run a conflict check" # CPA instructions rendered from the skill
-    post step_playbook_run_path(run), params: { step: "engage-the-tax-client", done: 1 }
-    assert_equal [1, 12], run.reload.progress
     post send_route_playbook_run_path(run)
     cmd = AddinCommand.last
     assert_equal [@preparer, "load_route", 12], [cmd.target_user, cmd.kind, cmd.skill_names.size]

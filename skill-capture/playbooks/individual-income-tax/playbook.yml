@@ -124,6 +124,7 @@ mainline:
 # Situations: a question asked at intake; "yes" adds the branch after the step it hangs off.
 situations:
   - key: self-employment
+    documents: [1099-nec, 1099-k, business-summary]
     question: Did the client have self-employment, freelance, gig or 1099-NEC / 1099-K income?
     forms: [Schedule C, Schedule SE, Form 8829, Form 4562]
     keywords: [self-employed, freelance, contractor, gig, 1099-nec, 1099-k, business, side hustle, sole proprietor]
@@ -135,6 +136,7 @@ situations:
       - [excel, Review business expenses and home office]
       - [excel, Compute self-employment tax]
   - key: investment-sales
+    documents: [1099-b]
     question: Did the client sell stocks, funds, crypto or other investments?
     forms: [Form 8949, Schedule D]
     keywords: [stock, shares, brokerage, 1099-b, crypto, bitcoin, capital gain, sold investments, mutual fund]
@@ -146,6 +148,7 @@ situations:
       - [excel, Verify cost basis and holding periods]
       - [excel, Summarize gains and losses]
   - key: rental-property
+    documents: [rental-summary]
     question: Did the client own rental property (including short-term rentals)?
     forms: [Schedule E, Form 4562]
     keywords: [rental, landlord, tenant, airbnb, short-term rental, property income]
@@ -157,6 +160,7 @@ situations:
       - [excel, Update the depreciation schedule]
       - [excel, Determine personal use and passive loss limits]
   - key: k1-income
+    documents: [k-1]
     question: Did the client receive a Schedule K-1 from a partnership, S corporation, estate or trust?
     forms: [Schedule E (Part II/III), Form 8582]
     keywords: [k-1, k1, partnership, s corporation, s corp, trust, estate, pass-through]
@@ -167,6 +171,7 @@ situations:
       - [excel, Enter each K-1 line by line]
       - [excel, Track basis and at-risk amounts]
   - key: hsa
+    documents: [5498-sa, 1099-sa]
     question: Did the client (or their employer) contribute to, or did they spend from, a Health Savings Account?
     forms: [Form 8889]
     keywords: [hsa, health savings account, 5498-sa, 1099-sa, high deductible]
@@ -177,6 +182,7 @@ situations:
       - [excel, Reconcile HSA contributions to the limit]
       - [excel, Confirm distributions were for medical expenses]
   - key: education
+    documents: [1098-t]
     question: Did the client pay college or other post-secondary tuition (Form 1098-T)?
     forms: [Form 8863]
     keywords: [tuition, college, university, 1098-t, education credit, student]
@@ -187,6 +193,7 @@ situations:
       - [excel, Collect 1098-T and qualified expenses]
       - [excel, Choose the education credit]
   - key: marketplace-insurance
+    documents: [1095-a]
     question: Did the client buy health insurance through the Marketplace (Form 1095-A)?
     forms: [Form 8962]
     keywords: [marketplace, 1095-a, healthcare.gov, premium tax credit, obamacare, aca]

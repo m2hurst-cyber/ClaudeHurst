@@ -97,8 +97,10 @@ Database settings: `DATABASE_HOST`, `DATABASE_USER` and `DATABASE_PASSWORD` (def
 18. **Skills meet the Agent Skills format.** `Publisher` refuses names, descriptions or instructions that break `SkillStandard`'s required rules; drafts go through `SkillStandard.normalize`. `SKILL.md` metadata stays a flat map of strings.
 19. **Prompts are judged before they're shown.** Triggers run at most every `evaluation.interval_minutes` per person in `PromptCheckJob`; nothing reaches a person until the evaluator opens it.
 20. **Prompts only read a person's own events** (`actor_key = user:<id>`), never other people's, and only propose: every accepted prompt goes through review. A dismissed prompt is never raised again.
-21. **Playbooks are files.** Content changes go in `playbooks/<key>/` and reach the app through `install!` (new versions, never edits); never hand-edit installed playbook skills in code. Returns (`PlaybookRun`) store only a reference, answers and steps done: no taxpayer names, identifiers, documents or amounts; descriptions sent to the AI are redacted.
-22. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
+21. **Playbooks are files.** Content changes go in `playbooks/<key>/` (skills, `documents.yml`, `legs.yml`) and reach the app through `install!` (new versions, never edits); never hand-edit installed playbook skills in code.
+22. **Return documents are protected.** `ReturnDocument` file, filename, payer and figures are encrypted (ActiveRecord encryption; production refuses to boot without the three `SKILL_CAPTURE_ENCRYPTION_*` keys). A return and its documents are visible only to the filer and the reviewer they chose; only the filer changes them. Identifiers (SSN/ITIN, EIN, account numbers) are never stored as figures or sent back from the AI: the catalog has no field for them and `ReturnDocument::IDENTIFIER` strips look-alikes. Document parameters are filtered from logs. The run reference refuses SSN/EIN/email look-alikes.
+23. **A leg is done only when it verifies.** `Capture::Legs#verify_all!` runs after every change to documents, inputs, answers or attestations; progress counts verified legs. The review leg needs a second person's sign-off, invalidated by later document changes. The AI never marks anything done; it prepares figures, memos and issues, and blocking issues hold the leg until resolved.
+24. **Isolation from the sibling app.** Nothing under `skill-capture/` references the repository-root application.
 
 ## 5. Spec cross-check (original Step 1 spec → status)
 
@@ -205,6 +207,9 @@ Legend: ✅ built and tested · 🟡 partial · ⛔ not built
 | `SKILL_CAPTURE_MAX_BATCH` | 500 | Maximum events per request |
 | `SKILL_CAPTURE_PUBLISH_ALERT_PER_HOUR` / `_INGEST_ALERT_PER_HOUR` | 10 / 50000 | Misuse alert thresholds |
 | `ANTHROPIC_API_KEY` (or `ANTHROPIC_AUTH_TOKEN`) | unset | Enables Claude drafting |
+| `SKILL_CAPTURE_AI_DOCUMENTS` | on (when an AI key is set) | `off` keeps uploaded return documents away from the AI: filers enter the boxes by hand |
+| `SKILL_CAPTURE_ENCRYPTION_PRIMARY_KEY`, `_DETERMINISTIC_KEY`, `_KEY_DERIVATION_SALT` | dev/test defaults | Encryption of return documents; **required in production** (`bin/rails db:encryption:init`) |
+| `SKILL_CAPTURE_PLAYBOOK_DIR` | `playbooks/` | Where playbooks are read from |
 | `SKILL_CAPTURE_LLM=off` | unset | Disables Claude even when a key is set |
 | `SKILL_CAPTURE_MODEL` | `claude-opus-5-5` | Drafting model |
 | `SKILL_CAPTURE_EXPORT_DIR` | unset | Write `SKILL.md` on every publish |
@@ -311,4 +316,10 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - `Capture::Playbook` installs curated linear workflows from `playbooks/`; `Situation`, `PlaybookRun`, `Capture::SituationAdvisor`, `Capture::Situations`.
 - The individual income tax playbook (10 mainline skills, 11 situation branches, 5 resource files); `/playbooks`, `/returns/:id`; `capture:playbooks:install|list`.
 - Map layout: branches without their own inbound road sit beside their parent.
-- Tests: 115 Rails runs, 23 JavaScript tests.
+
+## Changelog: document upload and AI-prepared legs
+
+- Returns take uploaded documents (PDF or image, encrypted); the AI reads each one into the catalog's boxes (`Capture::DocumentReader`), the filer confirms.
+- Each leg is prepared by `Capture::LegPreparer` (Claude, or rules) following its skill, with figures from `legs.yml` totals, and verified by `Capture::Legs` checks (documents, ties, inputs, attestations, AI issues, prior legs, reviewer sign-off).
+- Admin/env: `SKILL_CAPTURE_AI_DOCUMENTS=off` keeps documents away from the AI (manual entry); encryption keys required in production.
+- Tests: 121 Rails runs, 23 JavaScript tests.

@@ -1,0 +1,218 @@
+# How the AI prepares each leg of the road, and what must be true before the leg is verified.
+#
+# totals: named figures computed from confirmed documents (kind.field sums), filer inputs
+#   (input.key) and other totals (totals.key). Operators + - * /, functions max min round gt.
+# Each leg:
+#   documents: kinds that feed this leg (shown with it, and read by its AI preparer)
+#   inputs:    figures or choices the filer enters (from the current IRS instructions where noted)
+#   show:      totals displayed as the leg's prepared workpaper
+#   checks:    all must pass for the leg to be verified
+#     answered                  every situation question answered yes or no
+#     document {kind, where}    a confirmed document of that kind (optionally field == value)
+#     documents_confirmed       every uploaded document identified and confirmed
+#     situation_documents       each "yes" situation has at least one of its documents
+#     tax_year                  every document is for the return's tax year
+#     no_duplicates             no document uploaded twice under two labels
+#     input {key}               the filer has entered it
+#     attest {key, text}        the filer confirms it
+#     equal {left, right, tolerance}   two figures agree (e.g. the 1040 ties to the workpapers)
+#     at_most / at_least {left, right} with optional unless_attested
+#     ai_review                 the AI preparer found no blocking issue (or each is acknowledged)
+#     prior_legs                every earlier mainline leg is verified
+#     reviewer                  a second person (not the filer) signed off
+totals:
+  wages: [w2.box1]
+  interest: [1099-int.box1]
+  dividends: [1099-div.box1a]
+  qualified_dividends: [1099-div.box1b]
+  capital_gain_distributions: [1099-div.box2a]
+  retirement_gross: [1099-r.box1]
+  retirement_taxable: [1099-r.box2a]
+  social_security: [ssa-1099.box5]
+  unemployment: [1099-g.box1]
+  federal_withholding: [w2.box2, 1099-int.box4, 1099-div.box4, 1099-b.box4, 1099-r.box4, ssa-1099.box6, 1099-g.box4, 1099-nec.box4]
+  mortgage_interest: [1098.box1]
+  property_tax: [property-tax-bill.amount, 1098.box10]
+  charitable: [charitable-receipt.amount]
+  salt: "min(input.state_local_income_tax + totals.property_tax, input.salt_cap)"
+  itemized: "totals.mortgage_interest + totals.salt + totals.charitable"
+  deduction: "max(totals.itemized, input.standard_deduction)"
+  itemizes: "gt(totals.itemized, input.standard_deduction)"
+  receipts_on_1099s: [1099-nec.box1, 1099-k.box1a]
+  gross_receipts: [business-summary.gross_receipts]
+  net_profit: "totals.gross_receipts - business-summary.total_expenses"
+  se_earnings: "round(max(totals.net_profit, 0) * 0.9235)"
+  sale_proceeds: [1099-b.proceeds]
+  sale_basis: [1099-b.cost_basis]
+  net_capital_gain: "1099-b.short_term_gain + 1099-b.long_term_gain + totals.capital_gain_distributions"
+  rental_net: "rental-summary.rents - rental-summary.expenses - rental-summary.depreciation"
+  k1_ordinary: [k-1.ordinary_income]
+  k1_distributions: [k-1.distributions]
+  hsa_contributions: [w2.box12_w, 5498-sa.box2]
+  hsa_distributions: [1099-sa.box1]
+  education_expenses: "max(1098-t.box1 - 1098-t.box5, 0)"
+  ptc_advance: [1095-a.annual_advance]
+  fbar_required: "gt(input.max_foreign_balance, 10000)"
+  return_agi: [form-1040.line_11]
+  return_total_tax: [form-1040.line_24]
+  balance_due: [form-1040.line_37]
+  refund: [form-1040.line_34]
+  paid: [payment-confirmation.amount]
+  required_annual_payment: "round(totals.return_total_tax * (1 + 0.1 * gt(totals.return_agi, 150000)))"
+  estimates_needed: "max(totals.required_annual_payment - input.expected_withholding_next_year, 0)"
+  quarterly_estimate: "round(totals.estimates_needed / 4)"
+
+inputs:
+  tax_year: {label: Tax year, type: number}
+  filing_status: {label: Filing status, type: select, options: [Single, Married filing jointly, Married filing separately, Head of household, Qualifying surviving spouse]}
+  standard_deduction: {label: Standard deduction for this filing status (current Form 1040 instructions), type: money}
+  salt_cap: {label: State and local tax deduction cap for this year (current Schedule A instructions), type: money}
+  state_local_income_tax: {label: State and local income tax paid (W-2 box 17 plus estimates), type: money}
+  hsa_limit: {label: HSA contribution limit for this coverage and age (current Form 8889 instructions), type: money}
+  max_foreign_balance: {label: Highest total balance of all foreign accounts during the year (USD), type: money}
+  expected_withholding_next_year: {label: Expected federal withholding next year, type: money}
+
+legs:
+  engage-the-tax-client:
+    documents: [engagement-letter]
+    inputs: [tax_year, filing_status]
+    checks:
+      - {type: document, kind: engagement-letter, where: {signed: "yes"}, label: The engagement letter is signed}
+      - {type: input, key: tax_year}
+      - {type: input, key: filing_status}
+      - {type: answered}
+      - {type: attest, key: identity, text: "I verified the client's identity (new client) and have last year's return"}
+  collect-tax-documents:
+    documents: [w2, 1099-int, 1099-div, 1099-r, ssa-1099, 1099-g]
+    checks:
+      - {type: documents_confirmed}
+      - {type: situation_documents}
+      - {type: tax_year}
+      - {type: no_duplicates}
+      - {type: attest, key: complete, text: "Every payer on last year's return is here, or I know why not"}
+  organize-tax-financial-information:
+    show: [wages, interest, dividends, retirement_taxable, social_security, unemployment, federal_withholding]
+    checks:
+      - {type: documents_confirmed}
+      - {type: ai_review}
+      - {type: attest, key: prior_year, text: "Changes of more than 10% from last year are explained"}
+  report-individual-income:
+    documents: [w2, 1099-int, 1099-div, 1099-r, ssa-1099, 1099-g]
+    show: [wages, interest, dividends, qualified_dividends, capital_gain_distributions, retirement_gross, retirement_taxable, social_security, unemployment, federal_withholding]
+    checks:
+      - {type: at_most, left: totals.qualified_dividends, right: totals.dividends, label: Qualified dividends don't exceed ordinary dividends}
+      - {type: at_most, left: totals.retirement_taxable, right: totals.retirement_gross, label: Taxable retirement distributions don't exceed the gross}
+      - {type: ai_review}
+      - {type: attest, key: codes, text: "Every 1099-R distribution code is reviewed and rollovers are documented"}
+  claim-deductions-and-credits:
+    documents: ["1098", property-tax-bill, charitable-receipt]
+    inputs: [standard_deduction, salt_cap, state_local_income_tax]
+    show: [mortgage_interest, property_tax, salt, charitable, itemized, deduction, itemizes]
+    checks:
+      - {type: input, key: standard_deduction}
+      - {type: input, key: salt_cap}
+      - {type: input, key: state_local_income_tax}
+      - {type: ai_review}
+      - {type: attest, key: credits, text: "Each dependent meets the tests for every credit claimed, with due diligence documented"}
+  prepare-the-individual-return:
+    documents: [form-1040]
+    show: [wages, interest, dividends, federal_withholding, deduction, return_agi, return_total_tax, balance_due, refund]
+    checks:
+      - {type: document, kind: form-1040, label: The prepared Form 1040 is uploaded}
+      - {type: equal, left: form-1040.line_1a, right: totals.wages, tolerance: 1, label: "Line 1a ties to the W-2s"}
+      - {type: equal, left: form-1040.line_2b, right: totals.interest, tolerance: 1, label: "Line 2b ties to the 1099-INTs"}
+      - {type: equal, left: form-1040.line_3b, right: totals.dividends, tolerance: 1, label: "Line 3b ties to the 1099-DIVs"}
+      - {type: equal, left: form-1040.line_25d, right: totals.federal_withholding, tolerance: 1, label: "Line 25d ties to all withholding"}
+      - {type: equal, left: form-1040.line_12, right: totals.deduction, tolerance: 1, label: "Line 12 matches the deduction worked out"}
+      - {type: ai_review}
+      - {type: attest, key: diagnostics, text: "Software diagnostics are cleared, and any override is explained"}
+  review-the-individual-return:
+    documents: [form-8879]
+    checks:
+      - {type: prior_legs}
+      - {type: document, kind: form-8879, where: {signed: "yes"}, label: Form 8879 is signed}
+      - {type: equal, left: form-8879.agi, right: totals.return_agi, tolerance: 1, label: The 8879 shows the return's AGI}
+      - {type: equal, left: form-8879.total_tax, right: totals.return_total_tax, tolerance: 1, label: The 8879 shows the return's total tax}
+      - {type: reviewer}
+  e-file-the-individual-return:
+    documents: [efile-acknowledgment]
+    checks:
+      - {type: document, kind: efile-acknowledgment, where: {status: accepted}, label: The IRS accepted the return}
+  pay-individual-income-tax:
+    documents: [payment-confirmation]
+    show: [balance_due, paid, refund]
+    checks:
+      - {type: at_least, left: totals.paid, right: totals.balance_due, label: The balance due is paid (or nothing is due), unless_attested: payment_plan}
+      - {type: attest, key: recorded, text: "The payment confirmation (or expected refund) is recorded and the client told"}
+  plan-next-tax-year:
+    inputs: [expected_withholding_next_year]
+    show: [return_total_tax, return_agi, required_annual_payment, estimates_needed, quarterly_estimate]
+    checks:
+      - {type: input, key: expected_withholding_next_year}
+      - {type: attest, key: delivered, text: "The payment schedule, vouchers and copies are delivered to the client"}
+      - {type: attest, key: archived, text: "Workpapers and the signed 8879 are archived"}
+  report-self-employment-income:
+    documents: [1099-nec, 1099-k, business-summary]
+    show: [receipts_on_1099s, gross_receipts, net_profit, se_earnings]
+    checks:
+      - {type: document, kind: business-summary, label: The business income and expense summary is in}
+      - {type: at_least, left: totals.gross_receipts, right: totals.receipts_on_1099s, label: Gross receipts include everything on the 1099s, unless_attested: receipts_difference}
+      - {type: ai_review}
+      - {type: attest, key: expenses, text: "Large or unusual expenses are supported, and home office and vehicle use qualify"}
+  report-investment-sales:
+    documents: [1099-b]
+    show: [sale_proceeds, sale_basis, net_capital_gain]
+    checks:
+      - {type: document, kind: 1099-b}
+      - {type: ai_review}
+      - {type: attest, key: basis, text: "Basis not reported to the IRS (inherited, gifted, crypto) is documented"}
+  report-rental-property-income:
+    documents: [rental-summary]
+    show: [rental_net]
+    checks:
+      - {type: document, kind: rental-summary}
+      - {type: attest, key: personal_use, text: "Personal-use days and passive loss limits are applied"}
+  report-k1-pass-through-income:
+    documents: [k-1]
+    show: [k1_ordinary, k1_distributions]
+    checks:
+      - {type: document, kind: k-1}
+      - {type: attest, key: basis, text: "Basis and at-risk amounts are updated for each entity"}
+  claim-health-savings-account:
+    documents: [5498-sa, 1099-sa, w2]
+    inputs: [hsa_limit]
+    show: [hsa_contributions, hsa_distributions]
+    checks:
+      - {type: input, key: hsa_limit}
+      - {type: at_most, left: totals.hsa_contributions, right: input.hsa_limit, label: Contributions are within this year's limit}
+      - {type: attest, key: qualified, text: "Distributions paid qualified medical expenses (receipts kept)"}
+  claim-education-credits:
+    documents: [1098-t]
+    show: [education_expenses]
+    checks:
+      - {type: document, kind: 1098-t}
+      - {type: attest, key: eligibility, text: "The student's eligibility and the better credit are checked, without double-counting 529 money"}
+  reconcile-premium-tax-credit:
+    documents: [1095-a]
+    show: [ptc_advance]
+    checks:
+      - {type: document, kind: 1095-a}
+      - {type: ai_review}
+  prepare-multi-state-returns:
+    checks:
+      - {type: ai_review}
+      - {type: attest, key: residency, text: "Residency dates and income allocation by state are documented"}
+  report-foreign-income-and-accounts:
+    inputs: [max_foreign_balance]
+    show: [fbar_required]
+    checks:
+      - {type: input, key: max_foreign_balance}
+      - {type: attest, key: fbar, text: "FBAR (FinCEN 114) and Form 8938 are filed where required"}
+  file-individual-extension:
+    documents: [extension-confirmation]
+    checks:
+      - {type: document, kind: extension-confirmation, where: {status: accepted}, label: The extension was accepted}
+  set-up-irs-payment-plan:
+    documents: [payment-plan-confirmation]
+    checks:
+      - {type: document, kind: payment-plan-confirmation}

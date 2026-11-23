@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000014) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -146,6 +146,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "legs", default: {}, null: false
+    t.jsonb "inputs", default: {}, null: false
+    t.bigint "reviewer_id"
+    t.datetime "reviewed_at"
+    t.index ["reviewer_id"], name: "index_playbook_runs_on_reviewer_id"
     t.index ["user_id", "status"], name: "index_playbook_runs_on_user_id_and_status"
     t.index ["user_id"], name: "index_playbook_runs_on_user_id"
   end
@@ -259,6 +264,31 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
     t.index ["created_by_id"], name: "index_rest_stops_on_created_by_id"
     t.index ["skill_id"], name: "index_rest_stops_on_skill_id"
     t.index ["skill_name", "created_at"], name: "index_rest_stops_on_skill_name_and_created_at"
+  end
+
+  create_table "return_documents", force: :cascade do |t|
+    t.bigint "playbook_run_id", null: false
+    t.string "kind"
+    t.string "label"
+    t.text "filename"
+    t.text "payer"
+    t.string "content_type", null: false
+    t.integer "byte_size", null: false
+    t.string "checksum", null: false
+    t.text "content", null: false
+    t.text "fields_json"
+    t.integer "tax_year"
+    t.string "status", default: "uploaded", null: false
+    t.string "read_by"
+    t.integer "confidence"
+    t.text "notes"
+    t.bigint "uploaded_by_id"
+    t.datetime "confirmed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playbook_run_id", "checksum"], name: "index_return_documents_on_playbook_run_id_and_checksum", unique: true
+    t.index ["playbook_run_id"], name: "index_return_documents_on_playbook_run_id"
+    t.index ["uploaded_by_id"], name: "index_return_documents_on_uploaded_by_id"
   end
 
   create_table "situations", force: :cascade do |t|
@@ -694,6 +724,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
   add_foreign_key "fields", "users", column: "created_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "playbook_runs", "users"
+  add_foreign_key "playbook_runs", "users", column: "reviewer_id"
   add_foreign_key "promotions", "users", column: "decided_by_id"
   add_foreign_key "promotions", "users", column: "requested_by_id"
   add_foreign_key "resource_folders", "resource_folders", column: "parent_id"
@@ -702,6 +733,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000013) do
   add_foreign_key "resources", "users", column: "uploaded_by_id"
   add_foreign_key "rest_stops", "skills"
   add_foreign_key "rest_stops", "users", column: "created_by_id"
+  add_foreign_key "return_documents", "playbook_runs"
+  add_foreign_key "return_documents", "users", column: "uploaded_by_id"
   add_foreign_key "situations", "skill_candidates", column: "candidate_id"
   add_foreign_key "situations", "users", column: "proposed_by_id"
   add_foreign_key "skill_candidates", "skills"

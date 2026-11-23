@@ -323,6 +323,51 @@ namespace :capture do
       end
     end
 
+    # Sample documents on each sample return (fictional, marked SAMPLE). With an AI key they'd be read by
+    # the AI; here their figures are filled in as "sample" reads so the legs can be prepared and verified.
+    samples = {
+      "engagement-letter-signed.pdf" => ["engagement-letter", { "signed" => "yes", "signed_date" => "2026-01-20" }, nil],
+      "w2-example-employer.pdf" => ["w2", { "box1" => 85000, "box2" => 9800, "box3" => 85000, "box12_w" => 1200, "state" => "CA", "box16" => 85000, "box17" => 4300 }, "Example Employer Inc."],
+      "1099-int-example-bank.pdf" => ["1099-int", { "box1" => 1250 }, "Example Savings Bank"],
+      "1099-div-example-brokerage.pdf" => ["1099-div", { "box1a" => 2400, "box1b" => 1900, "box2a" => 300 }, "Example Brokerage"],
+      "1099-b-example-brokerage.pdf" => ["1099-b", { "proceeds" => 15000, "cost_basis" => 11000, "short_term_gain" => 500, "long_term_gain" => 3500 }, "Example Brokerage"],
+      "1099-nec-example-client.pdf" => ["1099-nec", { "box1" => 18000 }, "Example Client LLC"],
+      "business-summary.pdf" => ["business-summary", { "gross_receipts" => 21500, "total_expenses" => 6200, "home_office_sqft" => 150, "business_miles" => 2400 }, nil],
+      "1095-a-marketplace.pdf" => ["1095-a", { "annual_premium" => 6000, "annual_slcsp" => 6600, "annual_advance" => 4800 }, "Example State Marketplace"],
+      "1098-example-lender.pdf" => ["1098", { "box1" => 9200 }, "Example Mortgage Co."],
+      "property-tax-receipt.pdf" => ["property-tax-bill", { "amount" => 4100 }, "Example County Treasurer"],
+      "charitable-receipt.pdf" => ["charitable-receipt", { "amount" => 2500, "acknowledgment" => "yes" }, "Example Food Bank"]
+    }
+    sample_dir = Rails.root.join("playbooks", "individual-income-tax", "samples")
+    PlaybookRun.where(playbook_key: "individual-income-tax", reference: "2026-0142").find_each do |run|
+      next if run.documents.exists?
+      run.update!(inputs: { "tax_year" => "2025", "filing_status" => "Single", "standard_deduction" => "15000", "salt_cap" => "10000", "state_local_income_tax" => "4300" },
+                  done: [], legs: {})
+      catalog = run.playbook.catalog
+      samples.each_with_index do |(file, (kind, fields, payer)), i|
+        bytes = sample_dir.join(file).binread
+        d = run.documents.new(kind: kind, filename: file, payer: payer, content_type: "application/pdf", byte_size: bytes.bytesize,
+                              checksum: Digest::SHA256.hexdigest(bytes), content: Base64.strict_encode64(bytes), uploaded_by: run.user,
+                              tax_year: kind == "engagement-letter" ? nil : 2025, read_by: "sample", confidence: 95,
+                              notes: "Sample figures (demo without an AI key).",
+                              status: %w[1099-b-example-brokerage.pdf 1095-a-marketplace.pdf].include?(file) ? "read" : "confirmed")
+        d.assign_fields(fields, catalog)
+        d.label = Capture::ReturnDocuments.label_for(d)
+        d.confirmed_at = Time.current if d.status == "confirmed"
+        d.save!
+      end
+      legs = Capture::Legs.new(run.reload)
+      %w[engage-the-tax-client collect-tax-documents organize-tax-financial-information report-individual-income].each do |leg|
+        legs.prepare!(leg, user: run.user)
+      end
+      run.reload
+      { "engage-the-tax-client" => %w[identity], "organize-tax-financial-information" => %w[prior_year] }.each do |leg, keys|
+        run.legs = run.legs.merge(leg => run.leg(leg).merge("attested" => keys.to_h { |k| [k, { "by" => run.user_id, "at" => Time.current.iso8601 }] }))
+      end
+      run.save!
+      Capture::Legs.new(run).verify_all!
+    end
+
     # Rest stops: a first snapshot of every skill, plus a hand-made one before a rebrand.
     Capture::RestStops.sweep!
     deck = Skill.current("board-deck-design")

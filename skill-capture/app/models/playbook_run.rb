@@ -4,6 +4,12 @@ class PlaybookRun < ApplicationRecord
   SENSITIVE = [/\b\d{3}-?\d{2}-?\d{4}\b/, /\b\d{2}-?\d{7}\b/, /@/].freeze # SSN/ITIN, EIN, email
 
   belongs_to :user
+  belongs_to :reviewer, class_name: "User", optional: true
+  has_many :documents, class_name: "ReturnDocument", dependent: :destroy
+
+  def visible_to?(u) = u.present? && (u.id == user_id || u.id == reviewer_id)
+  def leg(name) = legs[name] || {}
+  def verified?(name) = leg(name)["status"] == "verified"
 
   validates :playbook_key, presence: true
   validates :reference, presence: true, length: { maximum: 60 }
@@ -28,8 +34,9 @@ class PlaybookRun < ApplicationRecord
     end
   end
 
+  # A step counts as done when its leg is verified.
   def progress
     steps = route.reject { |r| r[:pending] }
-    [steps.count { |r| done.include?(r[:name]) }, steps.size]
+    [steps.count { |r| verified?(r[:name]) }, steps.size]
   end
 end

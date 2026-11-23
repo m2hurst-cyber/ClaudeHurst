@@ -1,65 +1,72 @@
-<% r = @run; pb = @playbook; done, total = r.progress %>
+<% r = @run; pb = @playbook; done, total = r.progress; mine = r.user_id == current_user.id %>
 <% content_for :title, "Return #{r.reference}" %>
-<div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+<% if @documents.any? { |d| d.status == "reading" } %><% content_for :head do %><meta http-equiv="refresh" content="5"><% end %><% end %>
+<div class="flex flex-wrap justify-between items-start gap-3 mb-3">
   <div>
     <div class="text-xs text-slate-500 mb-1"><%= link_to "Playbooks", playbooks_path, class: "hover:underline" %> / <%= link_to pb.title, playbook_path(pb.key), class: "hover:underline" %></div>
-    <h1 class="text-2xl font-bold">Return <%= r.reference %></h1>
+    <h1 class="text-2xl font-bold">Return <%= r.reference %><%= " · #{r.inputs['tax_year']}" if r.inputs["tax_year"] %></h1>
     <div class="flex items-center gap-2 mt-2 text-sm">
-      <div class="w-48 h-2 rounded bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow="<%= done %>" aria-valuemax="<%= total %>"><div class="h-full bg-sky-600" style="width: <%= total.zero? ? 0 : (100 * done / total) %>%"></div></div>
-      <span class="text-slate-600"><%= done %> of <%= total %> steps</span>
+      <div class="w-48 h-2 rounded bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow="<%= done %>" aria-valuemax="<%= total %>"><div class="h-full bg-emerald-600" style="width: <%= total.zero? ? 0 : (100 * done / total) %>%"></div></div>
+      <span class="text-slate-600"><%= done %> of <%= total %> legs verified</span>
       <% if r.status == "completed" %><span class="text-emerald-700">· ✓ Completed <%= nice_date(r.completed_at) %></span><% end %>
+      <% unless mine %><span class="text-slate-500">· You're the reviewer (filer: <%= r.user.name %>)</span><% end %>
     </div>
   </div>
-  <div class="flex flex-wrap gap-2">
-    <%= button_to "Send route to my Office add-in", send_route_playbook_run_path(r), class: btn %>
-    <% if r.status == "open" && done == total %><%= button_to "Complete the return", complete_playbook_run_path(r), class: btn_primary %><% end %>
-  </div>
+  <% if mine %>
+    <div class="flex flex-wrap gap-2">
+      <%= button_to "Send route to my Office add-in", send_route_playbook_run_path(r), class: btn %>
+      <% if r.status == "open" && done == total %><%= button_to "Complete the return", complete_playbook_run_path(r), class: btn_primary %><% end %>
+    </div>
+  <% end %>
 </div>
-<% if pb.disclaimer %><p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-4"><%= pb.disclaimer %></p><% end %>
+<p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-4">
+  <%= pb.disclaimer %> The AI prepares and checks each leg; a preparer stays responsible for the return. Documents are encrypted and visible only to you and your reviewer.
+</p>
 
-<div class="grid lg:grid-cols-[1fr_24rem] gap-4">
+<div class="grid lg:grid-cols-[1fr_25rem] gap-4">
   <div class="bg-white border rounded p-4" id="route">
-    <h2 class="font-semibold mb-3">Route for this return</h2>
-    <% first_open = @route.find { |x| !x[:pending] && !r.done.include?(x[:name]) } %>
+    <h2 class="font-semibold mb-1">The road for this return</h2>
+    <p class="text-xs text-slate-500 mb-3">Each leg: upload its documents, <%= Capture::Config.llm_enabled? ? "let the AI prepare it" : "prepare it" %>, resolve what the checks flag. A leg is done only when it verifies.</p>
     <ol>
       <% n = 0 %>
       <% @route.each_with_index do |step, i| %>
-        <% branch = step[:kind] == "branch"; skill = step[:skill]; is_done = r.done.include?(step[:name]); n += 1 unless branch %>
-        <li id="step-<%= step[:name] %>" class="relative <%= branch ? 'ml-10 pl-8' : 'pl-10' %> pb-4">
-          <% unless i == @route.size - 1 %><span class="absolute <%= branch ? 'left-[10px] border-l-2 border-dashed border-slate-400 w-0' : 'left-[15px] w-1.5 bg-sky-600 rounded' %> top-8 bottom-0" aria-hidden="true"></span><% end %>
-          <span class="absolute left-0 top-0 <%= branch ? 'w-6 h-6 text-xs' : 'w-9 h-9 text-sm' %> rounded-full grid place-items-center font-bold
-                       <%= is_done ? 'bg-emerald-600 text-white' : (branch ? 'bg-white border-2 border-slate-500' : 'bg-white border-4 border-sky-600') %>"><%= is_done ? "✓" : (branch ? "⑂" : n) %></span>
-          <div class="flex flex-wrap items-baseline gap-2">
-            <% if step[:pending] %>
-              <span class="font-semibold text-slate-500"><%= step[:situation].candidate&.display_title || "New branch" %></span>
-              <span class="text-xs text-amber-700">branch in review: do this by judgment for now</span>
-            <% else %>
-              <span class="font-semibold <%= 'line-through text-slate-400' if is_done %>"><%= skill.title %></span>
-              <% if branch %><span class="text-xs text-slate-500">because: <%= step[:situation].question %></span><% end %>
-            <% end %>
-          </div>
-          <% unless step[:pending] %>
-            <details class="mt-1 text-sm" <%= "open" if step.equal?(first_open) %>>
-              <summary class="cursor-pointer text-xs text-sky-700">CPA instructions<%= " · #{step[:situation].forms.join(', ')}" if branch && step[:situation].forms.any? %></summary>
-              <div class="border rounded p-3 mt-1 bg-slate-50"><%= skill_markdown(skill.body) %>
-                <% res = Capture::ResourceLibrary.for_skill(skill.name, current_user) %>
-                <% if res.any? %><div class="mt-2 text-xs">📎 <%= safe_join(res.map { |x| link_to(x.name, download_resource_path(x), class: "text-sky-700 hover:underline") }, " · ") %></div><% end %>
-              </div>
-            </details>
-            <%= form_with url: step_playbook_run_path(r), method: :post, class: "mt-1" do %>
-              <%= hidden_field_tag :step, step[:name] %><%= hidden_field_tag :done, is_done ? 0 : 1 %>
-              <button class="text-xs <%= is_done ? 'text-slate-500 hover:underline' : 'px-2 py-0.5 rounded border bg-white hover:bg-slate-50' %>"><%= is_done ? "Mark not done" : "Mark done" %></button>
-            <% end %>
-          <% end %>
-        </li>
+        <% n += 1 unless step[:kind] == "branch" %>
+        <% if step[:pending] %>
+          <li class="relative ml-10 pl-8 pb-4">
+            <span class="absolute left-[10px] top-8 bottom-0 border-l-2 border-dashed border-slate-300" aria-hidden="true"></span>
+            <span class="absolute left-0 top-0 w-6 h-6 text-xs rounded-full grid place-items-center bg-white border-2 border-amber-500">⑂</span>
+            <span class="font-semibold text-slate-500"><%= step[:situation].candidate&.display_title || "New branch" %></span>
+            <span class="text-xs text-amber-700">branch in review with the tax reviewers: handle by judgment for now</span>
+          </li>
+        <% else %>
+          <%= render "leg", step: step, number: n, last: i == @route.size - 1 %>
+        <% end %>
       <% end %>
     </ol>
   </div>
 
-  <div class="space-y-4 text-sm" id="situations">
-    <div class="bg-white border rounded p-4">
+  <div class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-4" id="documents">
+      <div class="flex items-baseline justify-between"><h2 class="font-semibold">Documents</h2>
+        <span class="text-xs text-slate-500"><%= @documents.count { |d| d.status == "confirmed" } %> of <%= @documents.size %> confirmed</span></div>
+      <% if mine %>
+        <p class="text-xs text-slate-500 mt-1 mb-2">W-2s, 1099s, 1098s, the prepared 1040, the signed 8879, acknowledgments, payment confirmations. PDF or photo, up to 15 MB each.
+          <%= Capture::DocumentReader.enabled? ? "The AI reads each one; you check its figures against the document." : "Choose each one's kind and enter its boxes." %></p>
+        <%= form_with url: playbook_run_documents_path(r), method: :post, multipart: true, class: "flex gap-2 items-center mb-3" do %>
+          <input type="file" name="files[]" multiple accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" class="text-xs flex-1 min-w-0" required aria-label="Documents">
+          <button class="<%= btn_primary %> text-xs">Upload</button>
+        <% end %>
+      <% end %>
+      <% if @documents.any? %>
+        <ul class="space-y-2"><% @documents.each do |d| %><%= render "document", d: d %><% end %></ul>
+      <% else %>
+        <p class="text-xs text-slate-400">No documents yet.</p>
+      <% end %>
+    </div>
+
+    <div class="bg-white border rounded p-4" id="situations">
       <h2 class="font-semibold mb-1">Situation questions</h2>
-      <p class="text-xs text-slate-500 mb-2">Answer at intake. Yes (or not sure) adds the branch to the route.</p>
+      <p class="text-xs text-slate-500 mb-2">Yes (or not sure) adds the branch to the road; "not sure" has to be settled before the first leg verifies.</p>
       <%= form_with url: playbook_run_path(r), method: :patch do %>
         <ul class="space-y-2">
           <% @situations.each do |s| %>
@@ -68,22 +75,24 @@
               <div class="flex gap-1 mt-0.5" role="radiogroup" aria-label="<%= s.question %>">
                 <% [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]].each do |v, l| %>
                   <label class="text-xs px-2 py-0.5 rounded border cursor-pointer has-[:checked]:bg-slate-900 has-[:checked]:text-white">
-                    <input type="radio" class="sr-only" name="answers[<%= s.key %>]" value="<%= v %>" <%= "checked" if r.answers[s.key] == v %>><%= l %></label>
+                    <input type="radio" class="sr-only" name="answers[<%= s.key %>]" value="<%= v %>" <%= "checked" if r.answers[s.key] == v %> <%= "disabled" unless mine %>><%= l %></label>
                 <% end %>
               </div>
             </li>
           <% end %>
         </ul>
-        <button class="<%= btn_primary %> mt-3 w-full justify-center">Update the route</button>
+        <% if mine %><button class="<%= btn_primary %> mt-3 w-full justify-center">Update the road</button><% end %>
       <% end %>
     </div>
-    <div class="bg-white border rounded p-4">
-      <h2 class="font-semibold mb-1">Something not covered?</h2>
-      <p class="text-xs text-slate-500 mb-2">Describe what's different about this client's year. If it's a known situation it joins the route; if it's new, it's proposed as a new branch for the tax reviewers. Describe the situation, not the person: numbers and emails are removed before the AI sees it.</p>
-      <%= form_with url: situation_playbook_run_path(r), method: :post do %>
-        <textarea name="text" rows="3" required minlength="8" class="<%= input_css %>" placeholder="e.g. Client sold their main home this year"></textarea>
-        <button class="<%= btn %> mt-2 w-full justify-center">Check with the CPA advisor</button>
-      <% end %>
-    </div>
+    <% if mine %>
+      <div class="bg-white border rounded p-4">
+        <h2 class="font-semibold mb-1">Something not covered?</h2>
+        <p class="text-xs text-slate-500 mb-2">Describe what's different about this client's year. A known situation joins the road; a new one is proposed as a branch for the tax reviewers. Numbers and emails are removed before the AI sees it.</p>
+        <%= form_with url: situation_playbook_run_path(r), method: :post do %>
+          <textarea name="text" rows="3" required minlength="8" class="<%= input_css %>" placeholder="e.g. Client sold their main home this year"></textarea>
+          <button class="<%= btn %> mt-2 w-full justify-center">Check with the CPA advisor</button>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </div>

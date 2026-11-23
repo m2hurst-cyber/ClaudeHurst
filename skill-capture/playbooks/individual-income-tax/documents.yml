@@ -1,0 +1,198 @@
+# What each tax document looks like: the boxes the preparer uses. Identifiers (SSNs, EINs,
+# account numbers) are deliberately not fields: they are never copied out of the document.
+# type: money (number), number, text, code, date, yes_no
+kinds:
+  engagement-letter:
+    name: Signed engagement letter
+    fields:
+      - {key: signed, label: Signed by the client, type: yes_no}
+      - {key: signed_date, label: Date signed, type: date}
+  w2:
+    name: W-2 wage statement
+    issued_by: Employer
+    fields:
+      - {key: box1, label: "Box 1 wages, tips, other compensation", type: money}
+      - {key: box2, label: Box 2 federal income tax withheld, type: money}
+      - {key: box3, label: Box 3 social security wages, type: money}
+      - {key: box12_w, label: "Box 12 code W (HSA contributions)", type: money}
+      - {key: box16, label: Box 16 state wages, type: money}
+      - {key: box17, label: Box 17 state income tax, type: money}
+      - {key: state, label: Box 15 state, type: code}
+  1099-int:
+    name: 1099-INT interest
+    issued_by: Bank
+    fields:
+      - {key: box1, label: Box 1 interest income, type: money}
+      - {key: box3, label: Box 3 interest on US savings bonds and Treasuries, type: money}
+      - {key: box4, label: Box 4 federal income tax withheld, type: money}
+  1099-div:
+    name: 1099-DIV dividends
+    issued_by: Brokerage
+    fields:
+      - {key: box1a, label: Box 1a total ordinary dividends, type: money}
+      - {key: box1b, label: Box 1b qualified dividends, type: money}
+      - {key: box2a, label: Box 2a capital gain distributions, type: money}
+      - {key: box4, label: Box 4 federal income tax withheld, type: money}
+      - {key: box7, label: Box 7 foreign tax paid, type: money}
+  1099-b:
+    name: 1099-B sales of securities (summary)
+    issued_by: Brokerage or exchange
+    fields:
+      - {key: proceeds, label: Total proceeds, type: money}
+      - {key: cost_basis, label: Total cost basis, type: money}
+      - {key: wash_sale, label: Wash sale loss disallowed, type: money}
+      - {key: short_term_gain, label: Short-term gain or loss, type: money}
+      - {key: long_term_gain, label: Long-term gain or loss, type: money}
+      - {key: box4, label: Federal income tax withheld, type: money}
+  1099-r:
+    name: 1099-R retirement distributions
+    issued_by: Plan or IRA custodian
+    fields:
+      - {key: box1, label: Box 1 gross distribution, type: money}
+      - {key: box2a, label: Box 2a taxable amount, type: money}
+      - {key: box4, label: Box 4 federal income tax withheld, type: money}
+      - {key: box7, label: Box 7 distribution code, type: code}
+  ssa-1099:
+    name: SSA-1099 social security benefits
+    issued_by: Social Security Administration
+    fields:
+      - {key: box5, label: Box 5 net benefits, type: money}
+      - {key: box6, label: Box 6 voluntary federal income tax withheld, type: money}
+  1099-g:
+    name: 1099-G government payments
+    issued_by: State
+    fields:
+      - {key: box1, label: Box 1 unemployment compensation, type: money}
+      - {key: box2, label: Box 2 state or local income tax refund, type: money}
+      - {key: box4, label: Box 4 federal income tax withheld, type: money}
+  1099-nec:
+    name: 1099-NEC nonemployee compensation
+    issued_by: Client of the business
+    fields:
+      - {key: box1, label: Box 1 nonemployee compensation, type: money}
+      - {key: box4, label: Box 4 federal income tax withheld, type: money}
+  1099-k:
+    name: 1099-K payment card and third-party network transactions
+    issued_by: Payment platform
+    fields:
+      - {key: box1a, label: Box 1a gross amount, type: money}
+  business-summary:
+    name: Business income and expense summary
+    issued_by: Client's books
+    fields:
+      - {key: gross_receipts, label: Gross receipts, type: money}
+      - {key: total_expenses, label: Total expenses, type: money}
+      - {key: home_office_sqft, label: Home office square feet, type: number}
+      - {key: business_miles, label: Business miles driven, type: number}
+  rental-summary:
+    name: Rental property summary
+    issued_by: Client or property manager
+    fields:
+      - {key: rents, label: Rents received, type: money}
+      - {key: expenses, label: Expenses (excluding depreciation), type: money}
+      - {key: depreciation, label: Depreciation, type: money}
+      - {key: days_rented, label: Days rented at fair rent, type: number}
+      - {key: personal_days, label: Days of personal use, type: number}
+  k-1:
+    name: Schedule K-1
+    issued_by: Partnership, S corporation, estate or trust
+    fields:
+      - {key: ordinary_income, label: Ordinary business income (loss), type: money}
+      - {key: rental_income, label: Net rental income (loss), type: money}
+      - {key: interest, label: Interest income, type: money}
+      - {key: dividends, label: Dividends, type: money}
+      - {key: distributions, label: Distributions, type: money}
+  "1098":
+    name: 1098 mortgage interest
+    issued_by: Mortgage lender
+    fields:
+      - {key: box1, label: Box 1 mortgage interest, type: money}
+      - {key: box10, label: Box 10 property tax paid from escrow (if shown), type: money}
+  property-tax-bill:
+    name: Property tax bill or receipt
+    issued_by: County
+    fields:
+      - {key: amount, label: Amount paid in the tax year, type: money}
+  charitable-receipt:
+    name: Charitable contribution receipt
+    issued_by: Charity
+    fields:
+      - {key: amount, label: Amount given, type: money}
+      - {key: acknowledgment, label: "Written acknowledgment (required for $250 or more)", type: yes_no}
+  1098-t:
+    name: 1098-T tuition statement
+    issued_by: College
+    fields:
+      - {key: box1, label: Box 1 payments received for qualified tuition, type: money}
+      - {key: box5, label: Box 5 scholarships or grants, type: money}
+  1095-a:
+    name: 1095-A health insurance marketplace statement
+    issued_by: Health insurance Marketplace
+    fields:
+      - {key: annual_premium, label: Annual enrollment premiums (column A total), type: money}
+      - {key: annual_slcsp, label: Annual second lowest cost silver plan (column B total), type: money}
+      - {key: annual_advance, label: Annual advance payment of premium tax credit (column C total), type: money}
+  5498-sa:
+    name: 5498-SA HSA contributions
+    issued_by: HSA custodian
+    fields:
+      - {key: box2, label: Box 2 total contributions made in the year, type: money}
+  1099-sa:
+    name: 1099-SA HSA distributions
+    issued_by: HSA custodian
+    fields:
+      - {key: box1, label: Box 1 gross distribution, type: money}
+  form-1040:
+    name: Form 1040 (prepared return)
+    issued_by: Tax software
+    fields:
+      - {key: line_1a, label: Line 1a wages, type: money}
+      - {key: line_2b, label: Line 2b taxable interest, type: money}
+      - {key: line_3a, label: Line 3a qualified dividends, type: money}
+      - {key: line_3b, label: Line 3b ordinary dividends, type: money}
+      - {key: line_9, label: Line 9 total income, type: money}
+      - {key: line_11, label: Line 11 adjusted gross income, type: money}
+      - {key: line_12, label: Line 12 standard or itemized deduction, type: money}
+      - {key: line_15, label: Line 15 taxable income, type: money}
+      - {key: line_24, label: Line 24 total tax, type: money}
+      - {key: line_25d, label: Line 25d total federal income tax withheld, type: money}
+      - {key: line_33, label: Line 33 total payments, type: money}
+      - {key: line_34, label: Line 34 overpaid, type: money}
+      - {key: line_37, label: Line 37 amount you owe, type: money}
+      - {key: filing_status, label: Filing status, type: text}
+  form-8879:
+    name: Form 8879 e-file signature authorization
+    issued_by: Client signature
+    fields:
+      - {key: signed, label: Signed by the taxpayer (and spouse if joint), type: yes_no}
+      - {key: agi, label: Adjusted gross income shown, type: money}
+      - {key: total_tax, label: Total tax shown, type: money}
+  efile-acknowledgment:
+    name: E-file acknowledgment
+    issued_by: IRS (via tax software)
+    fields:
+      - {key: status, label: Status (accepted or rejected), type: text}
+      - {key: accepted_date, label: Date accepted, type: date}
+  extension-confirmation:
+    name: Extension (Form 4868) acceptance
+    issued_by: IRS
+    fields:
+      - {key: status, label: Status (accepted or rejected), type: text}
+      - {key: amount_paid, label: Amount paid with the extension, type: money}
+  payment-confirmation:
+    name: Payment confirmation
+    issued_by: IRS Direct Pay, EFTPS, card processor or bank
+    fields:
+      - {key: amount, label: Amount paid, type: money}
+      - {key: payment_date, label: Payment date, type: date}
+      - {key: jurisdiction, label: Paid to (IRS or state), type: text}
+  payment-plan-confirmation:
+    name: Payment plan acceptance
+    issued_by: IRS
+    fields:
+      - {key: monthly_amount, label: Monthly payment, type: money}
+      - {key: status, label: Status, type: text}
+  other:
+    name: Other document
+    fields:
+      - {key: amount, label: Amount (if any), type: money}

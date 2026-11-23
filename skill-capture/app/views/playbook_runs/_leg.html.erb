@@ -1,0 +1,118 @@
+<% name = step[:name]; branch = step[:kind] == "branch"; skill = step[:skill]; st = @run.leg(name); spec = @playbook.leg_spec(name) %>
+<% status = st["status"] || "not_started"; mine = @run.user_id == current_user.id; ai_on = Capture::Config.llm_enabled? %>
+<% checks = Array(st["checks"]); open_checks = checks.count { |c| !c["ok"] } %>
+<li id="leg-<%= name %>" class="relative <%= branch ? 'ml-10 pl-8' : 'pl-10' %> pb-5">
+  <% unless last %><span class="absolute <%= branch ? 'left-[10px] border-l-2 border-dashed border-slate-400 w-0' : 'left-[15px] w-1.5 bg-sky-600 rounded' %> top-8 bottom-0" aria-hidden="true"></span><% end %>
+  <span class="absolute left-0 top-0 <%= branch ? 'w-6 h-6 text-xs' : 'w-9 h-9 text-sm' %> rounded-full grid place-items-center font-bold
+               <%= status == 'verified' ? 'bg-emerald-600 text-white' : (branch ? 'bg-white border-2 border-slate-500' : 'bg-white border-4 border-sky-600') %>"><%= status == "verified" ? "✓" : (branch ? "⑂" : number) %></span>
+  <div class="flex flex-wrap items-baseline gap-2">
+    <span class="font-semibold"><%= skill.title %></span>
+    <% case status when "verified" %><span class="text-xs px-1.5 rounded border bg-emerald-50 text-emerald-800 border-emerald-200">✓ Verified</span>
+    <% when "prepared" %><span class="text-xs px-1.5 rounded border bg-amber-50 text-amber-800 border-amber-200">Prepared · <%= pluralize(open_checks, "check") %> open</span>
+    <% else %><span class="text-xs text-slate-500">Not prepared</span><% end %>
+    <% if st["stale"] %><span class="text-xs text-amber-700">documents changed since it was prepared</span><% end %>
+    <% if branch %><span class="text-xs text-slate-500">because: <%= step[:situation].question %></span><% end %>
+  </div>
+
+  <div class="mt-2 border rounded bg-white <%= status == 'verified' ? 'border-emerald-200' : '' %>">
+    <% leg_docs = @documents.select { |d| Array(spec["documents"]).map(&:to_s).include?(d.kind.to_s) } %>
+    <% if Array(spec["documents"]).any? %>
+      <div class="px-3 py-2 border-b text-xs">
+        <span class="text-slate-500">Documents:</span>
+        <% if leg_docs.any? %><%= safe_join(leg_docs.map { |d| link_to("#{d.label}#{' ✓' if d.status == 'confirmed'}", "#doc-#{d.id}", class: d.status == 'confirmed' ? 'text-emerald-700' : 'text-amber-700') }, ", ") %>
+        <% else %><span class="text-slate-400">none yet (<%= Array(spec["documents"]).map { |k| @playbook.catalog.dig(k.to_s, "name") }.compact.first(3).join(", ") %>…)</span><% end %>
+      </div>
+    <% end %>
+
+    <% if Array(spec["inputs"]).any? %>
+      <%= form_with url: inputs_playbook_run_path(@run), method: :patch, class: "px-3 py-2 border-b text-xs space-y-1" do %>
+        <%= hidden_field_tag :leg, name %>
+        <% Array(spec["inputs"]).each do |k| %>
+          <% meta = @playbook.leg_specs.dig("inputs", k) || {} %>
+          <label class="flex items-center gap-2"><span class="flex-1 text-slate-600"><%= meta["label"] %></span>
+            <% if meta["type"] == "select" %>
+              <select name="inputs[<%= k %>]" class="border rounded px-1 py-1 w-48" <%= "disabled" unless mine %>><option value=""></option>
+                <% meta["options"].each do |o| %><option <%= "selected" if @run.inputs[k] == o %>><%= o %></option><% end %></select>
+            <% else %>
+              <input name="inputs[<%= k %>]" value="<%= @run.inputs[k] %>" class="border rounded px-1 py-1 w-32 text-right tabular-nums" inputmode="decimal" <%= "disabled" unless mine %>>
+            <% end %>
+          </label>
+        <% end %>
+        <% if mine %><button class="<%= btn %> text-xs">Save</button><% end %>
+      <% end %>
+    <% end %>
+
+    <div class="px-3 py-2 border-b flex flex-wrap items-center gap-2">
+      <% if mine %>
+        <%= button_to (st["prepared_at"] ? "Prepare again" : (ai_on ? "✨ Prepare with AI" : "Prepare")), prepare_playbook_run_path(@run), params: { leg: name },
+              class: st["prepared_at"] ? "#{btn} text-xs" : "#{btn_primary} text-xs" %>
+      <% end %>
+      <% if st["prepared_at"] %><span class="text-xs text-slate-500"><%= st["prepared_by"] == "ai" ? "✨ Prepared by AI" : "Prepared by rules" %> <%= time_ago_in_words(Time.zone.parse(st["prepared_at"])) %> ago</span><% end %>
+      <details class="text-xs ml-auto"><summary class="cursor-pointer text-sky-700">CPA instructions</summary>
+        <div class="border rounded p-3 mt-1 bg-slate-50 text-sm"><%= skill_markdown(skill.body) %></div></details>
+    </div>
+
+    <% figures = Array(spec["show"]).filter_map { |k| (st["figures"] || {}).key?(k) && [k, st["figures"][k]] } %>
+    <% if figures.any? %>
+      <table class="w-full text-xs border-b"><tbody>
+        <% figures.each do |k, v| %>
+          <tr class="border-t first:border-t-0"><td class="px-3 py-1 text-slate-600"><%= k.humanize %></td>
+            <td class="px-3 py-1 text-right tabular-nums font-medium"><%= k.start_with?("itemizes", "fbar_required") ? (v.to_f.positive? ? "Yes" : "No") : number_with_delimiter(v.to_f == v.to_f.round ? v.to_f.round : v) %></td></tr>
+        <% end %>
+      </tbody></table>
+    <% end %>
+
+    <% if st["memo"].present? %>
+      <div class="px-3 py-2 border-b text-sm"><%= skill_markdown(st["memo"]) %></div>
+    <% end %>
+    <% issues = Array(st["issues"]) %>
+    <% if issues.any? %>
+      <ul class="px-3 py-2 border-b space-y-1 text-xs">
+        <% issues.each_with_index do |iss, i| %>
+          <% acked = Array(st["acknowledged"]).include?(i) %>
+          <li class="flex items-start gap-2">
+            <span class="<%= { 'blocking' => 'text-red-700', 'warning' => 'text-amber-700' }.fetch(iss['severity'], 'text-slate-500') %> font-semibold uppercase text-[10px] mt-0.5 w-14 shrink-0"><%= iss["severity"] %></span>
+            <span class="flex-1 <%= 'line-through text-slate-400' if acked %>"><%= iss["text"] %></span>
+            <% if iss["severity"] == "blocking" && !acked && mine %><%= button_to "Resolved", acknowledge_playbook_run_path(@run), params: { leg: name, index: i }, class: "text-sky-700 hover:underline", form: { class: "inline" } %><% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <ul class="px-3 py-2 space-y-1 text-xs" aria-label="Verification">
+      <% spec_checks = Array(spec["checks"]) %>
+      <% checks.each_with_index do |c, i| %>
+        <% sc = spec_checks[i] || {} %>
+        <li class="flex items-start gap-2">
+          <span class="<%= c['ok'] ? 'text-emerald-700' : 'text-red-700' %> w-3"><%= c["ok"] ? "✓" : "✗" %></span>
+          <span class="flex-1"><%= c["label"] %><% if c["detail"].present? %> <span class="text-slate-500">· <%= c["detail"] %></span><% end %></span>
+          <% if sc["type"] == "attest" && mine %>
+            <%= button_to (c["ok"] ? "Undo" : "I confirm"), attest_playbook_run_path(@run), params: { leg: name, key: sc["key"], value: c["ok"] ? 0 : 1 },
+                  class: c["ok"] ? "text-slate-400 hover:underline" : "px-1.5 rounded border bg-white hover:bg-slate-50", form: { class: "inline" } %>
+          <% elsif sc["unless_attested"] && !c["ok"] && mine %>
+            <%= button_to "Explained", attest_playbook_run_path(@run), params: { leg: name, key: sc["unless_attested"], value: 1 }, class: "px-1.5 rounded border bg-white", form: { class: "inline" } %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+    <% if spec_checks.any? { |c| c["type"] == "reviewer" } %>
+      <div class="px-3 py-2 border-t text-xs flex flex-wrap items-center gap-2">
+        <% if @run.reviewer_id == current_user.id %>
+          <% if @run.reviewed_at %>
+            <span class="text-emerald-700">You signed off <%= nice_time(@run.reviewed_at) %></span>
+            <%= button_to "Withdraw", sign_off_playbook_run_path(@run), params: { withdraw: 1 }, class: "text-slate-500 hover:underline", form: { class: "inline" } %>
+          <% else %>
+            <%= button_to "Sign off as reviewer", sign_off_playbook_run_path(@run), class: "#{btn_primary} text-xs", data: { turbo_confirm: "Sign off: you've reviewed every leg against the review checklist?" } %>
+          <% end %>
+        <% elsif mine %>
+          <%= form_with url: request_review_playbook_run_path(@run), method: :post, class: "flex gap-1 items-center" do %>
+            <select name="reviewer_id" class="border rounded px-1 py-1" aria-label="Reviewer">
+              <% @reviewers.each do |u| %><option value="<%= u.id %>" <%= "selected" if @run.reviewer_id == u.id %>><%= u.name %></option><% end %></select>
+            <button class="<%= btn %> text-xs"><%= @run.reviewer ? "Change reviewer" : "Ask for review" %></button>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</li>

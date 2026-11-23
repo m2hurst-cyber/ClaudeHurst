@@ -103,10 +103,18 @@ Rails.application.routes.draw do
     end
     resources :playbook_runs, path: "returns", only: %i[create show update] do
       member do
-        post :step
+        patch :inputs
+        post :prepare
+        post :attest
+        post :acknowledge
+        post :request_review
+        post :sign_off
         post :situation
         post :send_route
         post :complete
+      end
+      resources :documents, controller: :return_documents, only: %i[create show update destroy] do
+        member { post :read }
       end
     end
     resources :connected_apps, only: %i[index destroy]

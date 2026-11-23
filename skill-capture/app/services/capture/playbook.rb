@@ -56,6 +56,13 @@ module Capture
 
     def skill_spec(name) = skills.find { |s| s["name"] == name }
 
+    # Document catalog (documents.yml) and leg specifications (legs.yml), when the playbook has them.
+    def catalog = @catalog ||= (f = dir.join("documents.yml")).exist? ? YAML.safe_load(f.read).fetch("kinds") : {}
+    def leg_specs = @leg_specs ||= (f = dir.join("legs.yml")).exist? ? YAML.safe_load(f.read) : {}
+    def leg_spec(name) = leg_specs.dig("legs", name) || { "checks" => [{ "type" => "attest", "key" => "done", "text" => "I completed this step following its instructions" }] }
+    def situation_documents(key) = Array(situation_specs.find { |s| s["key"] == key }&.dig("documents"))
+    def prepares_legs? = catalog.any?
+
     # Problems that would stop an install.
     def problems
       out = []
@@ -72,6 +79,37 @@ module Capture
       end
       skills.flat_map { |s| Array(s["fields"]) }.uniq.each { |p| out << "unknown field #{p}" unless declared.include?(p) || Field.exists?(path: p) }
       Array(data.dig("resources", "items")).each { |r| out << "resource #{r['file']} missing" unless dir.join("resources", r["file"]).exist? }
+      out += leg_problems if prepares_legs?
+      out
+    end
+
+    def leg_problems
+      out = []
+      totals = leg_specs.fetch("totals", {})
+      inputs = leg_specs.fetch("inputs", {})
+      ref_ok = lambda do |ref|
+        ns, key = ref.split(".", 2)
+        case ns
+        when "input" then inputs.key?(key)
+        when "totals" then totals.key?(key)
+        else catalog.dig(ns, "fields")&.any? { |f| f["key"] == key }
+        end
+      end
+      totals.each do |name, expr|
+        refs = expr.is_a?(Array) ? expr : Formula.refs(expr)
+        refs.each { |r| out << "total #{name}: unknown #{r}" unless ref_ok.(r) }
+      end
+      leg_specs.fetch("legs", {}).each do |leg, spec|
+        out << "legs: #{leg} isn't a skill in this playbook" unless skill_spec(leg)
+        Array(spec["documents"]).each { |k| out << "#{leg}: unknown document #{k}" unless catalog.key?(k) }
+        Array(spec["inputs"]).each { |k| out << "#{leg}: unknown input #{k}" unless inputs.key?(k) }
+        Array(spec["show"]).each { |k| out << "#{leg}: unknown total #{k}" unless totals.key?(k) }
+        Array(spec["checks"]).each do |c|
+          [c["left"], c["right"]].compact.each { |r| out << "#{leg}: unknown #{r}" unless ref_ok.(r) }
+          out << "#{leg}: unknown document #{c['kind']}" if c["kind"] && !catalog.key?(c["kind"])
+        end
+      end
+      situation_specs.each { |s| Array(s["documents"]).each { |k| out << "situation #{s['key']}: unknown document #{k}" unless catalog.key?(k) } }
       out
     end
 
