@@ -7,10 +7,6 @@ default: &default
     class: InvoicesOverdueSweepJob
     queue: default
     schedule: every day at 7am
-  skill_capture_sweep:
-    class: SkillCaptureSweepJob
-    queue: default
-    schedule: every hour at minute 23
 
 development:
   <<: *default

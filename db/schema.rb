@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_19_153049) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -452,65 +452,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_120000) do
     t.index ["user_id"], name: "index_reminders_on_user_id"
   end
 
-  create_table "skill_candidates", force: :cascade do |t|
-    t.string "signature", null: false
-    t.jsonb "steps", default: [], null: false
-    t.string "domain"
-    t.string "status", default: "detected", null: false
-    t.integer "occurrence_count", default: 0, null: false
-    t.integer "distinct_user_count", default: 0, null: false
-    t.jsonb "contributor_ids", default: [], null: false
-    t.jsonb "example_traces", default: [], null: false
-    t.datetime "first_seen_at"
-    t.datetime "last_seen_at"
-    t.string "origin", default: "detected", null: false
-    t.string "draft_name"
-    t.string "draft_title"
-    t.text "draft_description"
-    t.text "draft_body"
-    t.string "draft_tags", default: [], null: false, array: true
-    t.jsonb "draft_inputs", default: [], null: false
-    t.jsonb "draft_outputs", default: [], null: false
-    t.string "draft_generator"
-    t.datetime "drafted_at"
-    t.bigint "requested_by_id"
-    t.bigint "reviewer_id"
-    t.datetime "reviewed_at"
-    t.text "review_notes"
-    t.bigint "skill_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["requested_by_id"], name: "index_skill_candidates_on_requested_by_id"
-    t.index ["reviewer_id"], name: "index_skill_candidates_on_reviewer_id"
-    t.index ["signature"], name: "index_skill_candidates_on_signature", unique: true
-    t.index ["skill_id"], name: "index_skill_candidates_on_skill_id"
-    t.index ["status"], name: "index_skill_candidates_on_status"
-  end
-
-  create_table "skills", force: :cascade do |t|
-    t.string "name", null: false
-    t.integer "version", default: 1, null: false
-    t.string "title", null: false
-    t.text "description", null: false
-    t.text "body", null: false
-    t.string "domain"
-    t.string "tags", default: [], null: false, array: true
-    t.jsonb "inputs", default: [], null: false
-    t.jsonb "outputs", default: [], null: false
-    t.string "license", default: "Proprietary - internal use only", null: false
-    t.string "status", default: "published", null: false
-    t.bigint "parent_skill_id"
-    t.bigint "published_by_id"
-    t.datetime "published_at"
-    t.jsonb "source", default: {}, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["name", "version"], name: "index_skills_on_name_and_version", unique: true
-    t.index ["parent_skill_id"], name: "index_skills_on_parent_skill_id"
-    t.index ["published_by_id"], name: "index_skills_on_published_by_id"
-    t.index ["status"], name: "index_skills_on_status"
-  end
-
   create_table "tasks", force: :cascade do |t|
     t.string "subject_type"
     t.bigint "subject_id"
@@ -528,22 +469,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_120000) do
     t.index ["discarded_at"], name: "index_tasks_on_discarded_at"
     t.index ["due_on"], name: "index_tasks_on_due_on"
     t.index ["subject_type", "subject_id"], name: "index_tasks_on_subject"
-  end
-
-  create_table "usage_events", force: :cascade do |t|
-    t.bigint "user_id"
-    t.string "session_key", null: false
-    t.string "workflow_key", null: false
-    t.string "http_method", null: false
-    t.string "resource_type"
-    t.bigint "resource_id"
-    t.integer "response_status"
-    t.jsonb "context", default: {}, null: false
-    t.datetime "occurred_at", null: false
-    t.index ["occurred_at"], name: "index_usage_events_on_occurred_at"
-    t.index ["user_id", "occurred_at"], name: "index_usage_events_on_user_id_and_occurred_at"
-    t.index ["user_id"], name: "index_usage_events_on_user_id"
-    t.index ["workflow_key"], name: "index_usage_events_on_workflow_key"
   end
 
   create_table "users", force: :cascade do |t|
@@ -621,11 +546,5 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_120000) do
   add_foreign_key "raw_material_lots", "raw_materials"
   add_foreign_key "raw_materials", "companies", column: "owned_by_company_id"
   add_foreign_key "reminders", "users"
-  add_foreign_key "skill_candidates", "skills"
-  add_foreign_key "skill_candidates", "users", column: "requested_by_id"
-  add_foreign_key "skill_candidates", "users", column: "reviewer_id"
-  add_foreign_key "skills", "skills", column: "parent_skill_id"
-  add_foreign_key "skills", "users", column: "published_by_id"
   add_foreign_key "tasks", "users", column: "assignee_id"
-  add_foreign_key "usage_events", "users"
 end

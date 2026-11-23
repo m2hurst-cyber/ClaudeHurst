@@ -31,10 +31,6 @@
         <%= link_to "Raw materials", raw_materials_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
         <%= link_to "Finished goods", finished_good_lots_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
 
-        <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">Knowledge</div>
-        <%= link_to "Skill library", skills_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
-        <%= link_to "Skill review", skill_candidates_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>
-
         <% if current_user&.admin? %>
           <div class="px-2 pt-3 pb-1 text-xs uppercase text-slate-500">Admin</div>
           <%= link_to "Users", admin_users_path, class: "block rounded px-2 py-2 hover:bg-slate-800" %>

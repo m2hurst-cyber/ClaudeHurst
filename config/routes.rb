@@ -86,22 +86,6 @@ Rails.application.routes.draw do
       member { get :trace }
     end
 
-    # Skill capture & institutional memory
-    resources :skill_candidates, except: %i[destroy] do
-      member do
-        post :generate_draft
-        post :approve
-        post :reject
-        post :dismiss
-      end
-    end
-    resources :skills, only: %i[index show edit update] do
-      member do
-        get :download
-        post :deprecate
-      end
-    end
-
     # Admin
     namespace :admin do
       resources :users
