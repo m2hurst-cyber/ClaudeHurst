@@ -34,15 +34,15 @@ namespace :capture do
       File.write(path, "#{front.to_yaml}---\n\n#{place.body.strip}\n")
       puts "wrote #{path}"
     end
-    Skill.published.find_each do |s|
+    Skill.published.shared.find_each do |s| # sandbox (local) skills are never exported
       puts "wrote #{Capture::SkillFile.export(s, dir: dir)}"
-      write.(dir.join(s.name, "ROAD.md"), Capture::Directions.find("road:#{s.name}"))
+      write.(dir.join(s.name, "ROAD.md"), Capture::Directions.find("road:#{s.name}", viewer: nil))
       if SkillLink.where(from_node: s.name).exists? || Waypoint.exists?(key: "junction:#{s.name}")
-        write.(dir.join(s.name, "INTERSECTION.md"), Capture::Directions.find("junction:#{s.name}"))
+        write.(dir.join(s.name, "INTERSECTION.md"), Capture::Directions.find("junction:#{s.name}", viewer: nil))
       end
     end
     SkillLink.distinct.pluck(:from_node, :to_node).each do |a, b|
-      place = Capture::Directions.find(Waypoint.key_for("handoff", a, b))
+      place = Capture::Directions.find(Waypoint.key_for("handoff", a, b), viewer: nil)
       write.(dir.join("handoffs", "#{a}--#{b}.md"), place)
     rescue Capture::Directions::NotFound
       next
@@ -174,6 +174,27 @@ namespace :capture do
     }.each do |key, body|
       place = Capture::Directions.find(key)
       Capture::Directions.save!(place, body: body, user: admin, note: "Demo directions") unless place.written
+    end
+
+    # Stages: most of the network is firm-wide; the FX branch and NDA review are still in the
+    # sandbox; the trial-balance export has been promoted to market.
+    Skill.published.update_all(stage: "firm", stage_changed_at: 30.days.ago)
+    Skill.published.where(name: %w[reconcile-multi-currency-bank review-nda]).update_all(stage: "local", stage_changed_at: 5.days.ago)
+    Skill.published.where(name: "export-trial-balance").update_all(stage: "market", license: "CC-BY-4.0")
+    # Votes: inactive placeholder voters (they can't sign in) so the comparison has data.
+    voters = 4.times.map do |i|
+      User.find_or_create_by!(email: "demo-voter-#{i + 1}@example.invalid") do |u|
+        u.assign_attributes(name: "Demo voter #{i + 1}", role: "member", domains: ["finance"], active: false, password: SecureRandom.hex(24))
+      end
+    end
+    { "reconcile-multi-currency-bank" => [1, 1, 1, 1], "reconcile-bank-statement" => [1, -1, 1, -1], "post-month-end-accruals" => [1, 1, -1] }.each do |name, values|
+      values.each_with_index { |v, i| SkillVote.find_or_create_by!(user: voters[i], skill_name: name) { |sv| sv.value = v; sv.comment = ("Handles FX without a separate sheet" if name.include?("multi") && i.zero?) } }
+    end
+    fx = Skill.current("reconcile-multi-currency-bank")
+    unless Promotion.exists?(skill_name: fx.name)
+      Promotion.create!(skill_name: fx.name, skill_version: fx.version, from_stage: "local", to_stage: "firm", requested_by: voters.first,
+                        pitch: "Every entity with foreign-currency accounts uses this; it removes the manual revaluation sheet.",
+                        checks: Capture::Gates.for(fx, "firm").map(&:to_h))
     end
 
     result.metrics.select(&:priced?).sort_by { |m| -m.congestion_index }.each do |m|

@@ -3,13 +3,14 @@ class BountiesController < ApplicationController
 
   def index
     @schedule = PricingSchedule.current
-    @active = Bounty.active.order(pool: :desc).to_a
+    visible = Skill.published.visible_to(current_user).pluck(:name)
+    @active = Bounty.active.where(skill_name: visible).order(pool: :desc).to_a
     @metrics = SkillMetric.where(name: @active.map(&:skill_name)).index_by(&:name)
     @skills = Skill.published.where(name: @active.map(&:skill_name)).index_by(&:name)
     @paid = Bounty.where(status: "paid").order(approved_at: :desc).limit(10).includes(:solver)
     @leaders = CreditEntry.group(:user_id).order(Arel.sql("SUM(amount) DESC")).limit(10).sum(:amount)
                           .map { |uid, amt| [User.find_by(id: uid), amt] }.select(&:first)
-    @congested = SkillMetric.where.not(tier: nil).order(congestion_index: :desc).limit(10)
+    @congested = SkillMetric.where(name: visible).where.not(tier: nil).order(congestion_index: :desc).limit(10)
   end
 
   def approve

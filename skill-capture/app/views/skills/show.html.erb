@@ -4,7 +4,7 @@
   <div>
     <div class="text-xs text-slate-500 mb-1"><%= link_to "Library", skills_path, class: "hover:underline" %></div>
     <h1 class="text-2xl font-bold"><%= s.title %></h1>
-    <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{s.domain}" if s.domain %> · <%= s.status %></div>
+    <div class="mt-1 flex flex-wrap items-center gap-2"><%= stage_badge(s.stage) %><span class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{s.domain}" if s.domain %> · <%= s.status %></span></div>
   </div>
   <div class="flex flex-wrap gap-2">
     <%= link_to "Download SKILL.md", download_skill_path(s), class: btn %>
@@ -27,6 +27,8 @@
     <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= s.body %></pre>
   </div>
   <div class="space-y-4 text-sm">
+    <%= render "stage_panel", s: s %>
+    <%= render "vote_panel", s: s %>
     <div class="bg-white border rounded p-4 space-y-1">
       <h2 class="font-semibold mb-1">Origin</h2>
       <div>Published by <%= s.published_by&.name || "—" %> on <%= nice_time(s.published_at) %></div>
@@ -63,8 +65,8 @@
         </div>
       <% end %>
     </div>
-    <% nexts = SkillLink.neighbours(s.name, direction: :next).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
-    <% prevs = SkillLink.neighbours(s.name, direction: :previous).filter_map { |l| (sk = Skill.current(l[:name])) && l.merge(skill: sk) } %>
+    <% nexts = SkillLink.neighbours(s.name, direction: :next).filter_map { |l| (sk = Skill.current(l[:name])) && sk.visible_to?(current_user) && l.merge(skill: sk) } %>
+    <% prevs = SkillLink.neighbours(s.name, direction: :previous).filter_map { |l| (sk = Skill.current(l[:name])) && sk.visible_to?(current_user) && l.merge(skill: sk) } %>
     <% manual_next = SkillLink.manual.where(from_node: s.name).pluck(:to_node) %>
     <div class="bg-white border rounded p-4">
       <div class="flex items-baseline justify-between">
@@ -93,7 +95,7 @@
       <% end %>
       <% if s.status == "published" && policy(s).update? %>
         <%= form_with url: skill_links_path(s), method: :post, class: "flex gap-1 mt-2" do %>
-          <%= select_tag :to, options_for_select(Skill.published.where.not(name: s.name).order(:title).pluck(:title, :name)), prompt: "Add what comes next…", class: "border rounded px-2 py-1 text-xs flex-1 min-w-0", "aria-label": "Skill that comes next" %>
+          <%= select_tag :to, options_for_select(Skill.published.visible_to(current_user).where.not(name: s.name).order(:title).pluck(:title, :name)), prompt: "Add what comes next…", class: "border rounded px-2 py-1 text-xs flex-1 min-w-0", "aria-label": "Skill that comes next" %>
           <button class="<%= btn %> text-xs">Link</button>
         <% end %>
       <% end %>

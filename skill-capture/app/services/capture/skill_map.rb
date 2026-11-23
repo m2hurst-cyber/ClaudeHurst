@@ -22,10 +22,15 @@ module Capture
       end
     end
 
-    def self.call = new.call
+    def self.call(user: nil) = new(user).call
+
+    def initialize(user = nil)
+      @user = user
+    end
 
     def call
-      skills = Skill.published.select(:id, :name, :title, :domain, :source, :published_at).to_a
+      skills = (@user ? Skill.published.visible_to(@user) : Skill.published)
+               .select(:id, :name, :title, :domain, :source, :published_at, :stage).to_a
       candidates = SkillCandidate.open.select(:id, :domain, :status, :steps, :contributors).to_a
       reviewers = User.active.where(role: "reviewer").pluck(:name, :domains)
 

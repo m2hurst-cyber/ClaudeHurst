@@ -20,16 +20,24 @@ module Capture
 
     class NotFound < StandardError; end
 
-    def self.find(key) = new.find(key)
+    # viewer: a User (sees what they're allowed to), nil (agents: firm and market only),
+    # or :system (internal jobs: everything).
+    def self.find(key, viewer: :system) = new(viewer: viewer).find(key)
+
+    def initialize(viewer: :system)
+      @viewer = viewer
+    end
+
+    def visible?(skill) = @viewer == :system || skill.visible_to?(@viewer)
 
     # Turn-by-turn for a route of skill names: road, intersection, handoff, next road, ... arrive.
-    def self.for_route(names)
+    def self.for_route(names, viewer: :system)
       keys = names.each_with_index.flat_map do |name, i|
         nxt = names[i + 1]
         nxt ? ["road:#{name}", "junction:#{name}", Waypoint.key_for("handoff", name, nxt)] : ["road:#{name}"]
       end
       keys.filter_map do |k|
-        find(k)
+        find(k, viewer: viewer)
       rescue NotFound
         nil
       end
@@ -37,8 +45,10 @@ module Capture
 
     def find(key)
       kind, from, to = Waypoint.parse_key(key) || raise(NotFound, "unknown place #{key.inspect}")
-      skill = Skill.current(from) || raise(NotFound, "no published skill #{from.inspect}")
-      to_skill = to && (Skill.current(to) || raise(NotFound, "no published skill #{to.inspect}"))
+      skill = Skill.current(from)
+      raise NotFound, "no published skill #{from.inspect}" unless skill && visible?(skill)
+      to_skill = to && Skill.current(to)
+      raise NotFound, "no published skill #{to.inspect}" if to && !(to_skill && visible?(to_skill))
       if kind == "handoff" && !SkillLink.exists?(from_node: from, to_node: to)
         raise NotFound, "no road from #{from} to #{to}"
       end
@@ -108,7 +118,7 @@ module Capture
 
     def road_scaffold(skill, _)
       steps = labels(skill)
-      prev = SkillLink.neighbours(skill.name, direction: :previous).filter_map { |l| Skill.current(l[:name]) }
+      prev = SkillLink.neighbours(skill.name, direction: :previous).filter_map { |l| (s = Skill.current(l[:name])) && visible?(s) && s }
       bounty = Bounty.active_for(skill.name)
       <<~MD
         # Road: #{skill.title}
@@ -135,8 +145,8 @@ module Capture
     end
 
     def junction_scaffold(skill, _)
-      exits = SkillLink.neighbours(skill.name, direction: :next).filter_map { |l| (s = Skill.current(l[:name])) && l.merge(skill: s) }
-      branches = Skill.published.where(parent_skill_id: Skill.where(name: skill.name).select(:id)).where.not(name: skill.name).to_a
+      exits = SkillLink.neighbours(skill.name, direction: :next).filter_map { |l| (s = Skill.current(l[:name])) && visible?(s) && l.merge(skill: s) }
+      branches = Skill.published.where(parent_skill_id: Skill.where(name: skill.name).select(:id)).where.not(name: skill.name).select { |b| visible?(b) }
       total = exits.sum { |e| e[:traffic] }
       lines = exits.each_with_index.map do |e, i|
         share = total.positive? && e[:traffic].positive? ? "#{(e[:traffic] * 100.0 / total).round}% of trips" : "linked by a reviewer"

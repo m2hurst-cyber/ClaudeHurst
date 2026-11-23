@@ -1,0 +1,43 @@
+<% content_for :title, "Compare: #{@skill.title}" %>
+<div class="mb-4">
+  <div class="text-xs text-slate-500 mb-1"><%= link_to @skill.title, skill_path(@skill), class: "hover:underline" %> / Compare</div>
+  <h1 class="text-2xl font-bold">Which process is better?</h1>
+  <p class="text-sm text-slate-500">Alternatives for the same job: this skill and the branches in its lineage. Votes sit next to how each one actually runs. The preferred one can be proposed for promotion, replacing the incumbent.</p>
+</div>
+
+<div class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));">
+  <% @rows.each do |r| %>
+    <% s = r[:skill]; m = r[:metric] %>
+    <section class="bg-white border rounded p-4 text-sm flex flex-col gap-2 <%= 'ring-2 ring-slate-900' if r[:preferred] %>">
+      <% if r[:preferred] %><div class="text-xs font-semibold text-slate-900">★ Preferred by colleagues</div><% end %>
+      <div>
+        <%= link_to s.title, skill_path(s), class: "font-semibold text-base text-sky-700 hover:underline" %>
+        <div class="mt-1 flex flex-wrap items-center gap-2"><%= stage_badge(s.stage) %><span class="text-xs text-slate-500">v<%= s.version %><%= " · improved ×#{r[:improvements]}" if r[:improvements].positive? %></span></div>
+      </div>
+      <dl class="grid grid-cols-[7.5rem_1fr] gap-y-1">
+        <dt class="text-slate-500">Votes</dt><dd><strong><%= format("%+d", r[:votes][:score]) %></strong> <span class="text-xs text-slate-500">(<%= r[:votes][:up] %> for, <%= r[:votes][:down] %> against)</span></dd>
+        <dt class="text-slate-500">Travel time</dt><dd><%= minutes_text(m&.median_minutes) %></dd>
+        <dt class="text-slate-500">Traffic</dt><dd><%= tier_badge(m&.tier) %></dd>
+        <dt class="text-slate-500">Trips (<%= schedule.window_days %> days)</dt><dd><%= m&.trips || 0 %></dd>
+        <dt class="text-slate-500">Steps</dt><dd><%= Array(s.source["workflow"]).size %></dd>
+      </dl>
+      <% if r[:comments].any? %>
+        <ul class="text-xs text-slate-600 space-y-1 border-t pt-2">
+          <% r[:comments].each do |v| %><li><%= v.value.positive? ? "👍" : "👎" %> “<%= v.comment %>” <span class="text-slate-400">· <%= v.user.name %></span></li><% end %>
+        </ul>
+      <% end %>
+      <div class="mt-auto pt-2 border-t flex flex-wrap gap-2 items-center">
+        <% unless Capture::Voting.own?(current_user, s) %>
+          <%= button_to "👍 Better", skill_vote_path(s), method: :put, params: { value: 1 }, class: btn %>
+          <%= button_to "👎", skill_vote_path(s), method: :put, params: { value: -1 }, class: btn, "aria-label": "Needs work" %>
+        <% end %>
+        <% if r[:preferred] && s.next_stage && Capture::Promotions.can_request?(current_user, s) %>
+          <% incumbent = @rows.map { |x| x[:skill] }.find { |x| x.name != s.name && Skill::STAGES.index(x.stage) >= Skill::STAGES.index(s.next_stage) } %>
+          <%= button_to "Propose for #{Skill::STAGE_LABELS[s.next_stage]}#{incumbent ? ", replacing #{incumbent.title.truncate(24)}" : ''}", skill_promotions_path(s), method: :post,
+                params: { replaces: incumbent&.name, pitch: "Preferred by colleagues on the comparison (net #{format('%+d', r[:votes][:score])})." }, class: btn_primary %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>
+<% if @rows.size < 2 %><p class="mt-4 text-sm text-slate-500">No alternatives yet. A branch of this skill (a variant) shows up here to compare.</p><% end %>

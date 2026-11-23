@@ -1,0 +1,39 @@
+<% open_promo = Promotion.open.find_by(skill_name: s.name) %>
+<% to = s.next_stage %>
+<div class="bg-white border rounded p-4">
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">Stage</h2>
+    <%= stage_badge(s.stage) %>
+  </div>
+  <p class="text-xs text-slate-500 mt-1"><%= ApplicationHelper::STAGE_STYLE[s.stage][2] %>.</p>
+  <% if s.status == "published" && to %>
+    <% checks = Capture::Gates.for(s, to) %>
+    <h3 class="font-medium mt-3 mb-1">Gates to <%= Skill::STAGE_LABELS[to] %></h3>
+    <ul class="space-y-1">
+      <% checks.each do |c| %>
+        <li class="flex gap-2">
+          <span aria-hidden="true" class="shrink-0 <%= c.passed ? 'text-[#0ca30c]' : 'text-[#d03b3b]' %>"><%= c.passed ? "✓" : "✗" %></span>
+          <span><span class="sr-only"><%= c.passed ? "Passed: " : "Not yet: " %></span><%= c.label %> <span class="block text-xs text-slate-500"><%= c.detail %></span></span>
+        </li>
+      <% end %>
+    </ul>
+    <% if open_promo %>
+      <p class="mt-3">Promotion to <%= Skill::STAGE_LABELS[open_promo.to_stage] %> requested by <%= open_promo.requested_by&.name %>. <%= link_to "See request", promotions_path(anchor: "promotion-#{open_promo.id}"), class: "text-sky-700 hover:underline" %></p>
+    <% elsif Capture::Promotions.can_request?(current_user, s) %>
+      <details class="mt-3" <%= "open" if Capture::Gates.passed?(checks) %>>
+        <summary class="cursor-pointer text-sky-700">Request promotion to <%= Skill::STAGE_LABELS[to] %></summary>
+        <%= form_with url: skill_promotions_path(s), method: :post, class: "space-y-2 mt-2" do |f| %>
+          <%= text_area_tag :pitch, nil, rows: 2, placeholder: "Why should #{to == 'firm' ? 'the whole firm' : 'the market'} use this?", class: input_css %>
+          <% rivals = s.family.reject { |x| x.name == s.name }.select { |x| x.visible_to?(current_user) && Skill::STAGES.index(x.stage) >= Skill::STAGES.index(to) } %>
+          <% if rivals.any? %>
+            <%= select_tag :replaces, options_for_select(rivals.map { |r| ["Replace #{r.title} (#{r.stage_label})", r.name] }), include_blank: "Add alongside the existing process", class: input_css, "aria-label": "Replace an existing process" %>
+          <% end %>
+          <%= f.submit "Request promotion", class: btn_primary %>
+          <% unless Capture::Gates.passed?(checks) %><p class="text-xs text-slate-500">Some gates aren't passed yet; approvers will see which.</p><% end %>
+        <% end %>
+      </details>
+    <% end %>
+  <% elsif s.stage == "market" %>
+    <p class="mt-2 text-slate-600">At the top stage.</p>
+  <% end %>
+</div>

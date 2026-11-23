@@ -1,15 +1,22 @@
 class SkillsController < ApplicationController
-  before_action :set_skill, only: %i[show edit update download deprecate]
+  before_action :set_skill, only: %i[show edit update download deprecate compare]
 
   def index
     authorize Skill
-    scope = params[:all] == "1" ? Skill.all : Skill.published
+    scope = (params[:all] == "1" ? Skill.all : Skill.published).visible_to(current_user)
     scope = scope.where(domain: params[:domain]) if params[:domain].present?
+    scope = scope.where(stage: params[:stage]) if Skill::STAGES.include?(params[:stage])
     @domains = Skill.published.distinct.where.not(domain: nil).order(:domain).pluck(:domain)
     @pagy, @skills = pagy(scope.search(params[:q]).recent)
   end
 
   def show; end
+
+  # Which process is better? The skill and its alternatives (same lineage), side by side.
+  def compare
+    @family = @skill.family.select { |s| s.visible_to?(current_user) }
+    @rows = Capture::Voting.comparison(@family)
+  end
 
   def download
     send_data @skill.to_skill_md, filename: "SKILL.md", type: "text/markdown", disposition: "attachment"

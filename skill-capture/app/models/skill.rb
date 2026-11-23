@@ -1,6 +1,11 @@
 class Skill < ApplicationRecord
   NAME_FORMAT = /\A[a-z0-9]+(-[a-z0-9]+)*\z/
   STATUSES = %w[published superseded deprecated].freeze
+  # local: sandbox (authors, contributors, the area's people). firm: everyone in the firm and agents.
+  # market: promoted beyond the firm (curated catalog / marketplace export).
+  STAGES = %w[local firm market].freeze
+  STAGE_LABELS = { "local" => "Local", "firm" => "Firm", "market" => "Market" }.freeze
+  SHARED_STAGES = %w[firm market].freeze
 
   belongs_to :parent_skill, class_name: "Skill", optional: true
   belongs_to :published_by, class_name: "User", optional: true
@@ -12,8 +17,37 @@ class Skill < ApplicationRecord
   validates :title, :body, presence: true
   validates :description, presence: true, length: { maximum: 1024 }
   validates :status, inclusion: { in: STATUSES }
+  validates :stage, inclusion: { in: STAGES }
 
   scope :published, -> { where(status: "published") }
+  scope :shared, -> { where(stage: SHARED_STAGES) }
+
+  # What a person may see: firm and market for everyone; local (sandbox) skills for their
+  # publisher, their contributors, people whose areas include the skill's area, and admins.
+  # No user (agents on the integration API) means shared skills only.
+  def self.visible_to(user)
+    return shared if user.nil?
+    return all if user.admin?
+    local = where(stage: "local").where(
+      "skills.domain = ANY(ARRAY[:areas]::varchar[]) OR skills.published_by_id = :id OR jsonb_exists(COALESCE(skills.source->'contributor_keys', '[]'::jsonb), :actor)",
+      areas: user.domains.presence || [""], id: user.id, actor: user.actor_key
+    )
+    shared.or(local)
+  end
+
+  def visible_to?(user) = Skill.visible_to(user).exists?(id: id)
+  def shared? = SHARED_STAGES.include?(stage)
+  def stage_label = STAGE_LABELS[stage]
+  def next_stage = { "local" => "firm", "firm" => "market" }[stage]
+
+  # The first name in this skill's lineage: skills sharing a root are alternatives for the same job.
+  def root_name = lineage.last.name
+
+  # Current published alternatives in the same family (the skill, its branches, their branches...).
+  def family
+    root = root_name
+    Skill.published.includes(:parent_skill).select { |s| s.root_name == root }.sort_by(&:published_at)
+  end
   scope :recent, -> { order(published_at: :desc, id: :desc) }
 
   def self.search(q)

@@ -26,7 +26,7 @@ class PlacesController < ApplicationController
 
   def search
     @q = params[:q].to_s
-    @hits = Capture::MapSearch.call(@q)
+    @hits = Capture::MapSearch.call(@q, viewer: current_user)
     respond_to do |format|
       format.html
       format.json { render json: @hits.map { |h| h.to_h.merge(url: place_path(h.key)) } }
@@ -36,7 +36,7 @@ class PlacesController < ApplicationController
   private
 
   def set_place
-    @place = Capture::Directions.find(params[:key])
+    @place = Capture::Directions.find(params[:key], viewer: current_user)
   rescue Capture::Directions::NotFound => e
     respond_to do |format|
       format.html { redirect_to skill_map_path, alert: e.message }

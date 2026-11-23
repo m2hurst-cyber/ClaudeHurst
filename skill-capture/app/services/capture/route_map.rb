@@ -14,7 +14,7 @@ module Capture
     end
 
     def call
-      skills = Skill.published.includes(:parent_skill).to_a
+      skills = Skill.published.visible_to(@user).includes(:parent_skill).to_a
       versions = Skill.group(:name).count
       metrics = SkillMetric.where(name: skills.map(&:name)).index_by(&:name)
       bounties = Bounty.active.where(skill_name: skills.map(&:name)).index_by(&:skill_name)
@@ -24,9 +24,9 @@ module Capture
         { id: s.name, title: s.title, area: s.domain, kind: "skill", version: s.version,
           improvements: versions[s.name].to_i - 1, steps: Array(s.source["workflow"]).size,
           apps: apps(Array(s.source["workflow"])), url: url_helpers.skill_path(s),
-          contributors: Array(s.source["contributors"]).size }.merge(traffic(metrics[s.name], bounties[s.name]))
+          contributors: Array(s.source["contributors"]).size, stage: s.stage }.merge(traffic(metrics[s.name], bounties[s.name]))
       end
-      scope = @user ? SkillCandidatePolicy::Scope.new(@user, SkillCandidate).resolve : SkillCandidate
+      scope = @user ? SkillCandidatePolicy::Scope.new(@user, SkillCandidate).resolve : SkillCandidate.none
       candidates = scope.open.to_a
       nodes += candidates.map do |c|
         { id: SkillLink.candidate_key(c), title: c.display_title, area: c.domain, kind: "unpaved",
@@ -46,7 +46,8 @@ module Capture
         edges << { from: from, to: s.name, kind: "branch", traffic: 0, manual: false } if from
       end
 
-      { nodes: nodes, edges: edges, areas: nodes.map { |n| n[:area] }.compact.uniq.sort, written: Waypoint.pluck(:key) }
+      { nodes: nodes, edges: edges, areas: nodes.map { |n| n[:area] }.compact.uniq.sort,
+        written: Waypoint.where(from_name: names.to_a).pluck(:key) }
     end
 
     private

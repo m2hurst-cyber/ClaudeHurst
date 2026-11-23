@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_000008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -116,6 +116,40 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "promotion_policies", force: :cascade do |t|
+    t.string "initial_stage", default: "local", null: false
+    t.integer "firm_min_trips", default: 3, null: false
+    t.integer "firm_min_people", default: 2, null: false
+    t.integer "firm_min_score", default: 2, null: false
+    t.integer "market_min_days", default: 14, null: false
+    t.integer "market_min_score", default: 5, null: false
+    t.string "market_max_tier", default: "slow", null: false
+    t.boolean "market_requires_directions", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "promotions", force: :cascade do |t|
+    t.string "skill_name", null: false
+    t.integer "skill_version", null: false
+    t.string "from_stage", null: false
+    t.string "to_stage", null: false
+    t.string "status", default: "open", null: false
+    t.string "replaces_name"
+    t.text "pitch"
+    t.jsonb "checks", default: [], null: false
+    t.boolean "waived", default: false, null: false
+    t.bigint "requested_by_id"
+    t.bigint "decided_by_id"
+    t.datetime "decided_at"
+    t.text "decision_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "index_promotions_on_decided_by_id"
+    t.index ["requested_by_id"], name: "index_promotions_on_requested_by_id"
+    t.index ["skill_name", "status"], name: "index_promotions_on_skill_name_and_status"
+  end
+
   create_table "skill_candidates", force: :cascade do |t|
     t.string "signature", null: false
     t.jsonb "steps", default: [], null: false
@@ -182,6 +216,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
     t.index ["name"], name: "index_skill_metrics_on_name", unique: true
   end
 
+  create_table "skill_votes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "skill_name", null: false
+    t.integer "value", null: false
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_name"], name: "index_skill_votes_on_skill_name"
+    t.index ["user_id", "skill_name"], name: "index_skill_votes_on_user_id_and_skill_name", unique: true
+    t.index ["user_id"], name: "index_skill_votes_on_user_id"
+  end
+
   create_table "skills", force: :cascade do |t|
     t.string "name", null: false
     t.integer "version", default: 1, null: false
@@ -200,9 +246,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
     t.jsonb "source", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "stage", default: "local", null: false
+    t.datetime "stage_changed_at"
     t.index ["name", "version"], name: "index_skills_on_name_and_version", unique: true
     t.index ["parent_skill_id"], name: "index_skills_on_parent_skill_id"
     t.index ["published_by_id"], name: "index_skills_on_published_by_id"
+    t.index ["stage"], name: "index_skills_on_stage"
     t.index ["status"], name: "index_skills_on_status"
   end
 
@@ -442,10 +491,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_23_000007) do
   add_foreign_key "credit_entries", "bounties"
   add_foreign_key "credit_entries", "users"
   add_foreign_key "notifications", "users"
+  add_foreign_key "promotions", "users", column: "decided_by_id"
+  add_foreign_key "promotions", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "skills"
   add_foreign_key "skill_candidates", "users", column: "requested_by_id"
   add_foreign_key "skill_candidates", "users", column: "reviewer_id"
   add_foreign_key "skill_links", "users", column: "created_by_id"
+  add_foreign_key "skill_votes", "users"
   add_foreign_key "skills", "skills", column: "parent_skill_id"
   add_foreign_key "skills", "users", column: "published_by_id"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

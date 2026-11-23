@@ -17,7 +17,7 @@ class SkillMapsController < ApplicationController
     nodes = map[:nodes].index_by { |n| n[:id] }
     if r
       render json: { found: true, keys: r.keys, legs: r.legs,
-                     directions: Capture::Directions.for_route(r.keys.reject { |k| k.start_with?("candidate:") }).map { |pl| pl.to_h.except(:markdown).merge(url: place_path(pl.key)) }, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps, :tier, :price, :median_minutes) } }
+                     directions: Capture::Directions.for_route(r.keys.reject { |k| k.start_with?("candidate:") }, viewer: current_user).map { |pl| pl.to_h.except(:markdown).merge(url: place_path(pl.key)) }, stops: r.keys.map { |k| nodes[k].slice(:id, :title, :area, :kind, :url, :apps, :steps, :tier, :price, :median_minutes) } }
     else
       render json: { found: false }
     end
@@ -25,7 +25,7 @@ class SkillMapsController < ApplicationController
 
   # GET /map/areas: where skills live, by area
   def areas
-    @areas = Capture::SkillMap.call
+    @areas = Capture::SkillMap.call(user: current_user)
     @max = [@areas.map(&:total).max.to_i, 1].max
     respond_to do |format|
       format.html

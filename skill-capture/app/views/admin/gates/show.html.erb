@@ -1,0 +1,30 @@
+<% content_for :title, "Gates" %>
+<h1 class="text-2xl font-bold mb-1">Promotion gates</h1>
+<p class="text-sm text-slate-500 mb-4">What a skill must show before it moves from the sandbox to the firm, and from the firm to the market. Approvals: an area reviewer for Firm, an admin for Market; never the person who asked. Only admins can waive a failed gate, with a reason.</p>
+<%= form_with model: @policy, url: admin_gates_path, method: :patch, class: "bg-white border rounded p-4 space-y-4 text-sm max-w-3xl" do |f| %>
+  <% if @policy.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded"><%= @policy.errors.full_messages.to_sentence %></div><% end %>
+  <div>
+    <%= f.label :initial_stage, "New skills and branches start at" %>
+    <%= f.select :initial_stage, [["Local (sandbox), recommended", "local"], ["Firm (skip the sandbox)", "firm"]], {}, class: input_css %>
+  </div>
+  <fieldset class="border rounded p-3">
+    <legend class="px-1 font-semibold">Local → Firm</legend>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div><%= f.label :firm_min_trips, "Sandbox trips" %><%= f.number_field :firm_min_trips, min: 0, class: input_css %></div>
+      <div><%= f.label :firm_min_people, "By at least (people)" %><%= f.number_field :firm_min_people, min: 0, class: input_css %></div>
+      <div><%= f.label :firm_min_score, "Net votes" %><%= f.number_field :firm_min_score, class: input_css %></div>
+    </div>
+    <p class="text-xs text-slate-500 mt-2">Also required: a description of when to use it, at least 2 steps, and stated outputs.</p>
+  </fieldset>
+  <fieldset class="border rounded p-3">
+    <legend class="px-1 font-semibold">Firm → Market</legend>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div><%= f.label :market_min_days, "Days at Firm" %><%= f.number_field :market_min_days, min: 0, class: input_css %></div>
+      <div><%= f.label :market_min_score, "Net votes" %><%= f.number_field :market_min_score, class: input_css %></div>
+      <div><%= f.label :market_max_tier, "Traffic no worse than" %><%= f.select :market_max_tier, PricingSchedule.current.sorted_tiers.map { |t| [t["label"], t["key"]] }, {}, class: input_css %></div>
+    </div>
+    <label class="flex items-center gap-2 mt-2"><%= f.check_box :market_requires_directions %> Require written agent directions for the road</label>
+    <p class="text-xs text-slate-500 mt-1">Also required: a license that allows sharing (not internal or proprietary).</p>
+  </fieldset>
+  <%= f.submit "Save gates", class: btn_primary %>
+<% end %>

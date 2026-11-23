@@ -112,6 +112,42 @@ How it works:
 - **Add-in:** a skill shows its road directions (if written) and "At the end of this road: which way next" (the intersection).
 - **Export:** `capture:export` writes `<skill>/ROAD.md`, `<skill>/INTERSECTION.md` and `handoffs/<from>--<to>.md` next to each `SKILL.md`.
 
+## Gatekeeping: stages, promotions and voting
+
+**Stages** (`skills.stage`):
+
+| Stage | Who can see it | Agents |
+|---|---|---|
+| `local` (sandbox) | The publisher, contributors (`source.contributor_keys` includes `user:<id>`), people whose `domains` include the skill's area, and admins | No |
+| `firm` | Everyone signed in | Yes |
+| `market` | Everyone signed in | Yes, plus `GET /api/v1/market` (skill, `SKILL.md`, road directions) for a marketplace or partner catalog |
+
+- **Starting stage:** new skills and new branches start at `PromotionPolicy.initial_stage` (`local`). A new version of a skill keeps its stage, so fixes go live, which keeps bounty measurement working. Existing skills were migrated to `firm`.
+- **Visibility everywhere:** `Skill.visible_to(user)` (`nil` = agents = firm and market) is applied across the library, skill pages, map, area view, search, directions (including exits and predecessors inside generated scaffolds), bounties, the add-in and the integration API. Automatic `SKILL.md` export and `capture:export` write firm and market skills only.
+
+**Promotions** (`Promotion`, `Capture::Promotions`, `Capture::Gates`):
+- **Request:** anyone who can see a skill can request the next stage, with an optional pitch and an incumbent to replace from the same lineage. Only one open request per skill is allowed.
+- **Gates:** evaluated live and snapshotted on decision:
+
+  | To | Gates |
+  |---|---|
+  | Firm | Description of at least 40 characters (what and when); at least 2 steps; outputs stated; sandbox use of `firm_min_trips` trips by `firm_min_people` people (lifetime trips over retained activity); net votes of at least `firm_min_score` |
+  | Market | `market_min_days` at Firm; net votes of at least `market_min_score`; traffic tier no worse than `market_max_tier`; a license that isn't internal or proprietary; written road directions (optional) |
+
+- **Approvers:**
+  - Firm: a reviewer of the skill's area who is neither the requester nor the publisher (admins may approve their own published skills).
+  - Market: an admin who isn't the requester.
+  - Declining needs a reason.
+- **Waivers:** failed gates can be waived only by an admin, with a written reason (`waived: true`).
+- **Replacing an incumbent:** approving a promotion that replaces an incumbent deprecates it (history is kept).
+- **Notifications:** approvers are notified on request; contributors and the publisher on approval, and the requester on rejection.
+
+**Voting** (`SkillVote`, `Capture::Voting`):
+- One +1 or −1 per person per skill *name*, so it carries across versions, with an optional reason. It can be changed or cleared.
+- You can't vote on a skill you published or contributed to, or one you can't see.
+- **Compare** (`/skills/:id/compare`) shows a skill's *family*: every current skill sharing its lineage root (the skill and its branches). Each alternative is shown with its net votes, travel time, traffic tier, trips, steps, improvements and recent reasons.
+- **Preferred:** the alternative with the highest net vote; ties go to the faster road, then the busier one. It can be proposed for the next stage, replacing the incumbent, in one click.
+
 ## Congestion pricing (demand schedule) and bounties
 
 The goal is to price congested skills higher, so there's a visible incentive to fix the bottleneck.
@@ -300,6 +336,7 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - `test/integration/capture_flow_test.rb`: the console and integration API end to end.
 - `test/integration/skill_map_test.rb`: per-area rollup, gaps, the map page and JSON, and the add-in area filter.
 - `test/integration/route_map_test.rb`: observed roads (traffic, minimum, gap), recomputation keeping manual links, branches, improvements, unpaved visibility, the planner (busier road wins, gaps), the agent route API, reviewer-drawn links and the add-in "next up".
+- `test/integration/gatekeeping_test.rb`: starting stages and inheritance, local visibility (people, library, search, the agent API), the Local → Firm gates and approver rules, admin-only waivers with a reason, the Firm → Market gates (days, votes, traffic, license, directions), the market API, voting rules (own skill, visibility, change and clear), the comparison's preferred choice and replacing the incumbent, and the pages (stage panel, queue, decline needs a reason, admin gates, add-in voting).
 - `test/integration/directions_test.rb`: generated scaffolds (exits and their share, the default exit, reviewers, predecessors, done-when), not-found keys, reviewer-only versioned writing, empty bodies refused, raw Markdown, search (roads, intersections, handoffs, full text inside directions), the agent search, place and route-with-directions APIs, map data and the add-in intersection.
 - `test/services/congestion_pricing_test.rb`: the schedule (tiers, prices, validation), travel time against free-flow, waits as handoff delay, the pricing threshold, the full bounty lifecycle (open → accrue → fix → measure → approve → credits), self-approval refusal, ineffective fixes reopening, branch fixes, self-clearing, and congestion-aware routing.
 - `test/integration/pricing_ui_test.rb`: bounties page, skill traffic panel, "Fix this" proposals, map traffic data, the admin schedule editor and its validation, and the skills API traffic object.

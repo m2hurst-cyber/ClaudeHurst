@@ -18,6 +18,19 @@ module ApplicationHelper
     name.length <= 3 ? name.upcase : name.tr("-_", "  ").titleize
   end
 
+  STAGE_STYLE = {
+    "local" => ["🧪", "bg-slate-100 text-slate-800", "Local: sandbox, visible to its area and contributors"],
+    "firm" => ["🏢", "bg-sky-100 text-sky-900", "Firm: available to everyone in the firm and to agents"],
+    "market" => ["🌐", "bg-emerald-100 text-emerald-900", "Market: promoted beyond the firm"]
+  }.freeze
+
+  def stage_badge(stage)
+    icon, cls, title = STAGE_STYLE.fetch(stage.to_s, ["", "bg-slate-100", stage.to_s])
+    tag.span(class: "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded #{cls}", title: title) do
+      safe_join([tag.span(icon, "aria-hidden": true), Skill::STAGE_LABELS.fetch(stage.to_s, stage.to_s.humanize)])
+    end
+  end
+
   def nice_time(t) = t ? t.in_time_zone.strftime("%Y-%m-%d %H:%M") : "—"
   def nice_date(t) = t ? t.to_date.iso8601 : "—"
 

@@ -29,7 +29,8 @@ module Capture
           domain: candidate.domain, tags: candidate.draft_tags,
           inputs: candidate.draft_inputs, outputs: candidate.draft_outputs,
           parent_skill: previous, published_by: @user, published_at: Time.current,
-          source: provenance(candidate)
+          source: provenance(candidate),
+          stage: previous&.stage || PromotionPolicy.current.initial_stage, stage_changed_at: previous&.stage_changed_at || Time.current
         )
         previous&.update!(status: "superseded")
         candidate.update!(status: "approved", skill: skill, reviewer: @user, reviewed_at: Time.current)
@@ -57,6 +58,9 @@ module Capture
           tags: attrs.key?(:tags) ? Array(attrs[:tags]) : skill.tags,
           inputs: skill.inputs, outputs: skill.outputs, license: skill.license,
           parent_skill: skill, published_by: @user, published_at: Time.current,
+          # A new version keeps its stage (fixes go live); a branch starts in the sandbox.
+          stage: fork ? PromotionPolicy.current.initial_stage : skill.stage,
+          stage_changed_at: fork ? Time.current : skill.stage_changed_at,
           source: skill.source.merge("revised_from" => "#{skill.name}@#{skill.version}",
                                      "change_note" => attrs[:change_note].presence).compact
         )
@@ -100,7 +104,7 @@ module Capture
 
     def after_publish(skill, action, **meta)
       AuditLog.record(action, user: @user, subject: skill, name: skill.name, version: skill.version, **meta)
-      SkillFile.export(skill)
+      SkillFile.export(skill) if skill.shared? # sandbox skills stay out of the skill repository
       check_publish_rate!
     end
 

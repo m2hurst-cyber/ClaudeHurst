@@ -6,10 +6,11 @@ module Capture
       def to_h = { key: key, kind: kind, label: Waypoint::KIND_LABELS[kind], title: title, subtitle: subtitle, written: written }
     end
 
-    def self.call(q, limit: 20) = new(q).call(limit)
+    def self.call(q, limit: 20, viewer: :system) = new(q, viewer).call(limit)
 
-    def initialize(q)
+    def initialize(q, viewer = :system)
       @q = q.to_s.strip
+      @viewer = viewer
     end
 
     def call(limit)
@@ -19,7 +20,9 @@ module Capture
       term = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
       written = Waypoint.pluck(:key).to_set
 
-      skills = Skill.published.where("title ILIKE :t OR name ILIKE :t OR description ILIKE :t OR :raw = ANY(tags)", t: term, raw: @q.downcase).to_a
+      base = @viewer == :system ? Skill.published : Skill.published.visible_to(@viewer)
+      visible_names = base.pluck(:name).to_set
+      skills = base.where("title ILIKE :t OR name ILIKE :t OR description ILIKE :t OR :raw = ANY(tags)", t: term, raw: @q.downcase).to_a
       skills.each do |s|
         title_hit = s.title.downcase.include?(@q.downcase) ? 2 : 1
         add.(Hit.new(key: "road:#{s.name}", kind: "road", title: s.title, subtitle: area(s), written: written.include?("road:#{s.name}"), score: 10 * title_hit))
@@ -28,6 +31,7 @@ module Capture
                        subtitle: exits_text(s.name), written: written.include?("junction:#{s.name}"), score: 6 * title_hit))
         end
         SkillLink.where("from_node = :n OR to_node = :n", n: s.name).distinct.pluck(:from_node, :to_node).each do |a, b|
+          next unless visible_names.include?(a) && visible_names.include?(b)
           sa, sb = Skill.current(a), Skill.current(b)
           next unless sa && sb
           key = Waypoint.key_for("handoff", a, b)
@@ -47,7 +51,7 @@ module Capture
     private
 
     def live?(key)
-      Directions.find(key)
+      Directions.find(key, viewer: @viewer)
       true
     rescue Directions::NotFound
       false

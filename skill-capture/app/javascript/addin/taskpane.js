@@ -27,6 +27,16 @@ function flashHtml() {
   return html;
 }
 
+const stageLabel = (st) => ({ local: "🧪 Local (sandbox)", firm: "🏢 Firm", market: "🌐 Market" }[st] || "");
+function voteHtml(s) {
+  const v = s.votes || { score: 0, up: 0, down: 0 };
+  const btnCls = (on) => `px-2 py-0.5 rounded border ${on ? "bg-slate-900 text-white" : "bg-white"}`;
+  return `<span class="font-semibold tabular-nums">${v.score > 0 ? "+" : ""}${v.score}</span>
+    <span class="text-xs text-slate-500">${v.up} for · ${v.down} against</span>
+    ${s.can_vote ? `<button data-action="vote" data-value="${s.my_vote === 1 ? 0 : 1}" aria-pressed="${s.my_vote === 1}" class="${btnCls(s.my_vote === 1)}">👍 Better</button>
+      <button data-action="vote" data-value="${s.my_vote === -1 ? 0 : -1}" aria-pressed="${s.my_vote === -1}" class="${btnCls(s.my_vote === -1)}" aria-label="Needs work">👎</button>` : ""}`;
+}
+
 // Traffic tiers wear the fixed status colors, always with an icon and a label.
 const STATUS = [["#0ca30c", "●"], ["#fab219", "▲"], ["#ec835a", "▲"], ["#d03b3b", "■"]];
 function trafficHtml(s) {
@@ -137,7 +147,7 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
     document.getElementById("results").innerHTML = skills.length ? skills.map((s) => `
       <button data-skill="${esc(s.name)}" class="block w-full text-left border rounded p-2 hover:bg-slate-50">
         <div class="font-medium">${esc(s.title)}</div>
-        <div class="text-xs text-slate-500">${esc(s.domain || "")}${s.domain ? " · " : ""}v${s.version}</div>
+        <div class="text-xs text-slate-500">${stageLabel(s.stage)} · ${esc(s.domain || "")}${s.domain ? " · " : ""}v${s.version}</div>
         <div class="text-slate-600 mt-1">${esc(s.description.slice(0, 160))}${s.description.length > 160 ? "…" : ""}</div>
       </button>`).join("") : '<p class="text-slate-500">No skills match.</p>';
   } catch (e) { document.getElementById("results").innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
@@ -151,7 +161,8 @@ async function renderSkill(name) {
     panel().innerHTML = `
       <button data-action="back-library" class="text-sky-700 mb-2">← Library</button>
       <h2 class="text-base font-semibold">${esc(s.title)}</h2>
-      <div class="text-xs text-slate-500 mb-2">${esc(s.name)} · v${s.version}${s.contributors.length ? ` · from ${esc(s.contributors.join(", "))}` : ""}</div>
+      <div class="text-xs text-slate-500 mb-2">${stageLabel(s.stage)} · ${esc(s.name)} · v${s.version}${s.contributors.length ? ` · from ${esc(s.contributors.join(", "))}` : ""}</div>
+      <div id="vote-box" class="flex items-center gap-2 mb-2">${voteHtml(s)}</div>
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
       <div class="flex gap-1 mb-3">
@@ -290,6 +301,11 @@ document.addEventListener("click", async (ev) => {
     } else if (a === "back-library") { renderLibrary(); }
     else if (a === "back-review") { renderReview(); }
     else if (a === "open-url") { openInBrowser(t.dataset.url); }
+    else if (a === "vote") {
+      const r = await api.vote(state.openSkill.name, Number(t.dataset.value));
+      Object.assign(state.openSkill, { votes: r.votes, my_vote: r.my_vote });
+      document.getElementById("vote-box").innerHTML = voteHtml(state.openSkill);
+    }
     else if (a === "insert-skill") { await insertText(toPlainSteps(state.openSkill)); flash("Steps inserted."); render(); }
     else if (a === "start-recording") { state.capture.startRecording(); renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recording") { state.capture.stopRecording(); renderRecord(); }

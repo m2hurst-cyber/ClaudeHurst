@@ -20,6 +20,17 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
   - each **handoff** (the connector between two skills): what to pass on and who to notify
 
   Until a reviewer writes them, directions are generated from live data. Search covers titles and the full text of written directions. Agents read any place as Markdown (`GET /api/v1/places/<key>.md`), and routes come back with the full sequence of directions.
+- **Gatekeeping: sandbox → firm → market.** Every skill has a stage:
+  - **Local** (sandbox): visible to its authors, contributors, its area's people and admins; never to agents.
+  - **Firm:** everyone in the firm, and agents through the API.
+  - **Market:** promoted beyond the firm, through `GET /api/v1/market` and export.
+
+  New skills and branches start Local, and a revision of a live skill keeps its stage. To move up, anyone who can see the skill requests a **promotion**, which shows live **gates**:
+  - **To Firm:** says when to use it, has steps and outputs, used in the sandbox (3 trips by 2 people), net votes of at least +2. Approved by an area reviewer who didn't publish or request it.
+  - **To Market:** 14 days at Firm, net votes of at least +5, traffic no worse than Slow, a shareable license, written road directions. Approved by an admin.
+
+  Only admins can waive gates, with a reason. Thresholds are set at **Admin → Gates**.
+- **Internal voting: which process is better.** Anyone who can see a skill votes 👍/👎 with an optional reason, though not on their own skill, in the console or the Office add-in. **Compare** puts a skill and its branches side by side with votes and evidence (travel time, traffic, trips, improvements), marks the colleagues' preferred one, and lets it be proposed for promotion, optionally **replacing** the incumbent (deprecated on approval).
 - **Congestion pricing and bounties.**
   - Each skill is priced on a **demand schedule**: the slower it has become compared with its own free-flow time (counting the wait before it starts), the higher its price per trip.
   - On the map's **Traffic** view, roads turn green, yellow, orange or red, Waze-style.

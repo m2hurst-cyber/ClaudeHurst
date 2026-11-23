@@ -115,14 +115,14 @@ export default class extends Controller {
       el("rect", { x: -12, y: -36, width: SEG + 24, height: 70, rx: 8, fill: "transparent" }, g)
       const c = this.color(n)
       el("line", { x1: 0, y1: 0, x2: SEG, y2: 0, stroke: SURFACE, "stroke-width": 14, "stroke-linecap": "round" }, g)
-      el("line", { x1: 0, y1: 0, x2: SEG, y2: 0, stroke: c, "stroke-width": 10, "stroke-linecap": "round",
-        "stroke-dasharray": n.kind === "unpaved" ? "12 9" : null }, g)
+      el("line", { x1: 0, y1: 0, x2: SEG, y2: 0, stroke: c, "stroke-width": n.stage === "local" ? 6 : 10, "stroke-linecap": "round",
+        "stroke-dasharray": n.kind === "unpaved" ? "12 9" : null, "stroke-opacity": n.stage === "local" ? 0.6 : 1 }, g)
       for (const x of [0, SEG]) el("circle", { cx: x, cy: 0, r: 5, fill: "#ffffff", stroke: c, "stroke-width": 3 }, g)
       const title = el("text", { x: 0, y: -15, "font-size": 15, "font-weight": 600, fill: INK }, g)
       title.textContent = truncate(n.title, 26)
       const meta = this.mode === "traffic" && n.tier
         ? [`${this.tiersValue[n.tier].icon} ${this.tiersValue[n.tier].label}`, this.money(n.price), n.bounty ? `💰 ${this.money(n.bounty.pool)}` : null].filter(Boolean).join(" · ")
-        : [n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
+        : [n.stage === "local" ? "🧪 local" : n.stage === "market" ? "🌐 market" : null, n.apps?.join(", "), `${n.steps} steps`, n.kind === "unpaved" ? "unpaved" : null,
            n.improvements ? `improved ×${n.improvements}` : null, n.bounty ? "💰 bounty" : null].filter(Boolean).join(" · ")
       const m = el("text", { x: 0, y: 26, "font-size": 12.5, fill: INK_2 }, g)
       m.textContent = meta
@@ -403,7 +403,8 @@ export default class extends Controller {
 
   // ---------- tooltips ----------
   nodeTip(ev, n) {
-    const lines = [[n.title, "font-semibold"], [[areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`].join(" · "), "text-slate-600"],
+    const stage = { local: "Local (sandbox)", firm: "Firm", market: "Market" }[n.stage]
+    const lines = [[n.title, "font-semibold"], [[areaName(n.area), n.kind === "unpaved" ? "unpaved: in review" : `v${n.version}`, stage].filter(Boolean).join(" · "), "text-slate-600"],
       ...(n.tier ? [[this.trafficText(n), "text-slate-900"]] : []),
       ...(n.bounty ? [[`💰 Bounty ${this.money(n.bounty.pool)}`, "text-slate-900"]] : []),
       [[n.apps?.join(", "), `${n.steps} steps`, n.improvements ? `improved ×${n.improvements}` : null, n.contributors ? `${n.contributors} contributors` : null].filter(Boolean).join(" · "), "text-slate-600"]]

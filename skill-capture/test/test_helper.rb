@@ -9,5 +9,8 @@ module ActiveSupport
   class TestCase
     parallelize(workers: 1)
     include CaptureHelpers
+
+    # Most tests exercise features of firm-wide skills; gatekeeping tests switch this to "local".
+    setup { PromotionPolicy.current.update!(initial_stage: "firm") }
   end
 end

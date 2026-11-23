@@ -7,6 +7,7 @@
 <%= form_with url: skills_path, method: :get, class: "mb-4 flex flex-wrap gap-2 items-center" do |f| %>
   <%= search_field_tag :q, params[:q], placeholder: "Search skills", class: "border rounded px-2 py-1.5 text-sm w-full sm:w-72" %>
   <%= select_tag :domain, options_for_select([["All areas", ""]] + @domains, params[:domain]), class: "border rounded px-2 py-1.5 text-sm" %>
+  <%= select_tag :stage, options_for_select([["All stages", ""], ["🧪 Local (sandbox)", "local"], ["🏢 Firm", "firm"], ["🌐 Market", "market"]], params[:stage]), class: "border rounded px-2 py-1.5 text-sm", "aria-label": "Stage" %>
   <label class="text-sm flex items-center gap-1"><%= check_box_tag :all, "1", params[:all] == "1" %> include old versions</label>
   <%= f.submit "Search", class: btn %>
 <% end %>
@@ -16,7 +17,7 @@
     <%= link_to skill_path(s), class: "block bg-white border rounded p-4 hover:shadow-sm" do %>
       <div class="flex justify-between gap-2">
         <div class="font-semibold"><%= s.title %></div>
-        <%= status_badge(s.status) %>
+        <span class="flex gap-1 shrink-0"><%= stage_badge(s.stage) %><% unless s.status == "published" %><%= status_badge(s.status) %><% end %></span>
       </div>
       <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{s.domain}" if s.domain %></div>
       <p class="text-sm text-slate-700 mt-2"><%= s.description.truncate(220) %></p>

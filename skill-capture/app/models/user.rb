@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :credit_entries, dependent: :restrict_with_error
 
   def credits = credit_entries.sum(:amount)
+  has_many :skill_votes, dependent: :destroy
 
   validates :name, presence: true
   validates :role, inclusion: { in: ROLES }

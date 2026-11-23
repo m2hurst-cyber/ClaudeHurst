@@ -5,7 +5,7 @@ module Api
     #   GET /api/v1/search?q=
     class PlacesController < BaseController
       def show
-        place = Capture::Directions.find(params[:key])
+        place = Capture::Directions.find(params[:key], viewer: nil)
         if request.format.symbol == :md
           render plain: place.body, content_type: "text/markdown"
         else
@@ -16,7 +16,7 @@ module Api
       end
 
       def search
-        render json: Capture::MapSearch.call(params[:q]).map(&:to_h)
+        render json: Capture::MapSearch.call(params[:q], viewer: nil).map(&:to_h)
       end
     end
   end

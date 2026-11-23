@@ -32,6 +32,7 @@ export function createApi(base = location.origin) {
     sendEvents: (payload) => request("POST", "/api/v1/addin/events", payload),
     skills: (q = "", domain = "") => request("GET", `/api/v1/addin/skills?q=${encodeURIComponent(q)}&domain=${encodeURIComponent(domain)}`),
     areas: () => request("GET", "/api/v1/addin/areas"),
+    vote: (name, value, comment) => request("PUT", `/api/v1/addin/skills/${encodeURIComponent(name)}/vote`, { value, comment }),
     skill: (name) => request("GET", `/api/v1/addin/skills/${encodeURIComponent(name)}`),
     candidates: () => request("GET", "/api/v1/addin/candidates"),
     candidate: (id) => request("GET", `/api/v1/addin/candidates/${id}`),

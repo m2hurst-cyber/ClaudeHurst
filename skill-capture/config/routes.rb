@@ -17,7 +17,9 @@ Rails.application.routes.draw do
       namespace :addin do
         resource :me, only: %i[show destroy], controller: :sessions
         resources :events, only: :create
-        resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
+        resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
+          member { put :vote }
+        end
         resources :areas, only: :index
         resources :candidates, only: %i[index show] do
           member do
@@ -31,6 +33,7 @@ Rails.application.routes.draw do
       resources :events, only: :create
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ }
       get :route, to: "routes#show"
+      get :market, to: "skills#market"
       get :search, to: "places#search"
       get "places/:key", to: "places#show", as: :place, constraints: { key: /[^\/]+?/ }, format: /json|md/
     end
@@ -58,12 +61,22 @@ Rails.application.routes.draw do
     end
     resources :skills, only: %i[index show edit update] do
       resources :links, only: %i[create destroy], controller: :skill_links, constraints: { id: /[^\/]+/ }
+      resource :vote, only: :update, controller: :skill_votes
+      resources :promotions, only: :create
       member do
+        get :compare
         get :download
         post :deprecate
       end
     end
     resources :connected_apps, only: %i[index destroy]
+    resources :promotions, only: :index do
+      member do
+        post :approve
+        post :reject
+        post :withdraw
+      end
+    end
     resources :bounties, only: :index do
       member do
         post :approve
@@ -84,6 +97,7 @@ Rails.application.routes.draw do
       resources :audit_logs, only: :index
       get :deploy, to: "deploy#show"
       resource :pricing, only: %i[show update], controller: :pricing
+      resource :gates, only: %i[show update]
     end
   end
 end

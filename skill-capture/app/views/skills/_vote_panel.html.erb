@@ -1,0 +1,26 @@
+<% t = SkillVote.tallies([s.name])[s.name] %>
+<% mine = SkillVote.find_by(user: current_user, skill_name: s.name) %>
+<% own = Capture::Voting.own?(current_user, s) %>
+<% alternatives = s.family.count { |x| x.visible_to?(current_user) } %>
+<div class="bg-white border rounded p-4">
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">Is this the better way?</h2>
+    <span class="tabular-nums font-semibold"><%= format("%+d", t[:score]) %></span>
+  </div>
+  <p class="text-xs text-slate-500"><%= t[:up] %> for · <%= t[:down] %> against</p>
+  <% if own %>
+    <p class="text-xs text-slate-500 mt-2">You published or contributed to this skill, so you can't vote on it.</p>
+  <% elsif s.status == "published" %>
+    <%= form_with url: skill_vote_path(s), method: :put, class: "mt-2 space-y-2" do |f| %>
+      <%= text_field_tag :comment, mine&.comment, placeholder: "Why? (optional, helps reviewers)", class: input_css, maxlength: 1000 %>
+      <div class="flex gap-2">
+        <button name="value" value="1" class="<%= mine&.value == 1 ? btn_primary : btn %>" aria-pressed="<%= mine&.value == 1 %>">👍 Better</button>
+        <button name="value" value="-1" class="<%= mine&.value == -1 ? btn_primary : btn %>" aria-pressed="<%= mine&.value == -1 %>">👎 Needs work</button>
+        <% if mine %><button name="value" value="0" class="text-xs text-slate-500 hover:underline">Clear</button><% end %>
+      </div>
+    <% end %>
+  <% end %>
+  <% if alternatives > 1 %>
+    <%= link_to "Compare #{alternatives} alternatives →", compare_skill_path(s), class: "inline-block mt-2 text-sky-700 hover:underline" %>
+  <% end %>
+</div>
