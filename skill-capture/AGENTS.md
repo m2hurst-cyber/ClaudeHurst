@@ -346,5 +346,12 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Ribbon: Search, Capture sheet, Map and Library open scoped to the pane's area and level.
 - Worksheet capture: `Capture::WorksheetInterpreter`, `WorksheetCapture`, `Capture::WorksheetDocs`, `POST /api/v1/addin/worksheet_captures`, console `/captures`, `/formulas/guide`; add-in `addin/sheet_capture.js`. Agent guides: `playbooks/{bql,factset}-analysis/AGENT.md`. Building a shipped DCF and capturing it back yields the same blueprint (row keys come from labels).
 - Privacy: only formulas and text labels leave the workbook; numeric cells are flagged, never sent.
-- Tests: 138 Rails runs, 36 JavaScript tests.
+
+
+## Changelog: person-to-person transfers
+
+- `SkillTransfer` (offer → accepted / declined / cancelled / expired; items pinned to the sent version; price in credits) and `SkillGrant` (recipient can see the skill at its stage; `Skill.visible_to` includes grants; level `received`, "Sent to me").
+- Payment uses `CreditEntry` (now with `skill_transfer_id`): two entries per paid transfer, balances locked during acceptance. A real payment processor would plug in at `SkillTransfer#accept!`.
+- Console `/transfers` (inbox, sent, ledger, send form with multi-select), "Send to a coworker" on skill pages; add-in API `/api/v1/addin/transfers` (index, create, accept, decline, coworkers) and pane UI.
+- Tests: 143 Rails runs, 36 JavaScript tests.
 

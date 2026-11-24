@@ -1,0 +1,2 @@
+<% st = t.status == "offered" && !t.pending? ? "expired" : t.status %>
+<span class="inline-block px-1.5 py-0.5 rounded text-xs <%= { "offered" => "bg-amber-100 text-amber-900", "accepted" => "bg-emerald-100 text-emerald-900", "declined" => "bg-slate-100 text-slate-700", "cancelled" => "bg-slate-100 text-slate-700", "expired" => "bg-slate-100 text-slate-500" }[st] %>"><%= { "offered" => "Waiting", "accepted" => "Accepted", "declined" => "Declined", "cancelled" => "Withdrawn", "expired" => "Expired" }[st] %></span>

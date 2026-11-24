@@ -1,0 +1,49 @@
+<% content_for :title, "Send skills" %>
+<div class="mb-4">
+  <div class="text-xs text-slate-500"><%= link_to "Transfers", transfers_path, class: "hover:underline" %> ›</div>
+  <h1 class="text-2xl font-bold">Send skills to a coworker</h1>
+  <p class="text-sm text-slate-500">Straight to one person, without moving anything up a level. They accept it into their library; if you set a price, the credits move from their balance to yours when they accept.</p>
+</div>
+<%= form_with url: transfers_path, method: :post, class: "grid lg:grid-cols-[1fr_20rem] gap-4", data: { controller: "transfer-form" } do %>
+  <section class="bg-white border rounded p-4 text-sm">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <h2 class="font-semibold">Skills <span class="text-slate-500 font-normal" data-transfer-form-target="count"></span></h2>
+      <input type="search" placeholder="Filter skills" data-action="transfer-form#filter" class="border rounded px-2 py-1" aria-label="Filter skills">
+    </div>
+    <% if @sendable.empty? %>
+      <p class="text-slate-500">You have no skills you can send yet: you can send skills you authored or review, ones shared with the firm, and ones sent to you that you may pass on.</p>
+    <% end %>
+    <ul class="divide-y max-h-[32rem] overflow-y-auto border rounded">
+      <% @sendable.each do |s, sellable| %>
+        <li data-transfer-form-target="item" data-text="<%= [s.title, s.name, s.domain].join(' ').downcase %>">
+          <label class="flex gap-2 items-start px-3 py-2 hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="skills[]" value="<%= s.name %>" <%= "checked" if @selected.include?(s.name) %> data-action="transfer-form#count" data-sellable="<%= sellable %>" class="mt-1">
+            <span class="flex-1"><span class="font-medium"><%= s.title %></span> <%= stage_badge(s.stage) %>
+              <span class="block font-mono text-xs text-slate-500"><%= s.name %> · v<%= s.version %><%= " · #{area_name(s.domain)}" if s.domain %><%= " · yours to sell" if sellable %></span></span>
+          </label>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+  <aside class="bg-white border rounded p-4 text-sm space-y-3 self-start">
+    <label class="block">Coworker
+      <select name="recipient_id" required class="mt-1 w-full border rounded px-2 py-1.5">
+        <option value="">Choose…</option>
+        <% @coworkers.group_by { |u| u.department.presence || "No department" }.sort.each do |dept, users| %>
+          <optgroup label="<%= dept %>"><% users.each do |u| %><option value="<%= u.id %>" <%= "selected" if @recipient_id.to_s == u.id.to_s %>><%= u.name %></option><% end %></optgroup>
+        <% end %>
+      </select>
+    </label>
+    <fieldset>
+      <legend class="mb-1">Price</legend>
+      <label class="flex items-center gap-2"><input type="radio" name="pricing" value="free" checked data-action="transfer-form#pricing"> Free</label>
+      <label class="flex items-center gap-2"><input type="radio" name="pricing" value="paid" data-action="transfer-form#pricing" data-transfer-form-target="paid"> For credits</label>
+      <input type="number" name="price" min="0" max="<%= SkillTransfer::MAX_PRICE %>" step="0.01" placeholder="Credits" disabled data-transfer-form-target="price" class="mt-1 w-full border rounded px-2 py-1.5" aria-label="Price in credits">
+      <p class="text-xs text-slate-500 mt-1" data-transfer-form-target="priceHint">You can charge only for skills you authored or review. Credits come from bounties and sales.</p>
+    </fieldset>
+    <label class="block">Message<textarea name="message" rows="3" maxlength="1000" class="mt-1 w-full border rounded px-2 py-1.5" placeholder="Why this helps"></textarea></label>
+    <label class="flex items-start gap-2"><input type="checkbox" name="allow_forward" value="1" class="mt-1"> <span>Let them pass it on <span class="block text-xs text-slate-500">(free only; they can never sell your skill)</span></span></label>
+    <button class="w-full px-3 py-2 rounded bg-slate-900 text-white">Send</button>
+    <p class="text-xs text-slate-500">Offers expire after <%= SkillTransfer::TTL.inspect %>.</p>
+  </aside>
+<% end %>

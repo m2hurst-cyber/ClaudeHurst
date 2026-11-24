@@ -1,0 +1,39 @@
+<% t = @transfer %>
+<% content_for :title, t.label %>
+<div class="mb-4">
+  <div class="text-xs text-slate-500"><%= link_to "Transfers", transfers_path, class: "hover:underline" %> ›</div>
+  <h1 class="text-2xl font-bold"><%= t.label %></h1>
+  <p class="text-sm text-slate-500"><%= t.sender.name %> → <%= t.recipient.name %> · <%= t.free? ? "Free" : credits(t.price) %> · <%= render "transfers/status", t: t %> · sent <%= time_ago_in_words(t.created_at) %> ago<%= " · expires in #{distance_of_time_in_words_to_now(t.expires_at)}" if t.pending? %></p>
+</div>
+<div class="grid lg:grid-cols-[1fr_18rem] gap-4">
+  <section class="bg-white border rounded text-sm">
+    <% if t.message.present? %><blockquote class="border-b p-4 text-slate-700 italic">“<%= t.message %>”</blockquote><% end %>
+    <ul class="divide-y">
+      <% t.items.each do |i| %>
+        <% s = @skills[i["name"]] %>
+        <li class="p-4">
+          <div class="flex justify-between gap-2">
+            <% if s && s.visible_to?(current_user) %><%= link_to i["title"], skill_path(s), class: "font-medium text-sky-700 hover:underline" %><% else %><span class="font-medium"><%= i["title"] %></span><% end %>
+            <%= stage_badge(i["stage"]) if i["stage"] %>
+          </div>
+          <div class="font-mono text-xs text-slate-500"><%= i["name"] %> · v<%= i["version"] %><%= " (now v#{s.version})" if s && s.version != i["version"] %></div>
+          <% if s %><p class="text-slate-600 mt-1"><%= s.description.truncate(220) %></p><% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+  <aside class="bg-white border rounded p-4 text-sm space-y-2 self-start">
+    <% if t.pending? && current_user.id == t.recipient_id %>
+      <% unless t.free? %><p>Costs <strong><%= credits(t.price) %></strong>. You have <strong><%= credits(current_user.credits) %></strong>.</p><% end %>
+      <%= button_to (t.free? ? "Accept into my library" : "Pay & accept"), accept_transfer_path(t), class: "w-full px-3 py-2 rounded bg-emerald-700 text-white", disabled: !t.free? && current_user.credits < t.price %>
+      <%= button_to "Decline", decline_transfer_path(t), class: "w-full px-3 py-2 rounded border" %>
+    <% elsif t.pending? && current_user.id == t.sender_id %>
+      <p>Waiting for <%= t.recipient.name %>.</p>
+      <%= button_to "Withdraw", cancel_transfer_path(t), class: "w-full px-3 py-2 rounded border" %>
+    <% elsif t.status == "accepted" %>
+      <p><%= t.recipient.name %> has these in their library under <strong>Sent to me</strong>, at the stage they're at. They see later versions too.</p>
+      <%= link_to "Open my received skills", skills_path(level: "received"), class: "block text-sky-700 hover:underline" if current_user.id == t.recipient_id %>
+    <% end %>
+    <p class="text-xs text-slate-500"><%= t.allow_forward ? "May be passed on, for free." : "Not to be passed on." %></p>
+  </aside>
+</div>

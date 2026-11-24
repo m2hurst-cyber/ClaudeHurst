@@ -19,7 +19,7 @@ const areaName = (n) => n === "factset" ? "FactSet" : n.length <= 3 ? n.toUpperC
 const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok", prompts: [], recovered: null,
                 hostOnly: settings.get("skillcapture.hostOnly") !== "0", // default: show skills for the app you're in
                 area: settings.get("skillcapture.area") || "", level: settings.get("skillcapture.level") || "" };
-const LEVELS = [["", "All"], ["mine", "Mine"], ["department", "Department"], ["firm", "Firm"], ["industry", "Industry"], ["global", "Global"]];
+const LEVELS = [["", "All"], ["mine", "Mine"], ["received", "Sent to me"], ["department", "Department"], ["firm", "Firm"], ["industry", "Industry"], ["global", "Global"]];
 let flushTimer = null;
 
 const btn = "inline-flex items-center justify-center px-3 py-1.5 rounded border bg-white hover:bg-slate-50";
@@ -252,6 +252,7 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
   state.query = q; state.area = area;
   settings.set("skillcapture.area", area || null);
   panel().innerHTML = `
+    <div id="offers"></div>
     <form data-form="search" class="flex gap-1 mb-2">
       <input name="q" value="${esc(q)}" placeholder="Search ${area ? `${esc(areaName(area))} ` : ""}skills" class="${input}" aria-label="Search skills">
       <button class="${btn}">Search</button>
@@ -262,6 +263,21 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
     ${state.host ? `<label class="flex items-center gap-1.5 text-xs mb-2"><input type="checkbox" data-action="host-only" ${state.hostOnly ? "checked" : ""}> Only ${esc(state.host)} skills</label>` : ""}
     <div id="areas" class="flex flex-wrap gap-1 mb-3" aria-label="Filter by area"></div>
     <div id="results" class="space-y-2"><p class="text-slate-500">Loading…</p></div>`;
+  api.transfers().then((t) => {
+    const el = document.getElementById("offers");
+    if (!el || !t.incoming?.length) return;
+    el.innerHTML = t.incoming.map((o) => `
+      <div class="rounded border border-sky-200 bg-sky-50 p-2 mb-2">
+        <div><strong>${esc(o.from)}</strong> sent you <strong>${esc(o.label)}</strong> · ${o.free ? "free" : `${esc(o.price)} credits`}</div>
+        ${o.skills.length > 1 ? `<div class="text-xs text-slate-600">${o.skills.map((x) => esc(x.title)).join(", ")}</div>` : ""}
+        ${o.message ? `<div class="text-xs italic text-slate-600 mt-0.5">“${esc(o.message)}”</div>` : ""}
+        <div class="flex gap-1 mt-1.5">
+          <button data-action="accept-transfer" data-id="${o.id}" class="${btnPrimary}">${o.free ? "Accept" : `Pay ${esc(o.price)} & accept`}</button>
+          <button data-action="decline-transfer" data-id="${o.id}" class="${btn}">Decline</button>
+          ${o.free ? "" : `<span class="text-xs text-slate-500 self-center">You have ${esc(t.credits)}</span>`}
+        </div>
+      </div>`).join("");
+  }).catch(() => {});
   api.areas().then((areas) => {
     const el = document.getElementById("areas");
     if (!el || !areas.length) return;
@@ -302,7 +318,9 @@ async function renderSkill(name) {
         <button data-action="remember" class="${s.worksheet ? btn : btnPrimary}">Add to memory</button>
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
+        ${s.can_send ? `<button data-action="send-skill" class="${btn}">⇢ Send to coworker</button>` : ""}
       </div>
+      <div id="send-box"></div>
       <article class="border-t pt-2">${renderMarkdown(s.body)}</article>
       ${s.directions?.written ? `<details class="border-t mt-3 pt-2"><summary class="cursor-pointer font-medium">Directions for this road</summary>
         <article class="mt-1 text-xs">${renderMarkdown(s.directions.markdown)}</article></details>` : ""}
@@ -505,6 +523,25 @@ function sheetCaptureHtml(c) {
     </div>`;
 }
 
+// Send the open skill straight to a coworker, free or (for skills you authored or review) for credits.
+async function renderSendBox() {
+  const box = document.getElementById("send-box");
+  const s = state.openSkill;
+  box.innerHTML = '<p class="text-slate-500">Loading coworkers…</p>';
+  const people = await api.coworkers();
+  box.innerHTML = `
+    <form data-form="send" class="rounded border p-2 mb-2 space-y-1.5">
+      <div class="font-medium">Send “${esc(s.title)}” to a coworker</div>
+      <p class="text-xs text-slate-500">Straight to one person. It stays at its level.</p>
+      <select name="recipient_id" required class="${input}" aria-label="Coworker"><option value="">Choose a coworker…</option>
+        ${people.map((p) => `<option value="${p.id}">${esc(p.name)}${p.department ? ` · ${esc(p.department)}` : ""}</option>`).join("")}</select>
+      ${s.can_sell ? `<input name="price" type="number" min="0" step="0.01" placeholder="Price in credits (blank = free)" class="${input}" aria-label="Price in credits">` : '<p class="text-xs text-slate-500">Free (you can charge only for skills you authored or review).</p>'}
+      <textarea name="message" rows="2" maxlength="1000" placeholder="Message (optional)" class="${input}"></textarea>
+      <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" name="allow_forward" value="1"> Let them pass it on (free)</label>
+      <div class="flex gap-1"><button class="${btnPrimary} flex-1">Send</button><button type="button" data-action="cancel-send" class="${btn}">Cancel</button></div>
+    </form>`;
+}
+
 function renderRecordSteps() {
   const ol = document.getElementById("rec-steps");
   const rec = state.capture.state().recording;
@@ -630,6 +667,14 @@ document.addEventListener("click", async (ev) => {
     }
     else if (a === "resume-recording") { state.capture.restoreRecording(state.recovered.steps); state.recovered = null; renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recovered") { state.recovered = null; settings.set(DRAFT_KEY, null); renderRecord(); }
+    else if (a === "send-skill") { await renderSendBox(); }
+    else if (a === "cancel-send") { document.getElementById("send-box").innerHTML = ""; }
+    else if (a === "accept-transfer" || a === "decline-transfer") {
+      const r = await (a === "accept-transfer" ? api.acceptTransfer(t.dataset.id) : api.declineTransfer(t.dataset.id));
+      flash(r.status === "accepted" ? `Added ${r.label} to your library (Sent to me).` : "Declined.");
+      if (r.status === "accepted") { state.level = "received"; settings.set("skillcapture.level", "received"); }
+      render();
+    }
     else if (a === "set-level") { state.level = t.dataset.level; settings.set("skillcapture.level", state.level || null); renderLibrary(); }
     else if (a === "capture-sheet") { await captureActiveSheet(); }
     else if (a === "close-sheet-capture") { state.sheetCapture = null; renderRecord(); }
@@ -682,6 +727,11 @@ document.addEventListener("submit", async (ev) => {
   const data = Object.fromEntries(new FormData(f));
   try {
     if (f.dataset.form === "search") return renderLibrary(data.q, state.area);
+    if (f.dataset.form === "send") {
+      const r = await api.sendSkills({ skills: [state.openSkill.name], recipient_id: data.recipient_id, price: data.price || 0, message: data.message, allow_forward: data.allow_forward === "1" });
+      document.getElementById("send-box").innerHTML = `<p class="rounded border border-emerald-200 bg-emerald-50 p-2 mb-2">Sent to ${esc(r.to)}${r.free ? "" : ` for ${esc(r.price)} credits`}. They'll see it next time they open their library.</p>`;
+      return;
+    }
     if (f.dataset.form === "build") { Object.assign(state.build.inputs, data); return renderBuildPanel(); }
     if (f.dataset.form === "note") {
       if (data.note.trim()) state.capture.addNote(manualStep(state.host, data.note));

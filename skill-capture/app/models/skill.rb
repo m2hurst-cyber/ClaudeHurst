@@ -21,8 +21,8 @@ class Skill < ApplicationRecord
 
   # Viewing levels, from closest to widest: what I wrote or worked on, my department's, the firm's,
   # my industry's, and everyone's. Always intersected with visible_to (sandbox rules still apply).
-  LEVELS = %w[mine department firm industry global].freeze
-  LEVEL_LABELS = { "mine" => "Mine", "department" => "Department", "firm" => "Firm", "industry" => "Industry", "global" => "Global" }.freeze
+  LEVELS = %w[mine received department firm industry global].freeze
+  LEVEL_LABELS = { "mine" => "Mine", "received" => "Sent to me", "department" => "Department", "firm" => "Firm", "industry" => "Industry", "global" => "Global" }.freeze
   MARKET_AUDIENCES = %w[industry global].freeze
   validates :market_audience, inclusion: { in: MARKET_AUDIENCES }
 
@@ -36,7 +36,8 @@ class Skill < ApplicationRecord
     return shared if user.nil?
     return all if user.admin?
     local = where(stage: "local").where(
-      "skills.domain = ANY(ARRAY[:areas]::varchar[]) OR skills.published_by_id = :id OR jsonb_exists(COALESCE(skills.source->'contributor_keys', '[]'::jsonb), :actor)",
+      "skills.domain = ANY(ARRAY[:areas]::varchar[]) OR skills.published_by_id = :id OR jsonb_exists(COALESCE(skills.source->'contributor_keys', '[]'::jsonb), :actor) " \
+      "OR skills.name IN (SELECT skill_name FROM skill_grants WHERE skill_grants.user_id = :id)",
       areas: user.domains.presence || [""], id: user.id, actor: user.actor_key
     )
     shared.or(local)
@@ -56,6 +57,7 @@ class Skill < ApplicationRecord
   def self.at_level(level, user)
     case level
     when "mine" then authored_by([user])
+      when "received" then where(name: SkillGrant.where(user: user).select(:skill_name))
     when "department" then authored_by(user.department_colleagues)
     when "firm" then where(stage: "firm")
     when "industry" then where(stage: "market", market_audience: "industry")

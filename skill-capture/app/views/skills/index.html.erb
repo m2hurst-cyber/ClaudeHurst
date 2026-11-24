@@ -4,13 +4,16 @@
   <p class="text-sm text-slate-500">Procedures captured from how people actually work. Each one downloads as an Agent Skills <code>SKILL.md</code>.</p>
 </div>
 
+<div class="flex flex-wrap items-center justify-between gap-2 mb-2">
 <nav class="flex flex-wrap items-center gap-1 mb-2 text-sm" aria-label="Level">
   <span class="text-slate-500 mr-1">Level</span>
   <% ([[nil, "All I can see"]] + Skill::LEVEL_LABELS.to_a).each do |lvl, label| %>
     <%= link_to label, skills_path(request.query_parameters.merge(level: lvl, page: nil).compact), class: "px-2 py-1 rounded border #{params[:level].to_s == lvl.to_s ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50'}",
-          title: { "mine" => "Skills you published, contributed to or asked for", "department" => "Skills by people in your department#{current_user.department.present? ? " (#{current_user.department})" : ' (or your areas)'}", "firm" => "Shared with the whole firm", "industry" => "Promoted to the market, shared with the firm's industry", "global" => "Promoted to the market for everyone" }[lvl] %>
+          title: { "mine" => "Skills you published, contributed to or asked for", "received" => "Skills coworkers sent you directly", "department" => "Skills by people in your department#{current_user.department.present? ? " (#{current_user.department})" : ' (or your areas)'}", "firm" => "Shared with the whole firm", "industry" => "Promoted to the market, shared with the firm's industry", "global" => "Promoted to the market for everyone" }[lvl] %>
   <% end %>
 </nav>
+<%= link_to "⇢ Send skills to a coworker", new_transfer_path, class: "text-sm text-sky-700 hover:underline" %>
+</div>
 <%= form_with url: skills_path, method: :get, class: "bg-white border rounded p-3 mb-3 flex flex-wrap gap-2 items-end text-sm" do |f| %>
   <%= hidden_field_tag :level, params[:level] if params[:level].present? %>
   <label class="flex flex-col gap-1 flex-1 min-w-48">Search<%= search_field_tag :q, params[:q], placeholder: "Title, description, tag", class: "border rounded px-2 py-1.5" %></label>

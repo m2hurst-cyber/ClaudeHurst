@@ -23,6 +23,8 @@
           <%= nav_link "Review", skill_candidates_path %>
           <%= nav_link "Promotions", promotions_path %>
           <%= nav_link "Bounties", bounties_path %>
+          <% np_t = current_user.received_transfers.pending.count %>
+          <%= nav_link (np_t.positive? ? "Transfers (#{np_t})" : "Transfers"), transfers_path %>
           <% if current_user.admin? %>
             <%= nav_link "Fields", admin_fields_path %>
             <%= nav_link "Gates", admin_gates_path %>

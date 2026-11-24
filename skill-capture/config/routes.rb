@@ -33,6 +33,13 @@ Rails.application.routes.draw do
         end
         resources :commands, only: :index
         resources :worksheet_captures, only: %i[create show]
+        resources :transfers, only: %i[index create] do
+          member do
+            post :accept
+            post :decline
+          end
+          collection { get :coworkers }
+        end
         resources :bundles, only: :show, constraints: { id: /[a-z0-9-]+/ }
         resources :resources, only: [] do
           member { get :download }
@@ -104,6 +111,13 @@ Rails.application.routes.draw do
       collection do
         post :import
         get :guide
+      end
+    end
+    resources :transfers, only: %i[index new create show] do
+      member do
+        post :accept
+        post :decline
+        post :cancel
       end
     end
     resources :worksheet_captures, path: "captures", only: %i[index show] do

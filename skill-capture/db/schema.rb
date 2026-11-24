@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -102,7 +102,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
     t.decimal "amount", precision: 12, scale: 2, null: false
     t.string "reason", null: false
     t.datetime "created_at", null: false
+    t.bigint "skill_transfer_id"
     t.index ["bounty_id"], name: "index_credit_entries_on_bounty_id"
+    t.index ["skill_transfer_id"], name: "index_credit_entries_on_skill_transfer_id"
     t.index ["user_id"], name: "index_credit_entries_on_user_id"
   end
 
@@ -400,6 +402,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
     t.index ["skill_classification_id"], name: "index_skill_field_assignments_on_skill_classification_id"
   end
 
+  create_table "skill_grants", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "skill_name", null: false
+    t.integer "version", null: false
+    t.bigint "transfer_id"
+    t.bigint "granted_by_id"
+    t.boolean "can_forward", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["granted_by_id"], name: "index_skill_grants_on_granted_by_id"
+    t.index ["transfer_id"], name: "index_skill_grants_on_transfer_id"
+    t.index ["user_id", "skill_name"], name: "index_skill_grants_on_user_id_and_skill_name", unique: true
+    t.index ["user_id"], name: "index_skill_grants_on_user_id"
+  end
+
   create_table "skill_links", force: :cascade do |t|
     t.string "from_node", null: false
     t.string "to_node", null: false
@@ -463,6 +480,23 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
     t.index ["added_by_id"], name: "index_skill_resources_on_added_by_id"
     t.index ["resource_id"], name: "index_skill_resources_on_resource_id"
     t.index ["skill_name", "resource_id"], name: "index_skill_resources_on_skill_name_and_resource_id", unique: true
+  end
+
+  create_table "skill_transfers", force: :cascade do |t|
+    t.bigint "sender_id", null: false
+    t.bigint "recipient_id", null: false
+    t.jsonb "items", default: [], null: false
+    t.decimal "price", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "status", default: "offered", null: false
+    t.text "message"
+    t.boolean "allow_forward", default: false, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "responded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipient_id", "status"], name: "index_skill_transfers_on_recipient_id_and_status"
+    t.index ["recipient_id"], name: "index_skill_transfers_on_recipient_id"
+    t.index ["sender_id"], name: "index_skill_transfers_on_sender_id"
   end
 
   create_table "skill_votes", force: :cascade do |t|
@@ -766,6 +800,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
   add_foreign_key "bounties", "users", column: "approved_by_id"
   add_foreign_key "bounties", "users", column: "solver_id"
   add_foreign_key "credit_entries", "bounties"
+  add_foreign_key "credit_entries", "skill_transfers"
   add_foreign_key "credit_entries", "users"
   add_foreign_key "fields", "fields", column: "parent_id"
   add_foreign_key "fields", "users", column: "created_by_id"
@@ -794,11 +829,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
   add_foreign_key "skill_classifications", "users", column: "updated_by_id"
   add_foreign_key "skill_field_assignments", "fields"
   add_foreign_key "skill_field_assignments", "skill_classifications"
+  add_foreign_key "skill_grants", "skill_transfers", column: "transfer_id"
+  add_foreign_key "skill_grants", "users"
+  add_foreign_key "skill_grants", "users", column: "granted_by_id"
   add_foreign_key "skill_links", "users", column: "created_by_id"
   add_foreign_key "skill_prompts", "skill_candidates", column: "candidate_id"
   add_foreign_key "skill_prompts", "users"
   add_foreign_key "skill_resources", "resources"
   add_foreign_key "skill_resources", "users", column: "added_by_id"
+  add_foreign_key "skill_transfers", "users", column: "recipient_id"
+  add_foreign_key "skill_transfers", "users", column: "sender_id"
   add_foreign_key "skill_votes", "users"
   add_foreign_key "skills", "skills", column: "parent_skill_id"
   add_foreign_key "skills", "users", column: "published_by_id"
