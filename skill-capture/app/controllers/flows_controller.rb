@@ -25,6 +25,7 @@ class FlowsController < ApplicationController
     @agents = Source.active.where(kind: "integration").order(:name)
     @people = User.where.not(id: current_user.id).order(:name)
     @runs = @flow.runs.order(created_at: :desc).limit(10)
+    @live = @flow.runs.where(status: %w[running on_hold]).order(created_at: :desc).first
   end
 
   def update
@@ -48,8 +49,10 @@ class FlowsController < ApplicationController
   end
 
   def run
-    r = FlowRun.start!(@flow, user: current_user)
-    redirect_to flow_run_path(r), notice: "Started. Task 1 is ready."
+    r = FlowRun.start!(@flow, user: current_user, from: params[:from].to_i, only: params[:only] == "1")
+    redirect_to flow_run_path(r), notice: params[:only] == "1" ? "Running just task #{r.current_index + 1}." : "Started at task #{r.current_index + 1}."
+  rescue FlowRun::Error => e
+    redirect_to flow_path(@flow), alert: e.message
   end
 
   private

@@ -51,15 +51,24 @@ class Flow < ApplicationRecord
     end
   end
 
-  def self.normalize_steps(list)
-    Array(list).first(MAX_STEPS).map do |s|
-      s = (s.respond_to?(:to_unsafe_h) ? s.to_unsafe_h : s.to_h).stringify_keys
-      { "id" => s["id"].to_s.gsub(/[^a-z0-9]/i, "").first(16).presence || SecureRandom.hex(4),
-        "title" => s["title"].to_s.squish.first(160), "app" => s["app"].to_s.presence_in(LANES) || "Agent",
-        "assignee" => s["assignee"].to_s.match?(/\A(me|user:\d+|agent:\d+)\z/) ? s["assignee"].to_s : "me",
-        "skill_name" => s["skill_name"].to_s.presence, "instructions" => s["instructions"].to_s.strip.first(2000).presence }.compact
-    end
+  def self.normalize_steps(list) = Array(list).first(MAX_STEPS).map { |s| normalize_step(s) }
+
+  # A step is a task (done by a person or an agent) or a pause: "manual" waits until someone resumes it,
+  # "timer" resumes by itself after pause_minutes.
+  def self.normalize_step(s)
+    s = (s.respond_to?(:to_unsafe_h) ? s.to_unsafe_h : s.to_h).stringify_keys
+    pause = s["kind"] == "pause"
+    { "id" => s["id"].to_s.gsub(/[^a-z0-9]/i, "").first(16).presence || SecureRandom.hex(4),
+      "kind" => pause ? "pause" : nil,
+      "title" => s["title"].to_s.squish.first(160).presence || (pause ? "Pause" : ""), "app" => s["app"].to_s.presence_in(LANES) || "Agent",
+      "assignee" => pause ? "me" : (s["assignee"].to_s.match?(/\A(me|user:\d+|agent:\d+)\z/) ? s["assignee"].to_s : "me"),
+      "skill_name" => (s["skill_name"].to_s.presence unless pause), "instructions" => s["instructions"].to_s.strip.first(2000).presence,
+      "pause_mode" => (pause ? (s["pause_mode"] == "timer" ? "timer" : "manual") : nil),
+      "pause_minutes" => (pause && s["pause_mode"] == "timer" ? s["pause_minutes"].to_i.clamp(1, 10_080) : nil) }.compact
   end
+
+  def self.pause?(s) = s["kind"] == "pause"
+  def self.pause_label(s) = s["pause_mode"] == "timer" ? "Wait #{ActiveSupport::Duration.build(s['pause_minutes'].to_i * 60).inspect}" : "Wait until resumed"
 
   private
 

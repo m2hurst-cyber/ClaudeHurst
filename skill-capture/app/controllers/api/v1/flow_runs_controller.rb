@@ -21,7 +21,7 @@ module Api
 
       def self.summary(run)
         { id: run.id, flow: run.flow.name, status: run.status, current_index: run.current_index,
-          steps: run.steps.each_with_index.map { |s, i| s.slice("title", "app", "state", "note", "by", "usage", "skill_name").merge("index" => i, "assignee" => Flow.assignee_label(s["assignee"], owner: run.user)) } }
+          steps: run.steps.each_with_index.map { |s, i| s.slice("title", "app", "state", "note", "by", "usage", "skill_name", "kind", "pause_mode", "pause_minutes", "resume_at").merge("index" => i, "assignee" => Flow.assignee_label(s["assignee"], owner: run.user)) } }
       end
     end
   end

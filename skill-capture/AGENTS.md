@@ -360,5 +360,12 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Escrow: `SkillTransfer` states offered → funded → settled | refunded (also declined, cancelled, expired); `content_fingerprint` (name, version, title, description, body; not stage), `terms_hash`, hash-chained `contract_log` (canonical, key-sorted JSON, since jsonb reorders keys), `CreditEntry.kind` escrow_hold / escrow_release / escrow_refund, `SkillTransfer.sweep!` (expire; refund stuck funded). A real payment rail would replace the credit entries in `fund!` and `cross!`.
 - Usage: `SkillRun`, `Capture::Intensity` (90-day window, percentile thirds), `POST /api/v1/skills/:id/runs` (Source token) and `/api/v1/addin/skills/:id/runs`; usage in bundles, the skill page and the add-in.
 - Flows: `Flow` (steps: id, title, app lane, assignee me | user:<id> | agent:<source id>, skill_name, instructions; template `research-report`), `FlowRun` (start!, complete!, hand off via `AddinCommand` kind `flow_task`, delivered only to the add-in in the task's app). Console `/flows` (process map, `flow_map_controller.js`), `/flow-runs/:id`; agent API `POST /api/v1/flow_runs/:id/complete?step=n`; add-in Flows tab (`addin/flow_pane.js`), shared logic `addin/flow_model.js`.
-- Tests: 149 Rails runs, 39 JavaScript tests.
+
+
+## Changelog: flow control
+
+- Steps can be pauses (`kind: pause`, `pause_mode` manual | timer, `pause_minutes`); `FlowResumeJob` ends timed pauses.
+- `FlowRun`: states pending / ready / paused / done / skipped; status running / on_hold / completed / cancelled; `start!(from:, only:)`, `resume_pause!`, `hold!` / `release!`, `jump_to!` (cancels the withdrawn task's pending `AddinCommand`), `skip!`, `insert!` (a step without a lane takes the previous step's lane).
+- Console map: ✕ and Delete key, arrow keys (reorder, change lane), Pause in the palette, Run from here / Run just this task, live run overlay (polls `flow_runs/:id.json`); run page refreshes itself (`run_refresh_controller.js`). Add-in: ✕ per task, press-and-hold or ⋮⋮ grip drag (pointer events, touch), pause, deploy now, skip, insert pause, pause/resume run.
+- Tests: 154 Rails runs, 40 JavaScript tests.
 

@@ -2,7 +2,10 @@
 <% content_for :wide, true %>
 <% assignees = [{ value: "me", label: "Me (whoever runs it)" }] + @people.map { |u| { value: "user:#{u.id}", label: u.name } } + @agents.map { |a| { value: "agent:#{a.id}", label: "🤖 #{a.name}" } } %>
 <div data-controller="flow-map" data-flow-map-steps-value="<%= @flow.steps.to_json %>" data-flow-map-url-value="<%= flow_path(@flow) %>"
-     data-flow-map-assignees-value="<%= assignees.to_json %>" data-flow-map-skills-value="<%= @palette.map { |s| { name: s.name, title: s.title } }.to_json %>">
+     data-flow-map-assignees-value="<%= assignees.to_json %>" data-flow-map-skills-value="<%= @palette.map { |s| { name: s.name, title: s.title } }.to_json %>"
+     data-flow-map-run-url-value="<%= run_flow_path(@flow) %>"
+     data-flow-map-run-value="<%= (@live ? { id: @live.id, json_url: flow_run_path(@live, format: :json), status: @live.status, current_index: @live.current_index,
+                                            ids: @live.steps.map { |s| s["id"] }, states: @live.steps.map { |s| s["state"] }, titles: @live.steps.map { |s| s["title"] } } : {}).to_json %>">
   <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
     <div class="flex-1 min-w-64">
       <div class="text-xs text-slate-500"><%= link_to "Flows", flows_path, class: "hover:underline" %> ›</div>
@@ -15,13 +18,20 @@
       <%= button_to "▶ Run", run_flow_path(@flow), class: "px-3 py-1.5 rounded bg-emerald-700 text-white", form: { data: { action: "submit->flow-map#beforeRun" } } %>
     </div>
   </div>
+  <div data-flow-map-target="live" hidden class="mb-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm flex flex-wrap items-center gap-2">
+    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span><strong data-live-text></strong>
+    <% if @live %><%= link_to "Open the run", flow_run_path(@live), class: "text-sky-700 hover:underline ml-auto" %><% end %>
+  </div>
   <div class="grid lg:grid-cols-[15rem_1fr_17rem] gap-3">
     <aside class="bg-white border rounded p-3 text-sm self-start">
       <h2 class="font-semibold mb-1">Palette</h2>
       <p class="text-xs text-slate-500 mb-2">Drag onto a lane, or click to add at the end.</p>
       <% blank = { title: "New task" } %>
       <button type="button" draggable="true" data-flow-map-target="paletteItem" data-text="blank task" data-item="<%= blank.to_json %>" data-action="dragstart->flow-map#dragPalette click->flow-map#addFromPalette"
-              class="w-full text-left px-2 py-1.5 mb-2 rounded border border-dashed border-slate-400 cursor-grab hover:bg-slate-50">＋ Blank task</button>
+              class="w-full text-left px-2 py-1.5 mb-1 rounded border border-dashed border-slate-400 cursor-grab hover:bg-slate-50">＋ Blank task</button>
+      <% pause = { kind: "pause", title: "Pause" } %>
+      <button type="button" draggable="true" data-flow-map-target="paletteItem" data-text="pause wait" data-item="<%= pause.to_json %>" data-action="dragstart->flow-map#dragPalette click->flow-map#addFromPalette"
+              class="w-full text-left px-2 py-1.5 mb-2 rounded border border-dashed border-amber-500 bg-amber-50 cursor-grab hover:bg-amber-100">⏸ Pause <span class="text-xs text-slate-500">(wait to resume, or a set time)</span></button>
       <input type="search" data-flow-map-target="filter" data-action="input->flow-map#filter" placeholder="Filter skills" class="w-full border rounded px-2 py-1 mb-2" aria-label="Filter skills">
       <ul class="max-h-[30rem] overflow-y-auto space-y-1">
         <% @palette.each do |s| %>

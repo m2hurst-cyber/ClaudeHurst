@@ -36,7 +36,15 @@ Rails.application.routes.draw do
         resources :worksheet_captures, only: %i[create show]
         resources :flows, only: %i[index show create update]
         resources :flow_runs, only: %i[create show] do
-          member { post :complete }
+          member do
+            post :complete
+            post :resume
+            post :hold
+            post :release
+            post :jump
+            post :skip
+            post :insert
+          end
         end
         get :agents, to: "flows#agents"
         resources :transfers, only: %i[index create] do
@@ -130,6 +138,12 @@ Rails.application.routes.draw do
       member do
         post :complete
         post :cancel
+        post :resume
+        post :hold
+        post :release
+        post :jump
+        post :skip
+        post :insert
       end
     end
     resources :transfers, only: %i[index new create show] do

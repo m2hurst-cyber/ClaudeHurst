@@ -7,8 +7,18 @@ export const MAX_STEPS = 50;
 let seq = 0;
 export const newId = () => `${Date.now().toString(36).slice(-5)}${(seq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`.replace(/[^a-z0-9]/g, "").slice(0, 16);
 
-// A new step from a palette item: a blank task, or a skill (its app guessed from the skill's apps).
+export const isPause = (s) => s?.kind === "pause";
+
+// "Wait 30 minutes", "Wait until resumed"
+export function pauseLabel(s) {
+  if (s.pause_mode !== "timer") return "Wait until resumed";
+  const m = Number(s.pause_minutes) || 0;
+  return `Wait ${m >= 1440 && m % 1440 === 0 ? `${m / 1440} day${m === 1440 ? "" : "s"}` : m >= 60 && m % 60 === 0 ? `${m / 60} hour${m === 60 ? "" : "s"}` : `${m} min`}`;
+}
+
+// A new step from a palette item: a blank task, a pause, or a skill (its app guessed from the skill's apps).
 export function stepFrom(item = {}, lane) {
+  if (item.kind === "pause") return { id: newId(), kind: "pause", title: item.title || "Pause", app: lane || "Agent", assignee: "me", pause_mode: item.pause_mode || "manual", ...(item.pause_minutes ? { pause_minutes: item.pause_minutes } : {}) };
   const app = lane || (item.apps || []).find((a) => LANES.includes(a)) || "Agent";
   return { id: newId(), title: item.title || "New task", app, assignee: item.assignee || "me", ...(item.name ? { skill_name: item.name } : {}), ...(item.instructions ? { instructions: item.instructions } : {}) };
 }
@@ -33,6 +43,11 @@ export function move(steps, id, toIndex, lane) {
 }
 
 export const remove = (steps, id) => steps.filter((s) => s.id !== id);
+
+// Keyboard: move a step one lane up or down.
+export function shiftLane(steps, id, by) {
+  return steps.map((s) => (s.id === id ? { ...s, app: LANES[Math.max(0, Math.min(LANES.length - 1, LANES.indexOf(s.app) + by))] } : s));
+}
 export const update = (steps, id, patch) => steps.map((s) => (s.id === id ? { ...s, ...patch } : s));
 
 // Where a drop lands: the gap index from the drop's x (process map) or y (flowchart), given the centres
@@ -46,7 +61,10 @@ export function gapIndex(centres, pos) {
 // the work crosses to another app or agent.
 export function layout(steps) {
   const nodes = steps.map((s, i) => ({ id: s.id, col: i, row: Math.max(0, LANES.indexOf(s.app)), step: s }));
-  const edges = nodes.slice(1).map((n, i) => ({ from: nodes[i].id, to: n.id, crossing: nodes[i].step.app !== n.step.app || nodes[i].step.assignee !== n.step.assignee }));
+  const edges = nodes.slice(1).map((n, i) => {
+    const a = nodes[i].step, b = n.step;
+    return { from: nodes[i].id, to: n.id, crossing: !isPause(a) && !isPause(b) && (a.app !== b.app || a.assignee !== b.assignee) };
+  });
   return { nodes, edges, lanes: LANES };
 }
 
@@ -54,6 +72,9 @@ export function problems(steps) {
   const out = [];
   if (!steps.length) out.push("Add at least one task.");
   if (steps.length > MAX_STEPS) out.push(`At most ${MAX_STEPS} tasks.`);
-  steps.forEach((s, i) => { if (!String(s.title || "").trim()) out.push(`Task ${i + 1} needs a title.`); });
+  steps.forEach((s, i) => {
+    if (!String(s.title || "").trim()) out.push(`Task ${i + 1} needs a title.`);
+    if (isPause(s) && s.pause_mode === "timer" && !(Number(s.pause_minutes) >= 1)) out.push(`Pause ${i + 1} needs a number of minutes.`);
+  });
   return out;
 }

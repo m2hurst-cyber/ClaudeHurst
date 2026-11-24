@@ -774,5 +774,9 @@ function flowPane() {
 document.addEventListener("dragstart", (ev) => { if (state.tab === "flows") flowPane().onDragStart(ev); });
 document.addEventListener("dragover", (ev) => { if (state.tab === "flows") flowPane().onDragOver(ev); });
 document.addEventListener("drop", (ev) => { if (state.tab === "flows") flowPane().onDrop(ev); });
+document.addEventListener("pointerdown", (ev) => { if (state.tab === "flows") flowPane().onPointerDown(ev); });
+document.addEventListener("pointermove", (ev) => { if (state.tab === "flows") flowPane().onPointerMove(ev); }, { passive: false });
+document.addEventListener("pointerup", (ev) => { if (state.tab === "flows") flowPane().onPointerUp(ev); });
+document.addEventListener("pointercancel", (ev) => { if (state.tab === "flows") flowPane().onPointerUp(ev); });
 document.addEventListener("input", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });
 document.addEventListener("change", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });

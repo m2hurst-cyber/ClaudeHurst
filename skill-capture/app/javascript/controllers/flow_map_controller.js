@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { LANES, stepFrom, insertAt, move, remove, update, gapIndex, layout, problems } from "addin/flow_model"
+import { LANES, stepFrom, insertAt, move, remove, update, gapIndex, layout, problems, shiftLane, isPause, pauseLabel } from "addin/flow_model"
 
 // The process map: lanes (where the work happens) × order (left to right). Drag a skill or a blank task
 // from the palette onto a lane; drag tasks to reorder them or move them to another lane; click a task to
@@ -7,17 +7,37 @@ import { LANES, stepFrom, insertAt, move, remove, update, gapIndex, layout, prob
 const W = 214, H = 96, LABEL = 110, NODE_W = 160, NODE_H = 64
 
 export default class extends Controller {
-  static targets = ["canvas", "svg", "nodes", "marker", "editor", "status", "name", "filter", "paletteItem", "save", "run"]
-  static values = { steps: Array, url: String, assignees: Array, skills: Array }
+  static targets = ["canvas", "svg", "nodes", "marker", "editor", "status", "name", "filter", "paletteItem", "save", "run", "live"]
+  static values = { steps: Array, url: String, assignees: Array, skills: Array, runUrl: String, run: Object }
 
   connect() {
     this.steps = this.stepsValue
     this.selected = null
     this.dirty = false
+    this.live = this.runValue && this.runValue.id ? this.runValue : null
     this.render()
     window.addEventListener("beforeunload", this.warn = (e) => { if (this.dirty) { e.preventDefault(); e.returnValue = "" } })
+    if (this.live) this.poll = setInterval(() => this.refreshLive(), 10000)
   }
-  disconnect() { window.removeEventListener("beforeunload", this.warn) }
+  disconnect() { window.removeEventListener("beforeunload", this.warn); clearInterval(this.poll) }
+
+  // A run of this flow is active: show which task is running now (and what's done), refreshed every 10 s.
+  async refreshLive() {
+    try {
+      const r = await fetch(this.live.json_url, { headers: { Accept: "application/json" } })
+      if (!r.ok) return
+      const d = await r.json()
+      this.live = { ...this.live, ...d }
+      if (!["running", "on_hold"].includes(d.status)) clearInterval(this.poll)
+      this.renderMap()
+    } catch { /* offline */ }
+  }
+
+  liveState(id) {
+    if (!this.live) return null
+    const i = this.live.ids.indexOf(id)
+    return i < 0 ? null : { state: this.live.states[i], current: i === this.live.current_index && ["running", "on_hold"].includes(this.live.status) }
+  }
 
   // ---------- palette ----------
   filter() {
@@ -66,7 +86,8 @@ export default class extends Controller {
     const f = e.target.name
     if (!this.selected || !f) return
     const v = e.target.value
-    this.change(update(this.steps, this.selected, { [f]: f === "skill_name" ? (v || undefined) : v }), { keepEditor: true })
+    const val = f === "skill_name" ? (v || undefined) : f === "pause_minutes" ? Number(v) : v
+    this.change(update(this.steps, this.selected, { [f]: val, ...(f === "pause_mode" && v === "timer" && !this.steps.find((s) => s.id === this.selected).pause_minutes ? { pause_minutes: 30 } : {}) }), { keepEditor: f !== "pause_mode" })
   }
   nudge(e) {
     const i = this.steps.findIndex((s) => s.id === this.selected)
@@ -74,6 +95,23 @@ export default class extends Controller {
     this.change(move(this.steps, this.selected, i + Number(e.currentTarget.dataset.by)))
   }
   removeSelected() { this.change(remove(this.steps, this.selected)); this.selected = null; this.render() }
+  removeNode(e) { e.stopPropagation(); const id = e.currentTarget.dataset.id; if (this.selected === id) this.selected = null; this.change(remove(this.steps, id)) }
+  key(e) {
+    const id = e.currentTarget.dataset.id, i = this.steps.findIndex((s) => s.id === id)
+    const k = e.key
+    if (k === "Delete" || k === "Backspace") { e.preventDefault(); this.selected = null; this.change(remove(this.steps, id)); return }
+    if (k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); this.selected = id; this.change(move(this.steps, id, i + (k === "ArrowLeft" ? -1 : 1))); this.focusNode(id); return }
+    if (k === "ArrowUp" || k === "ArrowDown") { e.preventDefault(); this.selected = id; this.change(shiftLane(this.steps, id, k === "ArrowUp" ? -1 : 1)); this.focusNode(id) }
+  }
+  focusNode(id) { this.nodesTarget.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus() }
+  runFrom(e) {
+    if (this.dirty) { this.status("Save before running.", true); return }
+    const i = this.steps.findIndex((s) => s.id === this.selected)
+    const f = document.createElement("form")
+    f.method = "post"; f.action = `${this.runUrlValue}?from=${i}${e.currentTarget.dataset.only ? "&only=1" : ""}`
+    f.innerHTML = `<input type="hidden" name="authenticity_token" value="${document.querySelector("meta[name=csrf-token]")?.content || ""}">`
+    document.body.appendChild(f); f.submit()
+  }
   rename() { this.dirty = true; this.status("Unsaved changes") }
 
   change(steps, { keepEditor = false } = {}) {
@@ -121,17 +159,28 @@ export default class extends Controller {
     this.svgTarget.innerHTML = `<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fill-slate-500"/></marker></defs>${lanes}${lines}`
     this.nodesTarget.querySelectorAll("[data-node]").forEach((n) => n.remove())
     nodes.forEach((n, i) => {
-      const s = n.step, p = pos[n.id]
-      const el = document.createElement("button")
-      el.type = "button"; el.draggable = true; el.dataset.node = ""; el.dataset.id = s.id
-      el.dataset.action = "dragstart->flow-map#dragNode click->flow-map#pick"
-      el.setAttribute("aria-label", `Task ${i + 1}: ${s.title} (${s.app})`)
-      el.className = `absolute text-left rounded border bg-white shadow-sm px-2 py-1 text-xs hover:border-slate-500 cursor-grab ${this.selected === s.id ? "ring-2 ring-sky-600 border-sky-600" : "border-slate-300"}`
+      const s = n.step, p = pos[n.id], pause = isPause(s), live = this.liveState(s.id)
+      const el = document.createElement("div")
+      el.tabIndex = 0; el.draggable = true; el.dataset.node = ""; el.dataset.id = s.id
+      el.dataset.action = "dragstart->flow-map#dragNode click->flow-map#pick keydown->flow-map#key"
+      el.setAttribute("role", "button")
+      el.setAttribute("aria-label", `Task ${i + 1}: ${s.title} (${pause ? pauseLabel(s) : s.app})${live?.current ? ", running now" : live ? `, ${live.state}` : ""}. Arrow keys move it, Delete removes it.`)
+      const ring = live?.current ? "ring-4 ring-amber-400 border-amber-500" : this.selected === s.id ? "ring-2 ring-sky-600 border-sky-600" : ""
+      const tone = live?.state === "done" ? "bg-emerald-50 border-emerald-500" : live?.state === "skipped" ? "bg-slate-50 opacity-50" : pause ? "bg-amber-50 border-dashed border-amber-500" : "bg-white border-slate-300"
+      el.className = `group absolute text-left rounded border shadow-sm px-2 py-1 text-xs hover:border-slate-500 cursor-grab focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${tone} ${ring}`
       Object.assign(el.style, { left: `${p.x}px`, top: `${p.y}px`, width: `${NODE_W}px`, height: `${NODE_H}px` })
-      el.innerHTML = `<div class="flex gap-1 items-start"><span class="shrink-0 w-4 h-4 rounded-full bg-slate-900 text-white grid place-items-center" style="font-size:9px">${i + 1}</span><span class="font-medium leading-tight line-clamp-2">${esc(s.title)}</span></div>
-        <div class="text-slate-500 truncate mt-0.5">${esc(who[s.assignee] || s.assignee)}${s.skill_name ? " · 📘" : ""}</div>`
+      const badge = live?.current ? (live.state === "paused" ? '<span class="text-amber-800 font-semibold">⏸ waiting now</span>' : this.live.status === "on_hold" ? '<span class="text-amber-800 font-semibold">⏸ run on hold</span>' : '<span class="inline-flex items-center gap-1 text-amber-800 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>running now</span>')
+        : live?.state === "done" ? '<span class="text-emerald-700">✓ done</span>' : live?.state === "skipped" ? '<span class="text-slate-500">skipped</span>' : ""
+      el.innerHTML = `<div class="flex gap-1 items-start pr-4"><span class="shrink-0 w-4 h-4 rounded-full ${pause ? "bg-amber-600" : "bg-slate-900"} text-white grid place-items-center" style="font-size:9px">${pause ? "⏸" : i + 1}</span><span class="font-medium leading-tight line-clamp-2">${esc(s.title)}</span></div>
+        <div class="text-slate-500 truncate mt-0.5">${badge || esc(pause ? pauseLabel(s) : `${who[s.assignee] || s.assignee}${s.skill_name ? " · 📘" : ""}`)}</div>
+        <button type="button" data-id="${esc(s.id)}" data-action="click->flow-map#removeNode" class="absolute top-0.5 right-1 text-slate-400 hover:text-red-700 opacity-0 group-hover:opacity-100 group-focus:opacity-100 ${this.selected === s.id ? "opacity-100" : ""}" aria-label="Delete task ${i + 1}" title="Delete (or press Delete)">✕</button>`
       this.nodesTarget.appendChild(el)
     })
+    if (this.hasLiveTarget) {
+      const cur = this.live && ["running", "on_hold"].includes(this.live.status) ? this.live.current_index : null
+      this.liveTarget.hidden = cur === null
+      if (cur !== null) this.liveTarget.querySelector("[data-live-text]").textContent = `${this.live.status === "on_hold" ? "On hold at" : "Running now:"} task ${cur + 1}, ${this.live.titles[cur] || ""}`
+    }
     if (!this.steps.length) this.status("Drag a skill or a blank task onto a lane to start.")
   }
 
@@ -147,10 +196,15 @@ export default class extends Controller {
       <div class="space-y-2" data-action="input->flow-map#edit change->flow-map#edit">
         <label class="block">Title<input name="title" value="${esc(s.title)}" class="mt-1 w-full border rounded px-2 py-1"></label>
         <label class="block">Where (lane)<select name="app" class="mt-1 w-full border rounded px-2 py-1">${LANES.map((l) => opt(l, l, s.app)).join("")}</select></label>
+        ${isPause(s) ? `
+        <label class="block">Pause until<select name="pause_mode" class="mt-1 w-full border rounded px-2 py-1">${opt("manual", "Someone resumes it", s.pause_mode)}${opt("timer", "A set time has passed", s.pause_mode)}</select></label>
+        ${s.pause_mode === "timer" ? `<label class="block">Minutes<input name="pause_minutes" type="number" min="1" max="10080" value="${esc(s.pause_minutes || 30)}" class="mt-1 w-full border rounded px-2 py-1"></label>` : ""}` : `
         <label class="block">Who does it<select name="assignee" class="mt-1 w-full border rounded px-2 py-1">${this.assigneesValue.map((a) => opt(a.value, a.label, s.assignee)).join("")}</select></label>
-        <label class="block">Skill to follow<select name="skill_name" class="mt-1 w-full border rounded px-2 py-1"><option value="">None</option>${this.skillsValue.map((k) => opt(k.name, k.title, s.skill_name || "")).join("")}</select></label>
-        <label class="block">Instructions<textarea name="instructions" rows="4" class="mt-1 w-full border rounded px-2 py-1">${esc(s.instructions)}</textarea></label>
+        <label class="block">Skill to follow<select name="skill_name" class="mt-1 w-full border rounded px-2 py-1"><option value="">None</option>${this.skillsValue.map((k) => opt(k.name, k.title, s.skill_name || "")).join("")}</select></label>`}
+        <label class="block">${isPause(s) ? "Note" : "Instructions"}<textarea name="instructions" rows="3" class="mt-1 w-full border rounded px-2 py-1">${esc(s.instructions)}</textarea></label>
       </div>
-      <button type="button" data-action="flow-map#removeSelected" class="mt-2 text-red-700 text-xs hover:underline">Remove task</button>`
+      ${isPause(s) ? "" : `<div class="flex gap-1 mt-3"><button type="button" data-action="flow-map#runFrom" class="flex-1 px-2 py-1 rounded bg-emerald-700 text-white text-xs">▶ Run from here</button><button type="button" data-action="flow-map#runFrom" data-only="1" class="flex-1 px-2 py-1 rounded border text-xs">Run just this task</button></div>`}
+      <button type="button" data-action="flow-map#removeSelected" class="mt-2 text-red-700 text-xs hover:underline">Delete ${isPause(s) ? "pause" : "task"}</button>
+      <p class="text-xs text-slate-500 mt-2">Keyboard: ←/→ reorder · ↑/↓ change lane · Delete removes.</p>`
   }
 }

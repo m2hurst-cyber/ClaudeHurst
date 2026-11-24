@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { stepFrom, insertAt, move, remove, update, gapIndex, layout, problems, LANES } from "addin/flow_model";
+import { stepFrom, insertAt, move, remove, update, gapIndex, layout, problems, LANES, shiftLane, pauseLabel, isPause } from "addin/flow_model";
 
 const s = (id, app = "Excel", assignee = "me") => ({ id, title: id, app, assignee });
 
@@ -37,4 +37,18 @@ test("drop position → gap, and the process map layout marks handoffs", () => {
   assert.deepEqual(edges.map((e) => e.crossing), [false, true, true]);
   assert.deepEqual(problems([]), ["Add at least one task."]);
   assert.deepEqual(problems([{ id: "a", title: " " }]), ["Task 1 needs a title."]);
+});
+
+test("pauses: palette item, labels, no handoff across a pause, timer needs minutes; lanes by keyboard", () => {
+  const p = stepFrom({ kind: "pause" }, "Excel");
+  assert.ok(isPause(p));
+  assert.equal(pauseLabel(p), "Wait until resumed");
+  assert.equal(pauseLabel({ pause_mode: "timer", pause_minutes: 90 }), "Wait 90 min");
+  assert.equal(pauseLabel({ pause_mode: "timer", pause_minutes: 120 }), "Wait 2 hours");
+  assert.equal(pauseLabel({ pause_mode: "timer", pause_minutes: 2880 }), "Wait 2 days");
+  const { edges } = layout([s("a", "Excel"), p, s("b", "Word")]);
+  assert.deepEqual(edges.map((e) => e.crossing), [false, false]);
+  assert.deepEqual(problems([{ ...p, pause_mode: "timer" }]), ["Pause 1 needs a number of minutes."]);
+  assert.equal(shiftLane([s("a", "Excel")], "a", 1)[0].app, "Word");
+  assert.equal(shiftLane([s("a", "Excel")], "a", -1)[0].app, "Excel");
 });
