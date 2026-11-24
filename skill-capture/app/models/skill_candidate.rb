@@ -8,6 +8,7 @@ class SkillCandidate < ApplicationRecord
   belongs_to :requested_by, class_name: "User", optional: true
   # Set when the candidate proposes extending (a new version of) or branching an existing skill.
   belongs_to :base_skill, class_name: "Skill", optional: true
+  has_one :worksheet_capture, foreign_key: :candidate_id, dependent: :nullify
   PROPOSALS = %w[save extend branch].freeze
 
   validates :signature, presence: true, uniqueness: true

@@ -32,6 +32,7 @@ Rails.application.routes.draw do
           member { post :respond }
         end
         resources :commands, only: :index
+        resources :worksheet_captures, only: %i[create show]
         resources :bundles, only: :show, constraints: { id: /[a-z0-9-]+/ }
         resources :resources, only: [] do
           member { get :download }
@@ -90,6 +91,7 @@ Rails.application.routes.draw do
         get :compare
         get :download
         post :deprecate
+        patch :audience
       end
     end
     resources :rest_stops, only: %i[show update] do
@@ -99,7 +101,13 @@ Rails.application.routes.draw do
       member { post :respond }
     end
     resources :formulas, only: %i[index create update] do
-      collection { post :import }
+      collection do
+        post :import
+        get :guide
+      end
+    end
+    resources :worksheet_captures, path: "captures", only: %i[index show] do
+      member { get "files/:file", action: :file, as: :file, constraints: { file: /[A-Za-z]+\.(md|json)/ } }
     end
     resources :playbooks, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
       member { post :install }

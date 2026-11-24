@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000017) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -362,6 +362,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
     t.datetime "updated_at", null: false
     t.string "proposal_kind"
     t.bigint "base_skill_id"
+    t.jsonb "worksheet"
     t.index ["base_skill_id"], name: "index_skill_candidates_on_base_skill_id"
     t.index ["requested_by_id"], name: "index_skill_candidates_on_requested_by_id"
     t.index ["reviewer_id"], name: "index_skill_candidates_on_reviewer_id"
@@ -496,6 +497,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
     t.datetime "updated_at", null: false
     t.string "stage", default: "local", null: false
     t.datetime "stage_changed_at"
+    t.string "market_audience", default: "global", null: false
     t.index ["name", "version"], name: "index_skills_on_name_and_version", unique: true
     t.index ["parent_skill_id"], name: "index_skills_on_parent_skill_id"
     t.index ["published_by_id"], name: "index_skills_on_published_by_id"
@@ -697,6 +699,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "prompts_checked_at"
+    t.string "department"
+    t.index ["department"], name: "index_users_on_department"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -729,6 +733,27 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
     t.index ["key"], name: "index_waypoints_on_key", unique: true
     t.index ["to_name"], name: "index_waypoints_on_to_name"
     t.index ["updated_by_id"], name: "index_waypoints_on_updated_by_id"
+  end
+
+  create_table "worksheet_captures", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "sheet_name", null: false
+    t.string "address"
+    t.string "provider"
+    t.jsonb "observed", default: {}, null: false
+    t.jsonb "interpretation", default: {}, null: false
+    t.jsonb "inventory", default: [], null: false
+    t.jsonb "blueprint", default: {}, null: false
+    t.text "structure_md"
+    t.text "formulas_md"
+    t.text "skill_md"
+    t.string "interpreted_by"
+    t.string "status", default: "written", null: false
+    t.bigint "candidate_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["candidate_id"], name: "index_worksheet_captures_on_candidate_id"
+    t.index ["user_id"], name: "index_worksheet_captures_on_user_id"
   end
 
   add_foreign_key "action_definitions", "sources"
@@ -790,4 +815,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
   add_foreign_key "waypoint_revisions", "users", column: "editor_id"
   add_foreign_key "waypoint_revisions", "waypoints"
   add_foreign_key "waypoints", "users", column: "updated_by_id"
+  add_foreign_key "worksheet_captures", "skill_candidates", column: "candidate_id"
+  add_foreign_key "worksheet_captures", "users"
 end

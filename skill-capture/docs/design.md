@@ -496,3 +496,16 @@ A candidate's area is the most common `domain` on its events. Failing that, it i
 - Outlook. It needs a separate mail add-in manifest, or a move to the unified JSON manifest.
 - Teams and Copilot surfaces through the unified manifest. The converter output shows that the XML manifest converts cleanly.
 - Push notifications outside Office and the console.
+
+## Levels and worksheet capture
+
+**Levels.** A skill is seen at five levels: *mine* (published by, contributed to or requested by me), *department* (the same for my department colleagues: same `users.department`, or the same areas if no department is set), *firm* (stage firm), *industry* and *global* (stage market, split by `skills.market_audience`, set by admins). The library, the add-in library and the map all filter by level.
+
+**Worksheet capture** follows the provider's `AGENT.md`, Observe → Interpret → Document → Write:
+
+| Stage | What happens | Output |
+|---|---|---|
+| Observe | Labels and formulas by cell (numbers flagged, never sent); provider; inputs = absolute refs to non-formula cells, labelled by the cell beside or above | `observed` |
+| Interpret | Header row and period columns; grid if rows reference their own column A; each row matched to a library command (regex from the syntax template), varying parameters → column params; computed formulas → `{row:}`, `{row_sum:}`, `{row_last:}`, `{cell:}`, `{input:}`, `{col:n}`; field, purpose, risks; optional Claude pass | `interpretation`, `blueprint` |
+| Document | Inventory of every formula pattern; unknown provider formulas generalized into new unverified commands | `STRUCTURE.md`, `FORMULAS.md`, `blueprint.json` |
+| Write | Agent Skills `SKILL.md`; a draft candidate (origin manual, kind save) carrying the blueprint; reviewers notified | `SKILL.md`, candidate |

@@ -19,7 +19,7 @@ const areaName = (a) => (!a ? "No area" : a === "factset" ? "FactSet" : a.length
 // branches as side roads, unpublished workflows as unpaved roads.
 export default class extends Controller {
   static targets = ["data", "svg", "viewport", "tip", "panel", "from", "to", "modeBtn", "areaLegend", "trafficLegend", "search", "results",
-                    "appChip", "stageChip", "fieldButton", "fieldTree", "hideOthers", "filterCount", "bridgeChip", "panelClose"]
+                    "appChip", "stageChip", "fieldButton", "fieldTree", "hideOthers", "filterCount", "bridgeChip", "panelClose", "levelChip", "areaSelect"]
   static values = { routeUrl: String, colors: Object, tiers: Object, currency: String, searchUrl: String, placeUrl: String,
                     sendUrl: String, sentUrl: String, recipients: Array }
 
@@ -44,7 +44,7 @@ export default class extends Controller {
   readFiltersFromUrl() {
     const q = new URLSearchParams(location.search)
     return { apps: new Set(q.getAll("app")), field: q.get("field") || null, stages: new Set(q.getAll("stage")), hide: q.get("hide") === "1",
-             bridges: q.get("bridges") === "1" }
+             bridges: q.get("bridges") === "1", level: q.get("level") || null, area: q.get("area") || null }
   }
 
   writeFiltersToUrl() {
@@ -54,6 +54,8 @@ export default class extends Controller {
     this.filters.stages.forEach((s) => q.append("stage", s))
     if (this.filters.hide) q.set("hide", "1")
     if (this.filters.bridges) q.set("bridges", "1")
+    if (this.filters.level) q.set("level", this.filters.level)
+    if (this.filters.area) q.set("area", this.filters.area)
     history.replaceState(null, "", `${location.pathname}${q.toString() ? `?${q}` : ""}`)
   }
 
@@ -63,10 +65,12 @@ export default class extends Controller {
     if (f.field && !(n.fields || []).some((p) => p === f.field || p.startsWith(`${f.field}/`))) return false
     if (f.bridges && !(n.bridge || this.allEdges.some((e) => e.bridge && (e.from === n.id || e.to === n.id)))) return false
     if (f.stages.size && !(n.kind === "skill" && f.stages.has(n.stage))) return false
+    if (f.level && !(n.levels || []).includes(f.level)) return false
+    if (f.area && n.area !== f.area) return false
     return true
   }
 
-  get filtering() { return this.filters.apps.size || this.filters.field || this.filters.stages.size || this.filters.bridges }
+  get filtering() { return this.filters.apps.size || this.filters.field || this.filters.stages.size || this.filters.bridges || this.filters.level || this.filters.area }
 
   toggleBridges() {
     this.filters.bridges = !this.filters.bridges
@@ -76,9 +80,11 @@ export default class extends Controller {
   }
 
   toggleApp(e) { const a = e.currentTarget.dataset.app; this.filters.apps.has(a) ? this.filters.apps.delete(a) : this.filters.apps.add(a); this.applyFilters() }
+  toggleLevel(e) { const l = e.currentTarget.dataset.level; this.filters.level = this.filters.level === l ? null : l; this.applyFilters() }
+  setArea(e) { this.filters.area = e.currentTarget.value || null; this.applyFilters() }
   toggleStage(e) { const s = e.currentTarget.dataset.stage; this.filters.stages.has(s) ? this.filters.stages.delete(s) : this.filters.stages.add(s); this.applyFilters() }
   setField(path) { this.filters.field = path; this.fieldTreeTarget.hidden = true; this.fieldButtonTarget.setAttribute("aria-expanded", "false"); this.applyFilters() }
-  clearFilters() { this.filters = { apps: new Set(), field: null, stages: new Set(), hide: false, bridges: false }; this.hideOthersTarget.checked = false; this.applyFilters() }
+  clearFilters() { this.filters = { apps: new Set(), field: null, stages: new Set(), hide: false, bridges: false, level: null, area: null }; this.hideOthersTarget.checked = false; this.applyFilters() }
 
   toggleFieldTree() {
     const open = this.fieldTreeTarget.hidden
@@ -121,6 +127,8 @@ export default class extends Controller {
     const on = (b, v) => { b.setAttribute("aria-pressed", String(v)); b.classList.toggle("bg-slate-900", v); b.classList.toggle("text-white", v); b.classList.toggle("bg-white", !v) }
     this.appChipTargets.forEach((b) => on(b, this.filters.apps.has(b.dataset.app)))
     this.stageChipTargets.forEach((b) => on(b, this.filters.stages.has(b.dataset.stage)))
+    this.levelChipTargets.forEach((b) => on(b, this.filters.level === b.dataset.level))
+    if (this.hasAreaSelectTarget) this.areaSelectTarget.value = this.filters.area || ""
     if (this.hasBridgeChipTarget) on(this.bridgeChipTarget, this.filters.bridges)
     this.hideOthersTarget.checked = this.filters.hide
     const f = (this.map.fields || []).find((x) => x.path === this.filters.field)

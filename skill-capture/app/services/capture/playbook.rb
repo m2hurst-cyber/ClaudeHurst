@@ -268,6 +268,7 @@ module Capture
 
     # A pack's intersections: where each route goes next.
     def refresh_route_junctions!(user)
+      write_road_directions!(user)
       routes.each_value do |r|
         names = Array(r["steps"]).map { |x| x["name"] }
         names.each_with_index do |name, i|
@@ -279,6 +280,20 @@ module Capture
           next if Waypoint.find_by(key: "junction:#{name}")&.body == body
           Directions.save!(Directions.find("junction:#{name}"), body: body, note: "#{title} v#{version}", user: user)
         end
+      end
+    end
+
+    def guide = (f = dir.join("AGENT.md")).exist? ? f.read : nil
+
+    # Each worksheet skill's road gets agent directions documenting what the sheet attempts and every formula.
+    def write_road_directions!(user)
+      cmds = FormulaCommand.where(provider: provider).to_h { |c| [c.key, c.to_builder.stringify_keys] }
+      skills.select { |s| s["worksheet"] }.each do |s|
+        skill = Skill.current(s["name"]) or next
+        body = WorksheetDocs.road_directions(skill_title: skill.title, description: s["description"], bp: s["worksheet"], commands: cmds,
+                                             provider: provider, guide_path: guide && "playbooks/#{key}/AGENT.md")
+        next if Waypoint.find_by(key: "road:#{skill.name}")&.body == body
+        Directions.save!(Directions.find("road:#{skill.name}"), body: body, note: "#{title} v#{version}", user: user)
       end
     end
 

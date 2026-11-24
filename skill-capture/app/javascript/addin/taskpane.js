@@ -6,6 +6,7 @@ import { renderMarkdown, toPlainSteps } from "addin/markdown";
 import { memory } from "addin/memory";
 import { registerRibbon, showPane } from "addin/ribbon";
 import { plan as planSheet, apply as applySheet, colLetter } from "addin/worksheet_builder";
+import { observeCells } from "addin/sheet_capture";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -16,7 +17,9 @@ const DRAFT_KEY = "skillcapture.recordingDraft"; // autosaved recording (redunda
 const areaName = (n) => n === "factset" ? "FactSet" : n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
 const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok", prompts: [], recovered: null,
-                hostOnly: settings.get("skillcapture.hostOnly") !== "0" }; // default: show skills for the app you're in
+                hostOnly: settings.get("skillcapture.hostOnly") !== "0", // default: show skills for the app you're in
+                area: settings.get("skillcapture.area") || "", level: settings.get("skillcapture.level") || "" };
+const LEVELS = [["", "All"], ["mine", "Mine"], ["department", "Department"], ["firm", "Firm"], ["industry", "Industry"], ["global", "Global"]];
 let flushTimer = null;
 
 const btn = "inline-flex items-center justify-center px-3 py-1.5 rounded border bg-white hover:bg-slate-50";
@@ -91,7 +94,14 @@ function wireRibbon() {
     if (message) flash(message);
     render();
   };
-  const web = (path) => () => openInBrowser(`${state.me?.console_url?.replace(/\/$/, "") || location.origin}${path}`);
+  const web = (path) => () => openInBrowser(`${state.me?.console_url?.replace(/\/$/, "") || location.origin}${typeof path === "function" ? path() : path}`);
+  const scoped = (base, extra = {}) => () => {
+    const q = new URLSearchParams(extra);
+    if (state.area) q.set(base === "/map" ? "area" : "domain", state.area);
+    if (state.level) q.set("level", state.level);
+    if (base === "/map" && (state.area || state.level)) q.set("hide", "1");
+    return `${base}${q.toString() ? `?${q}` : ""}`;
+  };
   registerRibbon(window.Office, {
     showMemory: () => go("memory"),
     showRecord: () => go("record"),
@@ -110,7 +120,10 @@ function wireRibbon() {
       try { await setAutoLoad(on); } catch { /* not supported on this client */ }
       await go(state.tab, on ? "Capture is on: Skill Capture notes step types (never document content)." : "Capture is off.");
     },
-    openMap: web("/map"),
+    focusSearch: async () => { await go("library"); setTimeout(() => document.querySelector('input[name="q"]')?.focus(), 50); },
+    captureSheet: async () => { await go("record"); await captureActiveSheet(); },
+    openMap: web(scoped("/map")),
+    openLibrary: web(scoped("/skills")),
     openReturns: web("/playbooks"),
     openConsole: web("/"),
   });
@@ -237,11 +250,15 @@ const panel = () => document.getElementById("panel");
 
 async function renderLibrary(q = state.query || "", area = state.area || "") {
   state.query = q; state.area = area;
+  settings.set("skillcapture.area", area || null);
   panel().innerHTML = `
     <form data-form="search" class="flex gap-1 mb-2">
-      <input name="q" value="${esc(q)}" placeholder="Search skills" class="${input}" aria-label="Search skills">
+      <input name="q" value="${esc(q)}" placeholder="Search ${area ? `${esc(areaName(area))} ` : ""}skills" class="${input}" aria-label="Search skills">
       <button class="${btn}">Search</button>
     </form>
+    <div class="flex flex-wrap gap-1 mb-2 text-xs" role="group" aria-label="Level">
+      ${LEVELS.map(([v, l]) => `<button data-action="set-level" data-level="${v}" aria-pressed="${state.level === v}" class="px-2 py-0.5 rounded border ${state.level === v ? "bg-sky-700 text-white border-sky-700" : "bg-white"}">${l}</button>`).join("")}
+    </div>
     ${state.host ? `<label class="flex items-center gap-1.5 text-xs mb-2"><input type="checkbox" data-action="host-only" ${state.hostOnly ? "checked" : ""}> Only ${esc(state.host)} skills</label>` : ""}
     <div id="areas" class="flex flex-wrap gap-1 mb-3" aria-label="Filter by area"></div>
     <div id="results" class="space-y-2"><p class="text-slate-500">Loading…</p></div>`;
@@ -254,7 +271,7 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
       areas.map((a) => chip(a.name, `${areaName(a.name)} · ${a.published}`, a.name === area)).join("");
   }).catch(() => {});
   try {
-    const skills = await api.skills(q, area, state.host && state.hostOnly ? state.host : "");
+    const skills = await api.skills(q, area, state.host && state.hostOnly ? state.host : "", state.level);
     const results = document.getElementById("results");
     if (!results) return; // the person moved to another tab while this loaded
     results.innerHTML = skills.length ? skills.map((s) => `
@@ -411,8 +428,16 @@ function renderRecord() {
       </div>`;
     return;
   }
+  if (!s.recording && state.sheetCapture) { panel().innerHTML = sheetCaptureHtml(state.sheetCapture); return; }
   if (!s.recording) {
+    const excel = state.host === "Excel";
     panel().innerHTML = `
+      <div class="space-y-2 rounded border p-2 mb-3">
+        <p><strong>▦ Capture this sheet</strong>: Skill Capture reads the active worksheet, works out what it's attempting, documents every formula (BQL, FactSet or Excel) and writes a draft skill for review.</p>
+        <p class="text-xs text-slate-500">Only labels and formulas are sent, never the numbers.</p>
+        <button data-action="capture-sheet" class="${btnPrimary} w-full" ${excel ? "" : "disabled"}>Capture this sheet</button>
+        ${excel ? "" : '<p class="text-xs text-slate-500">Works in Excel.</p>'}
+      </div>
       <div class="space-y-2">
         <p>Show Skill Capture how you do a task. Start recording, do it once as you normally would, and add notes for steps Office can't see (checks, decisions, where data comes from).</p>
         <p class="text-xs text-slate-500">Only step types are recorded (like "Sort data"), never file names, cell values or text.</p>
@@ -433,6 +458,51 @@ function renderRecord() {
       </div>
     </div>`;
   renderRecordSteps();
+}
+
+// Observe → Interpret → Document → Write for the active worksheet.
+async function captureActiveSheet() {
+  if (state.host !== "Excel" || !window.Excel) { flash("Capturing a sheet works in Excel.", "error"); return render(); }
+  state.sheetCapture = { busy: true };
+  if (state.tab === "record") renderRecord();
+  try {
+    const { sheet, address, formulas, values } = await window.Excel.run(async (ctx) => {
+      const ws = ctx.workbook.worksheets.getActiveWorksheet();
+      const used = ws.getUsedRange(true);
+      ws.load("name");
+      used.load(["address", "formulas", "values"]);
+      await ctx.sync();
+      return { sheet: ws.name, address: used.address, formulas: used.formulas, values: used.values };
+    });
+    const { cells, truncated } = observeCells(formulas, values, address);
+    const result = await api.captureSheet({ sheet, address: String(address).split("!").pop(), cells });
+    state.sheetCapture = { result, truncated };
+  } catch (e) {
+    state.sheetCapture = { error: e.message || String(e) };
+  }
+  if (state.tab === "record") renderRecord();
+}
+
+function sheetCaptureHtml(c) {
+  const close = `<button data-action="close-sheet-capture" class="${btn}">Done</button>`;
+  if (c.busy) return '<p class="text-slate-500">Reading the sheet: observing, interpreting, documenting, writing…</p>';
+  if (c.error) return `<div class="rounded border border-red-200 bg-red-50 text-red-800 p-2 mb-2">${esc(c.error)}</div>${close}`;
+  const r = c.result;
+  const stage = (n, label, text) => `<li class="border rounded p-2"><div class="font-medium">${n}. ${label}</div><div class="text-xs text-slate-600">${text}</div></li>`;
+  return `
+    <h2 class="text-base font-semibold">${esc(r.interpreted.title || r.sheet)}</h2>
+    <div class="text-xs text-slate-500 mb-2">${esc(r.provider_name)} · “${esc(r.sheet)}” · interpreted by ${r.interpreted_by === "ai" ? "AI" : "rules"}</div>
+    <ol class="space-y-1 mb-2">
+      ${stage(1, "Observed", esc(r.observed) + (c.truncated ? " (sheet truncated)" : ""))}
+      ${stage(2, "Interpreted", esc(r.interpreted.purpose || ""))}
+      ${stage(3, "Documented", `${r.documented.formulas} formula pattern${r.documented.formulas === 1 ? "" : "s"}, ${r.documented.commands} from the library${r.documented.new_commands ? `, ${r.documented.new_commands} new (unverified)` : ""}<br>${r.documented.files.map(esc).join(" · ")}`)}
+      ${stage(4, "Written", r.written ? `Draft skill <span class="font-mono">${esc(r.written.name)}</span>, sent to reviewers` : "Not written")}
+    </ol>
+    ${(r.interpreted.risks || []).length ? `<div class="rounded border border-amber-200 bg-amber-50 text-amber-900 text-xs p-2 mb-2">${r.interpreted.risks.slice(0, 5).map(esc).join("<br>")}</div>` : ""}
+    <div class="flex gap-1">
+      <button data-action="open-url" data-url="${esc(r.url)}" class="${btnPrimary} flex-1">Open the files</button>
+      ${close}
+    </div>`;
 }
 
 function renderRecordSteps() {
@@ -560,6 +630,9 @@ document.addEventListener("click", async (ev) => {
     }
     else if (a === "resume-recording") { state.capture.restoreRecording(state.recovered.steps); state.recovered = null; renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recovered") { state.recovered = null; settings.set(DRAFT_KEY, null); renderRecord(); }
+    else if (a === "set-level") { state.level = t.dataset.level; settings.set("skillcapture.level", state.level || null); renderLibrary(); }
+    else if (a === "capture-sheet") { await captureActiveSheet(); }
+    else if (a === "close-sheet-capture") { state.sheetCapture = null; renderRecord(); }
     else if (a === "build-sheet") { await renderBuild(t.dataset.name, t.dataset.from); }
     else if (a === "apply-sheet") {
       const p = currentPlan();

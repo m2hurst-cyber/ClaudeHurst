@@ -1,0 +1,58 @@
+<% i = @capture.interpretation %>
+<% content_for :title, i["title"].presence || @capture.sheet_name %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <div class="text-xs text-slate-500"><%= link_to "Captured worksheets", worksheet_captures_path, class: "hover:underline" %> ›</div>
+    <h1 class="text-2xl font-bold"><%= i["title"].presence || @capture.sheet_name %></h1>
+    <p class="text-sm text-slate-500">“<%= @capture.sheet_name %>” sheet<%= " (#{@capture.address})" if @capture.address.present? %> · <%= FormulaCommand.provider_name(@capture.provider) %> · captured by <%= @capture.user.name %> <%= time_ago_in_words(@capture.created_at) %> ago · interpreted by <%= @capture.interpreted_by == "ai" ? "AI, following the agent guide" : "rules" %></p>
+  </div>
+  <% if FormulaCommand::PROVIDERS.key?(@capture.provider) %><%= link_to "Agent guide", guide_formulas_path(provider: @capture.provider), class: "px-3 py-1.5 rounded border bg-white text-sm" %><% end %>
+</div>
+
+<ol class="grid md:grid-cols-4 gap-2 mb-4 text-sm" aria-label="Stages">
+  <% [["1", "Observe", @capture.observed["summary"]],
+      ["2", "Interpret", i["purpose"]],
+      ["3", "Document", "#{pluralize(@capture.inventory.size, 'formula pattern')}; #{@capture.files.keys.reject { |f| f == 'SKILL.md' }.to_sentence}"],
+      ["4", "Write", @capture.candidate ? "Draft skill #{@capture.candidate.draft_name}, waiting on review" : "Not written"]].each do |n, label, text| %>
+    <li class="bg-white border rounded p-3"><div class="flex items-center gap-2 font-semibold"><span class="w-5 h-5 rounded-full bg-slate-900 text-white text-xs grid place-items-center"><%= n %></span><%= label %></div><p class="text-slate-600 mt-1"><%= text %></p></li>
+  <% end %>
+</ol>
+
+<div class="grid lg:grid-cols-[1fr_18rem] gap-4">
+  <div class="space-y-4">
+    <section class="bg-white border rounded p-4 text-sm">
+      <h2 class="font-semibold mb-2">Interpretation</h2>
+      <dl class="grid grid-cols-[8rem_1fr] gap-y-1">
+        <dt class="text-slate-500">Attempting</dt><dd><%= i["purpose"] %></dd>
+        <dt class="text-slate-500">Shape</dt><dd><%= i["kind"] || "No table found: formulas documented as written" %></dd>
+        <dt class="text-slate-500">Field</dt><dd><%= Field.find_by(path: i["field"])&.label || i["field"] %></dd>
+        <% if Array(i["dependencies"]).any? %><dt class="text-slate-500">Reads</dt><dd><%= i["dependencies"].join(", ") %></dd><% end %>
+      </dl>
+      <% if Array(i["risks"]).any? %>
+        <h3 class="font-semibold mt-3 mb-1">Risks</h3>
+        <ul class="list-disc ml-5 text-amber-800"><% i["risks"].each do |r| %><li><%= r %></li><% end %></ul>
+      <% end %>
+    </section>
+    <section class="bg-white border rounded p-4 text-sm"><%= skill_markdown(@capture.formulas_md) %></section>
+    <section class="bg-white border rounded p-4 text-sm"><%= skill_markdown(@capture.structure_md) %></section>
+  </div>
+  <aside class="space-y-4 text-sm">
+    <div class="bg-white border rounded p-3">
+      <h2 class="font-semibold mb-2">Files</h2>
+      <ul class="space-y-1">
+        <% @capture.files.each_key do |f| %>
+          <li class="flex justify-between gap-2"><%= link_to f, file_worksheet_capture_path(@capture, file: f), class: "font-mono text-xs text-sky-700 hover:underline" %><%= link_to "Download", file_worksheet_capture_path(@capture, file: f, download: 1), class: "text-xs text-slate-500 hover:underline" %></li>
+        <% end %>
+      </ul>
+    </div>
+    <% if (c = @capture.candidate) %>
+      <div class="bg-white border rounded p-3">
+        <h2 class="font-semibold mb-1">Draft skill</h2>
+        <p class="font-mono text-xs break-all"><%= c.draft_name %></p>
+        <p class="text-slate-600 my-1"><%= c.draft_description %></p>
+        <%= link_to "Open for review", skill_candidate_path(c), class: "inline-block mt-1 px-3 py-1.5 rounded bg-slate-900 text-white text-xs" %>
+      </div>
+    <% end %>
+    <div class="bg-white border rounded p-3 text-xs text-slate-500">Only labels and formulas were captured. Numbers on the sheet stay in the workbook.</div>
+  </aside>
+</div>

@@ -6,6 +6,7 @@ module Api
           scope = Skill.published.visible_to(current_user).search(params[:q]).recent
                        .classified_as(app: params[:app].presence_in(SkillClassification::APPS), field: params[:field].presence)
           scope = scope.where(domain: params[:domain]) if params[:domain].present?
+          scope = scope.at_level(params[:level], current_user) if Skill::LEVELS.include?(params[:level])
           render json: scope.limit(100).map { |s| summary(s) }
         end
 

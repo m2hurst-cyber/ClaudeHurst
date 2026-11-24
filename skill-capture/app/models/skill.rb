@@ -19,6 +19,13 @@ class Skill < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :stage, inclusion: { in: STAGES }
 
+  # Viewing levels, from closest to widest: what I wrote or worked on, my department's, the firm's,
+  # my industry's, and everyone's. Always intersected with visible_to (sandbox rules still apply).
+  LEVELS = %w[mine department firm industry global].freeze
+  LEVEL_LABELS = { "mine" => "Mine", "department" => "Department", "firm" => "Firm", "industry" => "Industry", "global" => "Global" }.freeze
+  MARKET_AUDIENCES = %w[industry global].freeze
+  validates :market_audience, inclusion: { in: MARKET_AUDIENCES }
+
   scope :published, -> { where(status: "published") }
   scope :shared, -> { where(stage: SHARED_STAGES) }
 
@@ -33,6 +40,28 @@ class Skill < ApplicationRecord
       areas: user.domains.presence || [""], id: user.id, actor: user.actor_key
     )
     shared.or(local)
+  end
+
+  # Skills these people published, contributed to (captured from their work) or asked for.
+  def self.authored_by(users)
+    ids = Array(users).map { |u| u.is_a?(User) ? u.id : u }.uniq
+    return none if ids.empty?
+    keys = ids.map { |i| "user:#{i}" }
+    requested = SkillCandidate.where(requested_by_id: ids).where.not(skill_id: nil).select(:skill_id)
+    where(published_by_id: ids)
+      .or(where("jsonb_exists_any(COALESCE(skills.source->'contributor_keys', '[]'::jsonb), ARRAY[:keys]::text[])", keys: keys))
+      .or(where(id: requested))
+  end
+
+  def self.at_level(level, user)
+    case level
+    when "mine" then authored_by([user])
+    when "department" then authored_by(user.department_colleagues)
+    when "firm" then where(stage: "firm")
+    when "industry" then where(stage: "market", market_audience: "industry")
+    when "global" then where(stage: "market", market_audience: "global")
+    else all
+    end
   end
 
   # Filters by classification: an app ("Excel") and/or a field path including its subfields.

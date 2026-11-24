@@ -4,11 +4,15 @@
     <h1 class="text-2xl font-bold">Formula library</h1>
     <p class="text-sm text-slate-500">The small commands worksheet skills are built from. A skill names a command (for example <code>revenue</code>); the library holds the provider's exact formula. Commands start <strong>unverified</strong> until someone with access to the provider checks them.</p>
   </div>
+  <div class="flex flex-wrap gap-2 items-center text-sm">
+  <%= link_to "Agent guide", guide_formulas_path(provider: @provider), class: "px-3 py-1.5 rounded border bg-white hover:bg-slate-50", title: "Observe → Interpret → Document → Write: how a worksheet becomes a skill" %>
+  <%= link_to "Captured worksheets", worksheet_captures_path, class: "px-3 py-1.5 rounded border bg-white hover:bg-slate-50" %>
   <nav class="flex rounded border overflow-hidden text-sm" aria-label="Provider">
     <% @providers.each do |p| %>
       <%= link_to FormulaCommand.provider_name(p), formulas_path(provider: p), class: "px-3 py-1.5 #{p == @provider ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50'}" %>
     <% end %>
   </nav>
+  </div>
 </div>
 <div class="grid lg:grid-cols-[14rem_1fr] gap-4">
   <aside class="space-y-4 text-sm">

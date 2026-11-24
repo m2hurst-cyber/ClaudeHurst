@@ -6,6 +6,7 @@
     <%= f.label :role %><%= f.select :role, User::ROLES, {}, class: input_css %>
     <p class="text-xs text-slate-500">Members browse skills and request new ones. Reviewers also approve skills in their areas. Admins do everything.</p>
   </div>
+  <div><%= f.label :department, "Department (for the Department level: skills by colleagues)" %><%= f.text_field :department, placeholder: "Equity research", class: input_css %></div>
   <div><%= f.label :domains, "Areas reviewed (comma separated)" %><%= f.text_field :domains, value: user.domains.join(", "), placeholder: "finance, sales-ops", class: input_css %></div>
   <label class="flex items-center gap-2 text-sm"><%= f.check_box :active %> Active</label>
   <%= f.submit class: btn_primary %>

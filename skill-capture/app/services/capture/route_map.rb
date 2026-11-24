@@ -20,6 +20,8 @@ module Capture
       classes = SkillClassification.includes(field_assignments: :field).where(skill_name: skills.map(&:name)).index_by(&:skill_name)
       bounties = Bounty.active.where(skill_name: skills.map(&:name)).index_by(&:skill_name)
       names = skills.map(&:name).to_set
+      mine = @user ? Skill.published.authored_by([@user]).pluck(:name).to_set : Set.new
+      dept = @user ? Skill.published.authored_by(@user.department_colleagues).pluck(:name).to_set : Set.new
       stops = RestStop.where(skill_name: names.to_a).group(:skill_name).pluck(:skill_name, Arel.sql("count(*)"), Arel.sql("max(created_at)"), Arel.sql("max(id)"))
                       .to_h { |n, c, at, id| [n, { count: c, latest_at: at&.iso8601, url: url_helpers.rest_stop_path(id) }] }
 
@@ -28,6 +30,8 @@ module Capture
           improvements: versions[s.name].to_i - 1, steps: Array(s.source["workflow"]).size,
           apps: apps(Array(s.source["workflow"])), url: url_helpers.skill_path(s),
           contributors: Array(s.source["contributors"]).size, stage: s.stage,
+          levels: [("mine" if mine.include?(s.name)), ("department" if dept.include?(s.name)),
+                   ("firm" if s.stage == "firm"), (s.market_audience if s.stage == "market")].compact,
           rest_stops: stops[s.name] && stops[s.name].merge(list_url: url_helpers.skill_path(s, anchor: "rest-stops")) }
           .merge(traffic(metrics[s.name], bounties[s.name])).merge(classification(classes[s.name], s))
       end

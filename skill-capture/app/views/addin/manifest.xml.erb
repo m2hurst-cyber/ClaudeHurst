@@ -4,22 +4,25 @@
   # The add-in's own ribbon tab. [id, icon, action]: :pane opens the side pane; otherwise the name of a
   # function the shared runtime registers with Office.actions.associate (addin/ribbon.js).
   tab_groups = [
-    ["Skills", "Skills.Group", [["Library", "library", :pane], ["Memory", "memory", "showMemory"], ["Record", "record", "showRecord"], ["Review", "review", "showReview"]]],
-    ["Capture", "Capture.Group", [["StartRecording", "record", "startRecording"], ["ToggleCapture", "capture", "toggleCapture"]]],
-    ["Web", "Web.Group", [["Map", "map", "openMap"], ["Returns", "returns", "openReturns"], ["Console", "console", "openConsole"]]]
+    ["Skills", "Skills.Group", [["Library", "library", :pane], ["Search", "search", "focusSearch"], ["Memory", "memory", "showMemory"], ["Record", "record", "showRecord"], ["Review", "review", "showReview"]]],
+    ["Capture", "Capture.Group", [["CaptureSheet", "capture-sheet", "captureSheet"], ["StartRecording", "record", "startRecording"], ["ToggleCapture", "capture", "toggleCapture"]]],
+    ["Web", "Web.Group", [["Map", "map", "openMap"], ["WebLibrary", "library", "openLibrary"], ["Returns", "returns", "openReturns"], ["Console", "console", "openConsole"]]]
   ]
   tooltips = {
-    "Library" => ["Library", "Browse and search your team's skills for this app."],
+    "Library" => ["Library", "Browse your skills for this app, by area and level (mine, department, firm, industry, global)."],
+    "Search" => ["Search", "Search skills, in the area and level you're working in."],
+    "CaptureSheet" => ["Capture sheet", "Read this worksheet's structure and formulas (never its numbers), document them, and draft a skill for review."],
+    "WebLibrary" => ["Library", "Open the skill library in your browser, at your area and level."],
     "Memory" => ["Memory", "Skills loaded into this add-in's AI memory, sent from the map or added by you."],
     "Record" => ["Record", "Show Skill Capture how you do a task, step by step."],
     "Review" => ["Review", "Drafts waiting for you to approve or reject (reviewers)."],
     "StartRecording" => ["Start recording", "Open the pane and start recording a procedure right away."],
     "ToggleCapture" => ["Capture on/off", "Turn passive capture of your step types on or off (never document content)."],
-    "Map" => ["Skill map", "Open the skill map in your browser."],
+    "Map" => ["Skill map", "Open the skill map in your browser, at your area and level."],
     "Returns" => ["Returns", "Open playbooks and returns in your browser."],
     "Console" => ["Web console", "Open the Skill Capture console in your browser."]
   }
-  icons = %w[library memory record review capture map returns console]
+  icons = %w[library memory record review capture map returns console search capture-sheet]
 %>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

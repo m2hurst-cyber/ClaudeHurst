@@ -30,4 +30,16 @@ class User < ApplicationRecord
 
   # How this person appears as an actor in captured events.
   def actor_key = "user:#{id}"
+
+  # People in my department (or, when no department is set, people sharing one of my areas), me included.
+  def department_colleagues
+    scope = User.active
+    if department.present?
+      scope.where(department: department)
+    elsif domains.any?
+      scope.where("domains && ARRAY[?]::varchar[]", domains)
+    else
+      User.where(id: id)
+    end.or(User.where(id: id))
+  end
 end

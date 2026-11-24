@@ -81,8 +81,33 @@ module ApplicationHelper
     html = []
     list = nil
     close = -> { html << "</#{list}>" if list; list = nil }
+    table = nil
+    code = nil
+    flush = lambda do
+      next unless table
+      head, *body = table.reject { |r| r.all? { |c| c.match?(/\A:?-+:?\z/) } }
+      html << '<div class="overflow-x-auto my-2"><table class="text-xs border-collapse min-w-full">'
+      html << "<thead><tr>#{head.map { |c| %(<th class="border bg-slate-50 px-1.5 py-1 text-left font-semibold">#{inline.(c)}</th>) }.join}</tr></thead>"
+      html << "<tbody>#{body.map { |r| "<tr>#{r.map { |c| %(<td class="border px-1.5 py-1 align-top">#{inline.(c)}</td>) }.join}</tr>" }.join}</tbody></table></div>"
+      table = nil
+    end
     text.to_s.each_line(chomp: true) do |line|
+      if code
+        if line.start_with?("```") then html << %(<pre class="text-xs bg-slate-50 border rounded p-2 my-2 overflow-x-auto">#{ERB::Util.h(code.join("\n"))}</pre>); code = nil
+        else code << line
+        end
+        next
+      end
+      if line.match?(/\A\s*\|.*\|\s*\z/)
+        close.()
+        (table ||= []) << line.strip.delete_prefix("|").delete_suffix("|").split(/(?<!\\)\|/).map { |c| c.strip.gsub("\\|", "|") }
+        next
+      end
+      flush.()
       case line
+      when /\A```/
+        close.()
+        code = []
       when /\A(#+)\s+(.*)/
         close.()
         level = [$1.size + 1, 4].min
@@ -103,7 +128,9 @@ module ApplicationHelper
         html << %(<p class="my-1">#{inline.(line)}</p>)
       end
     end
+    flush.()
     close.()
+    html << %(<pre class="text-xs bg-slate-50 border rounded p-2 my-2">#{ERB::Util.h(code.join("\n"))}</pre>) if code
     safe_join([html.join.html_safe])
   end
 end

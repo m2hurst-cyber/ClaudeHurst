@@ -6,6 +6,17 @@
     <%= stage_badge(s.stage) %>
   </div>
   <p class="text-xs text-slate-500 mt-1"><%= ApplicationHelper::STAGE_STYLE[s.stage][2] %>.</p>
+  <% if s.stage == "market" %>
+    <div class="mt-2 text-xs flex items-center gap-2">
+      <span class="text-slate-500">Shared with</span>
+      <% if current_user.admin? && s.status == "published" %>
+        <%= form_with url: audience_skill_path(s), method: :patch, class: "flex gap-1" do %>
+          <select name="market_audience" class="border rounded px-1 py-0.5"><% Skill::MARKET_AUDIENCES.each do |a| %><option value="<%= a %>" <%= "selected" if s.market_audience == a %>><%= a == "industry" ? "Our industry" : "Everyone (global)" %></option><% end %></select>
+          <button class="px-1.5 rounded border bg-white">Save</button>
+        <% end %>
+      <% else %><strong><%= s.market_audience == "industry" ? "our industry" : "everyone (global)" %></strong><% end %>
+    </div>
+  <% end %>
   <% if s.status == "published" && to %>
     <% checks = Capture::Gates.for(s, to) %>
     <h3 class="font-medium mt-3 mb-1">Gates to <%= Skill::STAGE_LABELS[to] %></h3>

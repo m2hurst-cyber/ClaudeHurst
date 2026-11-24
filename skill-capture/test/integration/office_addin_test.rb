@@ -61,7 +61,7 @@ class OfficeAddinTest < ActionDispatch::IntegrationTest
       assert_equal %w[Skills Capture Web], tab.xpath("./ov:Group", ns).map { |g| g["id"].split(".").last }
       assert host.at_xpath(".//ov:OfficeTab[@id='TabHome']//ov:Action[@xsi:type='ShowTaskpane']", ns.merge("xsi" => "http://www.w3.org/2001/XMLSchema-instance")), "and its Skills button on Home"
       functions = tab.xpath(".//ov:FunctionName", ns).map(&:text)
-      assert_equal %w[showMemory showRecord showReview startRecording toggleCapture openMap openReturns openConsole], functions
+      assert_equal %w[focusSearch showMemory showRecord showReview captureSheet startRecording toggleCapture openMap openLibrary openReturns openConsole], functions
       functions.each { |f| assert_match(/\b#{f}:/, js, "#{f} is handled in the shared runtime") }
       assert_equal "Taskpane.Url", host.at_xpath(".//ov:FunctionFile", ns)["resid"], "ribbon functions run in the pane's shared runtime"
     end

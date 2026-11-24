@@ -1,0 +1,12 @@
+<% content_for :title, "Agent guide: #{FormulaCommand.provider_name(@provider)}" %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+  <div>
+    <h1 class="text-2xl font-bold">Agent guide: <%= FormulaCommand.provider_name(@provider) %></h1>
+    <p class="text-sm text-slate-500">How the AI (and people) read a worksheet, interpret it, document every formula and write the skill: Observe → Interpret → Document → Write. The worksheet capture in the add-in follows it.</p>
+  </div>
+  <div class="flex gap-2 text-sm">
+    <%= link_to "← Formula library", formulas_path(provider: @provider), class: "px-3 py-1.5 rounded border bg-white" %>
+    <%= link_to "Captured worksheets", worksheet_captures_path, class: "px-3 py-1.5 rounded border bg-white" %>
+  </div>
+</div>
+<article class="bg-white border rounded p-5 text-sm max-w-4xl"><%= skill_markdown(@guide) %></article>

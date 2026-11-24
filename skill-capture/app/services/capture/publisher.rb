@@ -32,7 +32,7 @@ module Capture
           domain: candidate.domain, tags: candidate.draft_tags,
           inputs: candidate.draft_inputs, outputs: candidate.draft_outputs,
           parent_skill: previous || branch_of, published_by: @user, published_at: Time.current,
-          source: provenance(candidate).merge(source_extra.to_h.stringify_keys),
+          source: provenance(candidate).merge(candidate.worksheet.present? ? { "worksheet" => candidate.worksheet } : {}).merge(source_extra.to_h.stringify_keys),
           stage: previous&.stage || PromotionPolicy.current.initial_stage, stage_changed_at: previous&.stage_changed_at || Time.current
         )
         previous&.update!(status: "superseded")

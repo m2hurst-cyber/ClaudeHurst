@@ -4,7 +4,7 @@ require "csv"
 # commands worksheet skills are built from. Area reviewers for the provider and admins manage them.
 class FormulasController < ApplicationController
   before_action :set_provider
-  before_action :manager_only, except: :index
+  before_action :manager_only, except: %i[index guide]
 
   def index
     scope = FormulaCommand.where(provider: @provider)
@@ -22,6 +22,12 @@ class FormulasController < ApplicationController
     end
     @can_manage = can_manage?
     @providers = (FormulaCommand::PROVIDERS.keys | FormulaCommand.distinct.pluck(:provider))
+  end
+
+  # The provider's agent guide (playbooks/<pack>/AGENT.md): how to read a worksheet and write its skill.
+  def guide
+    @guide = Capture::Playbook.all.find { |pb| pb.pack? && pb.provider == @provider }&.guide
+    raise ActiveRecord::RecordNotFound unless @guide
   end
 
   def create

@@ -27,7 +27,7 @@ class FormulaCommand < ApplicationRecord
   end
 
   # What the add-in's builder needs.
-  def to_builder = { syntax: syntax, defaults: defaults, status: status, name: name }
+  def to_builder = { syntax: syntax, defaults: defaults, status: status, name: name, description: description }
 
   # Skills (current versions) whose worksheet uses this command.
   def used_by

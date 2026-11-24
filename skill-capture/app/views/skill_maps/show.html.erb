@@ -82,6 +82,15 @@
           <button type="button" data-route-map-target="stageChip" data-stage="<%= st %>" data-action="route-map#toggleStage" aria-pressed="false" class="px-2 py-1 rounded border text-xs bg-white"><%= label %></button>
         <% end %>
       </div>
+      <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Level">
+        <% Skill::LEVEL_LABELS.each do |lvl, label| %>
+          <button type="button" data-route-map-target="levelChip" data-level="<%= lvl %>" data-action="route-map#toggleLevel" aria-pressed="false" class="px-2 py-1 rounded border text-xs bg-white"><%= label %></button>
+        <% end %>
+      </div>
+      <select data-route-map-target="areaSelect" data-action="route-map#setArea" class="border rounded px-1.5 py-1 text-xs" aria-label="Area">
+        <option value="">All areas</option>
+        <% @map[:areas].each do |a| %><option value="<%= a %>"><%= area_name(a) %></option><% end %>
+      </select>
       <button type="button" data-route-map-target="bridgeChip" data-action="route-map#toggleBridges" aria-pressed="false" class="px-2 py-1 rounded border text-xs bg-white">⇄ Bridges</button>
       <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" data-route-map-target="hideOthers" data-action="route-map#applyFilters"> Hide non-matching</label>
       <button type="button" class="text-xs text-sky-700 hover:underline" data-action="route-map#clearFilters">Clear</button>

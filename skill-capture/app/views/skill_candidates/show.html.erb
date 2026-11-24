@@ -11,6 +11,9 @@
         <%= link_to "#{c.base_skill.title} v#{c.base_skill.version}", skill_path(c.base_skill), class: "text-sky-700 underline" %>
         <span class="text-slate-500"><%= c.proposal_kind == "extend" ? "· publishes as its next version" : "· publishes as a new branch in the sandbox" %> · a rest stop is kept</span>
       </div>
+    <% elsif c.worksheet_capture %>
+      <div class="mt-2 text-sm bg-emerald-50 border border-emerald-200 rounded px-2 py-1 inline-block">▦ Captured from <%= c.requested_by&.name || "someone" %>'s “<%= c.worksheet_capture.sheet_name %>” worksheet ·
+        <%= link_to "observed, interpreted and documented", worksheet_capture_path(c.worksheet_capture), class: "text-sky-700 underline" %> (STRUCTURE.md, FORMULAS.md, blueprint.json)</div>
     <% elsif c.proposal_kind == "save" %>
       <div class="mt-2 text-sm text-slate-600">💾 Saved from <%= c.requested_by&.name || "someone" %>'s repeated work</div>
     <% end %>

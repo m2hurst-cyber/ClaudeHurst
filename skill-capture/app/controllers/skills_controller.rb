@@ -1,11 +1,12 @@
 class SkillsController < ApplicationController
-  before_action :set_skill, only: %i[show edit update download deprecate compare]
+  before_action :set_skill, only: %i[show edit update download deprecate compare audience]
 
   def index
     authorize Skill
     scope = (params[:all] == "1" ? Skill.all : Skill.published).visible_to(current_user)
     scope = scope.where(domain: params[:domain]) if params[:domain].present?
     scope = scope.where(stage: params[:stage]) if Skill::STAGES.include?(params[:stage])
+    scope = scope.at_level(params[:level], current_user) if Skill::LEVELS.include?(params[:level])
     scope = scope.classified_as(app: params[:app].presence_in(SkillClassification::APPS), field: params[:field].presence)
     @field = Field.find_by(path: params[:field]) if params[:field].present?
     @domains = Skill.published.distinct.where.not(domain: nil).order(:domain).pluck(:domain)
@@ -19,6 +20,14 @@ class SkillsController < ApplicationController
   def compare
     @family = @skill.family.select { |s| s.visible_to?(current_user) }
     @rows = Capture::Voting.comparison(@family)
+  end
+
+  # Admins choose who a market skill is shared with: the firm's industry, or everyone.
+  def audience
+    raise Pundit::NotAuthorizedError unless current_user.admin? && @skill.stage == "market"
+    @skill.update!(market_audience: params[:market_audience].to_s.presence_in(Skill::MARKET_AUDIENCES) || "global")
+    AuditLog.record("skill.audience", user: current_user, subject: @skill, audience: @skill.market_audience)
+    redirect_to skill_path(@skill), notice: "Shared with #{@skill.market_audience == 'industry' ? 'our industry' : 'everyone'}."
   end
 
   def download

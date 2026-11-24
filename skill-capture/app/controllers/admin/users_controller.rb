@@ -37,7 +37,7 @@ module Admin
     def set_user = @user = User.find(params[:id])
 
     def user_params
-      p = params.require(:user).permit(:name, :email, :role, :domains, :active)
+      p = params.require(:user).permit(:name, :email, :role, :domains, :department, :active)
       p[:domains] = p[:domains].to_s.split(",") if p.key?(:domains)
       p
     end
