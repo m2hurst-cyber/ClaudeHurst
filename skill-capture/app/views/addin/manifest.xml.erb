@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Skill Capture: Office add-in manifest (add-in only XML manifest) for Excel, Word and PowerPoint. Generated for <%= @base %> -->
+<%
+  # The add-in's own ribbon tab. [id, icon, action]: :pane opens the side pane; otherwise the name of a
+  # function the shared runtime registers with Office.actions.associate (addin/ribbon.js).
+  tab_groups = [
+    ["Skills", "Skills.Group", [["Library", "library", :pane], ["Memory", "memory", "showMemory"], ["Record", "record", "showRecord"], ["Review", "review", "showReview"]]],
+    ["Capture", "Capture.Group", [["StartRecording", "record", "startRecording"], ["ToggleCapture", "capture", "toggleCapture"]]],
+    ["Web", "Web.Group", [["Map", "map", "openMap"], ["Returns", "returns", "openReturns"], ["Console", "console", "openConsole"]]]
+  ]
+  tooltips = {
+    "Library" => ["Library", "Browse and search your team's skills for this app."],
+    "Memory" => ["Memory", "Skills loaded into this add-in's AI memory, sent from the map or added by you."],
+    "Record" => ["Record", "Show Skill Capture how you do a task, step by step."],
+    "Review" => ["Review", "Drafts waiting for you to approve or reject (reviewers)."],
+    "StartRecording" => ["Start recording", "Open the pane and start recording a procedure right away."],
+    "ToggleCapture" => ["Capture on/off", "Turn passive capture of your step types on or off (never document content)."],
+    "Map" => ["Skill map", "Open the skill map in your browser."],
+    "Returns" => ["Returns", "Open playbooks and returns in your browser."],
+    "Console" => ["Web console", "Open the Skill Capture console in your browser."]
+  }
+  icons = %w[library memory record review capture map returns console]
+%>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
@@ -41,6 +62,45 @@
           </GetStarted>
           <FunctionFile resid="Taskpane.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <%# Its own "Skill Capture" tab on the ribbon ... %>
+            <CustomTab id="SkillCapture.<%= host %>.Tab">
+<% tab_groups.each do |group, label, buttons| %>
+              <Group id="SkillCapture.<%= host %>.<%= group %>">
+                <Label resid="<%= label %>"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+<% buttons.each do |id, icon, action| %>
+                <Control xsi:type="Button" id="SkillCapture.<%= host %>.<%= id %>">
+                  <Label resid="<%= id %>.Label"/>
+                  <Supertip>
+                    <Title resid="<%= id %>.Label"/>
+                    <Description resid="<%= id %>.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.<%= icon %>.16"/>
+                    <bt:Image size="32" resid="Icon.<%= icon %>.32"/>
+                    <bt:Image size="80" resid="Icon.<%= icon %>.80"/>
+                  </Icon>
+<% if action == :pane %>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>SkillCapture.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+<% else %>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName><%= action %></FunctionName>
+                  </Action>
+<% end %>
+                </Control>
+<% end %>
+              </Group>
+<% end %>
+              <Label resid="Tab.Label"/>
+            </CustomTab>
+            <%# ... and its button on the Home tab. Both open the same side pane. %>
             <OfficeTab id="<%= tab %>">
               <Group id="SkillCapture.<%= host %>.Group">
                 <Label resid="Group.Label"/>
@@ -77,6 +137,9 @@
         <bt:Image id="Icon.16" DefaultValue="<%= @base %>/addin/icon-16.png"/>
         <bt:Image id="Icon.32" DefaultValue="<%= @base %>/addin/icon-32.png"/>
         <bt:Image id="Icon.80" DefaultValue="<%= @base %>/addin/icon-80.png"/>
+<% icons.each do |i| %><% [16, 32, 80].each do |sz| %>
+        <bt:Image id="Icon.<%= i %>.<%= sz %>" DefaultValue="<%= @base %>/addin/icon-<%= i %>-<%= sz %>.png"/>
+<% end %><% end %>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="<%= @base %>/addin/taskpane"/>
@@ -86,10 +149,20 @@
         <bt:String id="GetStarted.Title" DefaultValue="Skill Capture is ready"/>
         <bt:String id="Group.Label" DefaultValue="Skill Capture"/>
         <bt:String id="Button.Label" DefaultValue="Skills"/>
+        <bt:String id="Tab.Label" DefaultValue="Skill Capture"/>
+        <bt:String id="Skills.Group" DefaultValue="Skills"/>
+        <bt:String id="Capture.Group" DefaultValue="Capture"/>
+        <bt:String id="Web.Group" DefaultValue="Web console"/>
+<% tooltips.each do |id, (label, _)| %>
+        <bt:String id="<%= id %>.Label" DefaultValue="<%= label %>"/>
+<% end %>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Open Skills on the Home tab to browse your team's procedures or record a new one."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the Skill Capture tab (or Skills on the Home tab) to browse your team's procedures or record a new one."/>
         <bt:String id="Button.Tooltip" DefaultValue="Browse your team's skill library, record a procedure, and review captured workflows."/>
+<% tooltips.each do |id, (_, tip)| %>
+        <bt:String id="<%= id %>.Tooltip" DefaultValue="<%= tip %>"/>
+<% end %>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

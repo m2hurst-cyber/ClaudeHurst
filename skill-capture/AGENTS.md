@@ -327,4 +327,8 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 
 - `playbooks/partnership-k1s` (allocate partnership items, generate Schedule K-1s); `Capture::K1Generator`, `Capture::SimplePdf`; check type `generated`; numeric literals in checks.
 - `handoffs:` in playbook.yml connect roads across playbooks with written handoff directions; the generator hands off to `report-k1-pass-through-income`. A generated K-1 can be sent to one of the same preparer's open returns (unconfirmed there).
-- Tests: 124 Rails runs, 23 JavaScript tests.
+
+## Changelog: ribbon tab
+
+- The manifest adds a `CustomTab` ("Skill Capture": Skills, Capture, Web console groups) next to the Home tab button; ribbon functions live in `addin/ribbon.js` and are wired in `taskpane.js` (`wireRibbon`). Icons in `public/addin/icon-<name>-<16|32|80>.png`.
+- Tests: 125 Rails runs, 25 JavaScript tests. Not yet sideloaded in real Office; run `npm run validate` and sideload before rollout.

@@ -25,7 +25,7 @@ Step 1 of the knowledge program: Skill Capture & Institutional Memory, delivered
 | Piece | Where |
 |---|---|
 | Manifest (add-in-only XML, `TaskPaneApp`, hosts Workbook/Document/Presentation) | `GET /addin/manifest.xml`, generated for the serving origin (`app/views/addin/manifest.xml.erb`) |
-| Ribbon | A **Skills** button in a *Skill Capture* group on the Home tab of each host, opening the task pane |
+| Ribbon | Both: its own **Skill Capture** tab (`CustomTab`) with three groups (**Skills**: Library, Memory, Record, Review; **Capture**: Start recording, Capture on/off; **Web console**: Skill map, Returns, Web console), and a **Skills** button in a *Skill Capture* group on the Home tab. Library and Home › Skills open the side pane directly (`ShowTaskpane`); the other buttons are `ExecuteFunction` actions in the shared runtime (`addin/ribbon.js` registers them with `Office.actions.associate`; each opens the pane with `Office.addin.showAsTaskpane` on the right tab, starts recording, toggles capture, or opens the console in the browser, and always calls `event.completed()`). On clients without the shared runtime the tab still shows, and Library / Home › Skills still open the pane |
 | Shared runtime | `<Runtime lifetime="long">` on each host, so when the person turns capture on, `Office.addin.setStartupBehavior(load)` keeps capturing while the pane is closed |
 | Task pane | `GET /addin/taskpane` loads Office.js from Microsoft's CDN, then `app/javascript/addin/taskpane.js` |
 | Capture engine | `addin/capture.js`: no Office dependency, unit-tested with `npm test` |

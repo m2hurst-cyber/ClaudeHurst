@@ -4,6 +4,7 @@ import { manualStep } from "addin/vocabulary";
 import { wireHost, setAutoLoad, insertText, openInBrowser, connectDialog } from "addin/office_hosts";
 import { renderMarkdown, toPlainSteps } from "addin/markdown";
 import { memory } from "addin/memory";
+import { registerRibbon, showPane } from "addin/ribbon";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -77,6 +78,41 @@ async function boot() {
   }
   await loadMe();
   render();
+  wireRibbon();
+}
+
+// ---------- the "Skill Capture" ribbon tab ----------
+function wireRibbon() {
+  const go = async (tab, message) => {
+    await showPane(window.Office);
+    if (tab === "review" && !state.me?.reviewer) { tab = "library"; message = "Review is for reviewers; here's the library."; }
+    state.tab = tab;
+    if (message) flash(message);
+    render();
+  };
+  const web = (path) => () => openInBrowser(`${state.me?.console_url?.replace(/\/$/, "") || location.origin}${path}`);
+  registerRibbon(window.Office, {
+    showMemory: () => go("memory"),
+    showRecord: () => go("record"),
+    showReview: () => go("review"),
+    startRecording: async () => {
+      await go("record");
+      if (!state.me) return;
+      if (!state.host) { flash("Recording works inside Excel, Word or PowerPoint.", "error"); return render(); }
+      if (!state.capture.state().recording) { state.capture.startRecording(); renderRecord(); updateCaptureBadge(); }
+    },
+    toggleCapture: async () => {
+      if (!state.me) return go("library");
+      const on = !state.capture.state().capturing;
+      settings.set(CAPTURE_KEY, on ? "on" : "off");
+      state.capture.setCapturing(on && !!state.host);
+      try { await setAutoLoad(on); } catch { /* not supported on this client */ }
+      await go(state.tab, on ? "Capture is on: Skill Capture notes step types (never document content)." : "Capture is off.");
+    },
+    openMap: web("/map"),
+    openReturns: web("/playbooks"),
+    openConsole: web("/"),
+  });
 }
 
 async function loadMe() {

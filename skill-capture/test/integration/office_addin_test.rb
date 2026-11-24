@@ -47,6 +47,30 @@ class OfficeAddinTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the add-in has its own Skill Capture ribbon tab and keeps its button on the Home tab; both open the side pane" do
+    get addin_manifest_path
+    doc = Nokogiri::XML(response.body)
+    ns = { "ov" => "http://schemas.microsoft.com/office/taskpaneappversionoverrides", "bt" => "http://schemas.microsoft.com/office/officeappbasictypes/1.0" }
+    hosts = doc.xpath("//ov:VersionOverrides/ov:Hosts/ov:Host", ns)
+    assert_equal 3, hosts.size
+    js = Rails.root.join("app/javascript/addin/ribbon.js").read + Rails.root.join("app/javascript/addin/taskpane.js").read
+    hosts.each do |host|
+      tab = host.at_xpath(".//ov:CustomTab", ns)
+      assert tab, "#{host['xsi:type']} has its own tab"
+      assert_equal "Tab.Label", tab.at_xpath("./ov:Label", ns)["resid"]
+      assert_equal %w[Skills Capture Web], tab.xpath("./ov:Group", ns).map { |g| g["id"].split(".").last }
+      assert host.at_xpath(".//ov:OfficeTab[@id='TabHome']//ov:Action[@xsi:type='ShowTaskpane']", ns.merge("xsi" => "http://www.w3.org/2001/XMLSchema-instance")), "and its Skills button on Home"
+      functions = tab.xpath(".//ov:FunctionName", ns).map(&:text)
+      assert_equal %w[showMemory showRecord showReview startRecording toggleCapture openMap openReturns openConsole], functions
+      functions.each { |f| assert_match(/\b#{f}:/, js, "#{f} is handled in the shared runtime") }
+      assert_equal "Taskpane.Url", host.at_xpath(".//ov:FunctionFile", ns)["resid"], "ribbon functions run in the pane's shared runtime"
+    end
+    assert_includes response.body, '<bt:String id="Tab.Label" DefaultValue="Skill Capture"/>'
+    response.body.scan(%r{https://[^"]+(/addin/icon-[a-z0-9-]+\.png)}).flatten.uniq.each do |path|
+      assert Rails.root.join("public#{path}").exist?, "#{path} exists"
+    end
+  end
+
   test "SKILL_CAPTURE_PUBLIC_URL overrides the origin in the manifest" do
     ENV["SKILL_CAPTURE_PUBLIC_URL"] = "https://capture.contoso.com/"
     get addin_manifest_path

@@ -5,6 +5,7 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
 - **Find and follow skills.** The **Skills** button on the Home tab opens a task pane with your team's skill library. You can read a skill there, insert its steps into the document, or open it in the browser.
 - **Record a procedure.** An expert starts recording and does the task once. The add-in lists each step Office reports, such as "Insert rows", "Sort data" or "Add a slide". The expert adds their own notes for the parts Office can't see, such as checks, decisions and where data comes from, then submits the procedure for review.
 - **Capture repeated workflows (opt-in).** Anyone can turn on *Capture my workflow*. The add-in then shares the *types* of steps they take, never file names, sheet names, values or text, and changes made by co-authors are ignored. When several people repeat the same sequence, Skill Capture proposes it as a skill.
+- **Its own ribbon tab and a side pane.** A **Skill Capture** tab in Excel, Word and PowerPoint (Library, Memory, Record, Review, Start recording, Capture on/off, Skill map, Returns, Web console), plus **Home › Skills**; both open the same side pane.
 - **Review inside Office.** Reviewers see drafts for their areas in the pane and can approve or reject them there. Drafts are written by Claude when `ANTHROPIC_API_KEY` is set, otherwise by a built-in template.
 - **Route map.** The web console's **Map** shows skills as a road network, like a navigation app:
   - each published skill is a stretch of road, colored by area
