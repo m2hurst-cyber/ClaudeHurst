@@ -322,4 +322,9 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Returns take uploaded documents (PDF or image, encrypted); the AI reads each one into the catalog's boxes (`Capture::DocumentReader`), the filer confirms.
 - Each leg is prepared by `Capture::LegPreparer` (Claude, or rules) following its skill, with figures from `legs.yml` totals, and verified by `Capture::Legs` checks (documents, ties, inputs, attestations, AI issues, prior legs, reviewer sign-off).
 - Admin/env: `SKILL_CAPTURE_AI_DOCUMENTS=off` keeps documents away from the AI (manual entry); encryption keys required in production.
-- Tests: 121 Rails runs, 23 JavaScript tests.
+
+## Changelog: K-1 generator and handoffs between playbooks
+
+- `playbooks/partnership-k1s` (allocate partnership items, generate Schedule K-1s); `Capture::K1Generator`, `Capture::SimplePdf`; check type `generated`; numeric literals in checks.
+- `handoffs:` in playbook.yml connect roads across playbooks with written handoff directions; the generator hands off to `report-k1-pass-through-income`. A generated K-1 can be sent to one of the same preparer's open returns (unconfirmed there).
+- Tests: 124 Rails runs, 23 JavaScript tests.

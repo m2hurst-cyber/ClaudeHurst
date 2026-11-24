@@ -3,7 +3,7 @@
 # Visible to the filer and the reviewer they choose, nobody else.
 class PlaybookRunsController < ApplicationController
   before_action :set_run, except: :create
-  before_action :filer_only, only: %i[update inputs prepare attest acknowledge request_review situation send_route complete]
+  before_action :filer_only, only: %i[update inputs prepare attest acknowledge request_review situation send_route complete generate deliver]
 
   def create
     pb = Capture::Playbook.find(params[:playbook_key])
@@ -82,6 +82,25 @@ class PlaybookRunsController < ApplicationController
     AuditLog.record("return.issue_acknowledged", user: current_user, subject: @run, leg: leg, issue: state["issues"][i]["text"])
     reverify
     redirect_to playbook_run_path(@run, anchor: "leg-#{leg}")
+  end
+
+  # POST: the K-1 generator makes one statement per partner from the confirmed allocations
+  def generate
+    made = Capture::K1Generator.generate!(@run, user: current_user)
+    redirect_to playbook_run_path(@run, anchor: "leg-generate-schedule-k1s"), notice: "Generated #{made.size} K-1s, tied to the Form 1065."
+  rescue Capture::K1Generator::Error => e
+    redirect_to playbook_run_path(@run, anchor: "leg-generate-schedule-k1s"), alert: e.message
+  end
+
+  # POST document_id, target_id: send a generated K-1 into one of my individual returns (the handoff)
+  def deliver
+    k1 = @run.documents.find(params[:document_id])
+    target = current_user.playbook_runs.find(params[:target_id])
+    copy = Capture::K1Generator.deliver!(k1, target, user: current_user)
+    redirect_to playbook_run_path(@run, anchor: "leg-generate-schedule-k1s"),
+                notice: "Sent #{k1.label} to return #{target.reference} as #{copy.label}; its K-1 branch is now on that return's road."
+  rescue Capture::K1Generator::Error => e
+    redirect_to playbook_run_path(@run, anchor: "leg-generate-schedule-k1s"), alert: e.message
   end
 
   def request_review

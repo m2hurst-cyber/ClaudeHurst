@@ -52,6 +52,40 @@
         <div class="border rounded p-3 mt-1 bg-slate-50 text-sm"><%= skill_markdown(skill.body) %></div></details>
     </div>
 
+    <% if spec["generate"] == "k1" %>
+      <% made = Capture::K1Generator.generated(@run); delivered = st["delivered"] || {} %>
+      <% targets = current_user.playbook_runs.where(status: "open").where.not(id: @run.id).select { |t| t.playbook.catalog.key?("k-1") } %>
+      <div class="px-3 py-2 border-b text-xs space-y-2">
+        <div class="flex items-center gap-2">
+          <% if mine %><%= button_to (made.any? ? "Regenerate K-1s" : "⚙ Generate K-1s"), generate_playbook_run_path(@run), class: made.any? ? "#{btn} text-xs" : "#{btn_primary} text-xs" %><% end %>
+          <span class="text-slate-500"><%= made.any? ? "#{made.size} generated, tied to the 1065 to the cent" : "One statement per confirmed partner" %></span>
+        </div>
+        <% if made.any? %>
+          <table class="w-full"><thead><tr class="text-slate-500 text-left"><th class="py-1">Partner</th><th class="text-right">Ordinary</th><th class="text-right">Rental</th><th class="text-right">Interest</th><th class="text-right">Dividends</th><th class="text-right">Distrib.</th><th></th></tr></thead>
+            <tbody>
+              <% made.each do |k| %>
+                <% f = k.fields; sent = delivered[k.id.to_s] %>
+                <tr class="border-t align-top">
+                  <td class="py-1"><%= link_to f["partner_ref"], playbook_run_document_path(@run, k), target: "_blank", class: "text-sky-700 hover:underline" %></td>
+                  <% %w[ordinary_income rental_income interest dividends distributions].each do |key| %><td class="text-right tabular-nums"><%= number_with_delimiter(format("%.2f", f[key].to_f)) %></td><% end %>
+                  <td class="pl-2 text-right whitespace-nowrap">
+                    <% if sent %><span class="text-emerald-700">→ return <%= sent["reference"] %></span>
+                    <% elsif mine && targets.any? %>
+                      <%= form_with url: deliver_playbook_run_path(@run), method: :post, class: "inline-flex gap-1" do %>
+                        <%= hidden_field_tag :document_id, k.id %>
+                        <select name="target_id" class="border rounded px-1 py-0.5" aria-label="Send to return"><% targets.each do |t| %><option value="<%= t.id %>"><%= t.reference %></option><% end %></select>
+                        <button class="px-1.5 rounded border bg-white">Send</button>
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    <% end %>
+
     <% figures = Array(spec["show"]).filter_map { |k| (st["figures"] || {}).key?(k) && [k, st["figures"][k]] } %>
     <% if figures.any? %>
       <table class="w-full text-xs border-b"><tbody>

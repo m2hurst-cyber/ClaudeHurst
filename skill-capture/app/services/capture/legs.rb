@@ -153,6 +153,12 @@ module Capture
         ["The #{st['prepared_by'] == 'ai' ? 'AI preparer' : 'preparer'} found no unresolved blocking issue",
          st["prepared_at"].present? && blocking.empty?,
          st["prepared_at"].blank? ? "Prepare this leg first" : (blocking.any? ? "#{blocking.size} blocking: #{blocking.map { |iss, _| iss['text'] }.join(' | ')}" : nil)]
+      when "generated"
+        partners = docs.select { |d| d.kind == "partner" }
+        made = K1Generator.generated(@run)
+        missing = partners.map { |d| d.fields["partner_ref"] } - made.map { |d| d.fields["partner_ref"] || d.payer }
+        [c["label"] || "Every partner has a generated K-1", partners.any? && missing.empty? && made.size == partners.size,
+         partners.empty? ? "Confirm the partner allocations first" : (missing.any? || made.size != partners.size ? "Generate the K-1s (#{made.size} of #{partners.size})" : nil)]
       when "prior_legs"
         names = route_names
         before = names.first(names.index(leg).to_i)
@@ -170,6 +176,9 @@ module Capture
       Check.new(id: id, label: label, ok: ok, detail: detail)
     end
 
-    def resolve_ref(ref) = ref.to_s.start_with?("totals.") ? total(ref.delete_prefix("totals.")) : resolve(ref.to_s)
+    def resolve_ref(ref)
+      return ref.to_f if ref.is_a?(Numeric) || ref.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+      ref.to_s.start_with?("totals.") ? total(ref.delete_prefix("totals.")) : resolve(ref.to_s)
+    end
   end
 end

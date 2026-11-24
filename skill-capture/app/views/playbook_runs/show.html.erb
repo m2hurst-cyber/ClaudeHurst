@@ -64,6 +64,7 @@
       <% end %>
     </div>
 
+    <% if @situations.any? %>
     <div class="bg-white border rounded p-4" id="situations">
       <h2 class="font-semibold mb-1">Situation questions</h2>
       <p class="text-xs text-slate-500 mb-2">Yes (or not sure) adds the branch to the road; "not sure" has to be settled before the first leg verifies.</p>
@@ -84,7 +85,8 @@
         <% if mine %><button class="<%= btn_primary %> mt-3 w-full justify-center">Update the road</button><% end %>
       <% end %>
     </div>
-    <% if mine %>
+    <% end %>
+    <% if mine && @situations.any? %>
       <div class="bg-white border rounded p-4">
         <h2 class="font-semibold mb-1">Something not covered?</h2>
         <p class="text-xs text-slate-500 mb-2">Describe what's different about this client's year. A known situation joins the road; a new one is proposed as a branch for the tax reviewers. Numbers and emails are removed before the AI sees it.</p>

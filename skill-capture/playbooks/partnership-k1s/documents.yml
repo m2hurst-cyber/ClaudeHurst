@@ -1,0 +1,29 @@
+# Partnership documents. "k-1" uses the same boxes as the individual playbook's K-1, so a generated
+# K-1 lands in a partner's individual return without re-keying.
+kinds:
+  form-1065-summary:
+    name: Form 1065 totals (Schedule K)
+    issued_by: Partnership return (tax software)
+    fields:
+      - {key: ordinary_income, label: "Ordinary business income (loss), Schedule K line 1", type: money}
+      - {key: rental_income, label: "Net rental real estate income (loss), line 2", type: money}
+      - {key: interest, label: "Interest income, line 5", type: money}
+      - {key: dividends, label: "Ordinary dividends, line 6a", type: money}
+      - {key: distributions, label: "Distributions, line 19", type: money}
+  partner:
+    name: Partner allocation
+    issued_by: Partnership agreement and capital accounts
+    fields:
+      - {key: partner_ref, label: "Partner reference (not a name or TIN)", type: text}
+      - {key: profit_pct, label: Profit and loss sharing %, type: number}
+      - {key: capital_pct, label: Capital %, type: number}
+      - {key: distributions, label: Distributions to this partner, type: money}
+  k-1:
+    name: Schedule K-1
+    issued_by: Partnership, S corporation, estate or trust
+    fields:
+      - {key: ordinary_income, label: Ordinary business income (loss), type: money}
+      - {key: rental_income, label: Net rental income (loss), type: money}
+      - {key: interest, label: Interest income, type: money}
+      - {key: dividends, label: Dividends, type: money}
+      - {key: distributions, label: Distributions, type: money}

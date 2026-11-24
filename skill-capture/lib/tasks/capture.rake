@@ -368,6 +368,38 @@ namespace :capture do
       Capture::Legs.new(run).verify_all!
     end
 
+    # A sample partnership with three partners: the K-1 generator makes their K-1s and partner PTR-A's
+    # is sent into the sample individual return, whose K-1 branch picks it up.
+    User.active.where(role: %w[admin reviewer]).find_each do |u|
+      next if u.playbook_runs.exists?(playbook_key: "partnership-k1s")
+      prun = u.playbook_runs.create!(playbook_key: "partnership-k1s", reference: "P-2026-07", inputs: { "tax_year" => "2025" })
+      sheet = ->(title, rows) { Capture::SimplePdf.render([["SAMPLE - fictional data", 9, true], [title, 16, true], *rows.map { |r| [r, 11, false] }]) }
+      add = lambda do |kind, fields, pdf, payer = nil|
+        d = prun.documents.new(kind: kind, filename: "#{kind}.pdf", payer: payer, content_type: "application/pdf", byte_size: pdf.bytesize,
+                               checksum: Digest::SHA256.hexdigest(pdf), content: Base64.strict_encode64(pdf), uploaded_by: u, tax_year: 2025,
+                               read_by: "sample", status: "confirmed", confirmed_at: Time.current, notes: "Sample figures (demo without an AI key).")
+        d.assign_fields(fields, prun.playbook.catalog)
+        d.label = Capture::ReturnDocuments.label_for(d)
+        d.save!
+      end
+      add.("form-1065-summary", { "ordinary_income" => 240_000, "rental_income" => -12_000, "interest" => 1_800, "dividends" => 3_000, "distributions" => 150_000 },
+           sheet.("Form 1065 Schedule K totals", ["Ordinary business income 240,000", "Net rental income (12,000)", "Interest 1,800", "Dividends 3,000", "Distributions 150,000"]),
+           "Example Partners LP")
+      [["PTR-A", 50, 50, 75_000], ["PTR-B", 30, 30, 45_000], ["PTR-C", 20, 20, 30_000]].each do |ref, pct, cap, dist|
+        add.("partner", { "partner_ref" => ref, "profit_pct" => pct, "capital_pct" => cap, "distributions" => dist },
+             sheet.("Partner allocation #{ref}", ["Profit share #{pct}%", "Capital #{cap}%", "Distributions #{dist}"]))
+      end
+      Capture::Legs.new(prun.reload).prepare!("allocate-partnership-items", user: u)
+      prun.reload
+      prun.legs = prun.legs.merge("allocate-partnership-items" => prun.leg("allocate-partnership-items").merge("attested" => { "agreement" => { "by" => u.id, "at" => Time.current.iso8601 } }))
+      prun.save!
+      made = Capture::K1Generator.generate!(prun.reload, user: u)
+      Capture::Legs.new(prun.reload).prepare!("generate-schedule-k1s", user: u)
+      if (ind = u.playbook_runs.find_by(playbook_key: "individual-income-tax", reference: "2026-0142"))
+        Capture::K1Generator.deliver!(made.find { |k| k.fields["partner_ref"] == "PTR-A" }, ind, user: u)
+      end
+    end
+
     # Rest stops: a first snapshot of every skill, plus a hand-made one before a rebrand.
     Capture::RestStops.sweep!
     deck = Skill.current("board-deck-design")

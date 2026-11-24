@@ -1,0 +1,54 @@
+# Partnership K-1s: allocate a partnership's income to its partners and generate each partner's
+# Schedule K-1 statement. The generator's road hands off into the individual income tax return's
+# K-1 branch: a generated K-1 can be sent straight into a partner's return.
+key: partnership-k1s
+version: 1
+title: Partnership K-1s
+area: tax
+stage: firm
+description: >-
+  Allocates a partnership's year-end income, deductions and distributions to its partners under the
+  partnership agreement, and generates each partner's Schedule K-1 statement, tied out to the return.
+  Generated K-1s hand off to the partners' individual returns.
+disclaimer: >-
+  Generates K-1 allocation statements for review and for entry in tax software; the official Schedule
+  K-1 (Form 1065) is produced by the software. Confirm allocations against the partnership agreement and
+  the current Form 1065 instructions.
+
+fields:
+  - path: tax/partnership-tax
+    name: Partnership tax
+    keywords: [partnership, 1065, k-1, partner, allocation]
+
+mainline:
+  - name: allocate-partnership-items
+    fields: [tax/partnership-tax]
+    steps:
+      - [excel, Tie the 1065 totals to the books]
+      - [excel, Confirm each partner's profit and capital percentages]
+      - [excel, Allocate income deductions and distributions]
+  - name: generate-schedule-k1s
+    fields: [tax/partnership-tax]
+    steps:
+      - [excel, Generate each partner's K-1 statement]
+      - [excel, Tie the K-1s back to the return]
+      - [outlook, Deliver the K-1s to the partners]
+
+# Roads into other playbooks' skills (installed only when the other playbook is).
+handoffs:
+  - from: generate-schedule-k1s
+    to: report-k1-pass-through-income
+    playbook: individual-income-tax
+    directions: |
+      # Handoff: Generate Schedule K-1s → Report K-1 pass-through income
+
+      What crosses: one K-1 statement per partner (ordinary business income, net rental income,
+      interest, dividends and distributions), tied to the partnership's Form 1065.
+
+      - Sender (partnership preparer): send each partner's K-1 to their individual return from the
+        generator ("Send to a return"), or deliver it through the secure portal. Never by plain email.
+      - Receiver (individual preparer): the K-1 arrives on the return as "K-1 #n", unconfirmed, and the
+        return's K-1 situation is set to yes. Check each figure against the statement and confirm it;
+        then the "Report K-1 pass-through income" leg updates basis and applies the loss limits.
+      - If a K-1 is corrected after delivery, send the corrected one; the earlier one must be deleted from
+        the partner's return before it re-verifies.

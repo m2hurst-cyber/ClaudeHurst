@@ -112,6 +112,8 @@ Rails.application.routes.draw do
         post :situation
         post :send_route
         post :complete
+        post :generate
+        post :deliver
       end
       resources :documents, controller: :return_documents, only: %i[create show update destroy] do
         member { post :read }

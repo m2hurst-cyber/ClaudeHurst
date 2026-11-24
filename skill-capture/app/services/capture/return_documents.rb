@@ -57,7 +57,7 @@ module Capture
     def label_for(doc)
       return nil if doc.kind.blank?
       short = if doc.kind == "w2" then "W-2"
-              elsif doc.kind.match?(/\A(\d|ssa-|form-)/) then doc.kind.upcase.sub(/\AFORM-/, "Form ")
+              elsif doc.kind.match?(/\A(\d|ssa-|form-|k-1\z)/) then doc.kind.upcase.sub(/\AFORM-/, "Form ")
               else doc.playbook_run.playbook.catalog.dig(doc.kind, "name") || doc.kind.humanize
               end
       same = doc.playbook_run.documents.where(kind: doc.kind)

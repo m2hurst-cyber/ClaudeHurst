@@ -88,6 +88,7 @@ module Capture
       totals = leg_specs.fetch("totals", {})
       inputs = leg_specs.fetch("inputs", {})
       ref_ok = lambda do |ref|
+        next true if ref.is_a?(Numeric)
         ns, key = ref.split(".", 2)
         case ns
         when "input" then inputs.key?(key)
@@ -149,10 +150,24 @@ module Capture
       end
       link!(user)
       report.situations = upsert_situations!
+      Playbook.all.each { |pb| pb.connect_handoffs!(user) } # roads between playbooks, whichever was installed first
       refresh_junctions!(user)
       AuditLog.record("playbook.installed", user: user, playbook: key, version: version,
                       created: report.created, updated: report.updated, resources: report.resources)
       report
+    end
+
+    # Roads from this playbook's skills into another playbook's, with written handoff directions.
+    # Connected once both ends are installed.
+    def connect_handoffs!(user)
+      Array(data["handoffs"]).each do |h|
+        next unless Skill.current(h["from"]) && Skill.current(h["to"])
+        SkillLink.find_or_create_by!(from_node: h["from"], to_node: h["to"], origin: "manual") { |l| l.created_by = user }
+        key = Waypoint.key_for("handoff", h["from"], h["to"])
+        body = h["directions"].to_s.strip
+        next if body.empty? || Waypoint.find_by(key: key)&.body == body
+        Directions.save!(Directions.find(key), body: body, note: "#{title} playbook v#{version}", user: user)
+      end
     end
 
     # Each mainline intersection says where the road goes next and which situations branch off.
@@ -171,6 +186,12 @@ module Capture
             lines << "- **#{s.question}** Take **#{b&.title || 'a branch still in review'}**#{b ? " (`road:#{b.name}`)" : ''}" \
                      "#{s.forms.any? ? ", forms: #{s.forms.join(', ')}" : ''}, then #{nxt ? "rejoin at #{nxt.title}" : 'finish'}."
           end
+          lines << ""
+        end
+        outs = Array(data["handoffs"]).select { |h| h["from"] == name }.filter_map { |h| (t = Skill.current(h["to"])) && [h, t] }
+        if outs.any?
+          lines += ["## Hands off to another road", ""]
+          outs.each { |h, t| lines << "- **#{t.title}** (`road:#{t.name}`) in the #{h['playbook'].to_s.tr('-', ' ')} playbook. See the handoff directions (`handoff:#{name}>#{t.name}`)." }
           lines << ""
         end
         lines << "> #{disclaimer}" if disclaimer

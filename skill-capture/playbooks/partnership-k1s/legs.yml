@@ -1,0 +1,43 @@
+totals:
+  partnership_ordinary_income: [form-1065-summary.ordinary_income]
+  partnership_rental_income: [form-1065-summary.rental_income]
+  partnership_interest: [form-1065-summary.interest]
+  partnership_dividends: [form-1065-summary.dividends]
+  partnership_distributions: [form-1065-summary.distributions]
+  profit_pct_total: [partner.profit_pct]
+  capital_pct_total: [partner.capital_pct]
+  partner_distributions: [partner.distributions]
+  k1_ordinary_income: [k-1.ordinary_income]
+  k1_rental_income: [k-1.rental_income]
+  k1_interest: [k-1.interest]
+  k1_dividends: [k-1.dividends]
+  k1_distributions: [k-1.distributions]
+
+inputs:
+  tax_year: {label: Tax year, type: number}
+
+legs:
+  allocate-partnership-items:
+    documents: [form-1065-summary, partner]
+    inputs: [tax_year]
+    show: [partnership_ordinary_income, partnership_rental_income, partnership_interest, partnership_dividends, partnership_distributions, profit_pct_total, capital_pct_total, partner_distributions]
+    checks:
+      - {type: document, kind: form-1065-summary, label: The partnership's Form 1065 totals are in and confirmed}
+      - {type: document, kind: partner, label: At least one partner's allocation is in and confirmed}
+      - {type: documents_confirmed}
+      - {type: equal, left: totals.profit_pct_total, right: 100, tolerance: 0.01, label: Profit percentages add up to 100%}
+      - {type: equal, left: totals.capital_pct_total, right: 100, tolerance: 0.01, label: Capital percentages add up to 100%}
+      - {type: equal, left: totals.partner_distributions, right: totals.partnership_distributions, tolerance: 1, label: Partner distributions add up to the 1065's}
+      - {type: attest, key: agreement, text: "Allocations follow the partnership agreement; special allocations and guaranteed payments are handled separately"}
+  generate-schedule-k1s:
+    generate: k1
+    documents: [k-1]
+    show: [k1_ordinary_income, k1_rental_income, k1_interest, k1_dividends, k1_distributions]
+    checks:
+      - {type: generated, label: Every partner has a generated K-1}
+      - {type: equal, left: totals.k1_ordinary_income, right: totals.partnership_ordinary_income, tolerance: 0.01, label: K-1 ordinary income ties to the 1065}
+      - {type: equal, left: totals.k1_rental_income, right: totals.partnership_rental_income, tolerance: 0.01, label: K-1 rental income ties to the 1065}
+      - {type: equal, left: totals.k1_interest, right: totals.partnership_interest, tolerance: 0.01, label: K-1 interest ties to the 1065}
+      - {type: equal, left: totals.k1_dividends, right: totals.partnership_dividends, tolerance: 0.01, label: K-1 dividends tie to the 1065}
+      - {type: equal, left: totals.k1_distributions, right: totals.partnership_distributions, tolerance: 0.01, label: K-1 distributions tie to the 1065}
+      - {type: attest, key: delivered, text: "Every partner's K-1 is delivered (to their return or through the secure portal)"}
