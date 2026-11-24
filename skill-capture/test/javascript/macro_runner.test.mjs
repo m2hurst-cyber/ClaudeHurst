@@ -13,6 +13,8 @@ test("an approved macro runs against the document and reports what it did, with 
 
 test("a macro without run(context) is refused, and failures carry the script's own message", async () => {
   assert.throws(() => compile("const x = 1"), /no run\(context\) function/);
+  assert.throws(() => compile("// mentions run() but defines nothing"), /no run\(context\) function/);
+  assert.doesNotThrow(() => compile("const run = async (context) => 'ok'"));
   await assert.rejects(runMacro("async function run(c) { throw new Error('no chart on this sheet'); }", { host: "Excel", excel: fakeExcel }), /no chart on this sheet/);
   await assert.rejects(runMacro("async function run(c) { return 1; }", { host: "Word", excel: fakeExcel }), /run in Excel/);
 });

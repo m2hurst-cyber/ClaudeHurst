@@ -382,5 +382,12 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - `Capture::Estimator`: per-step and per-run anticipated tokens/seconds/cost (measured from `SkillRun` where available, priors otherwise), `tally` (spent vs planned vs projected), `trial_plan` (same task priced on every model) and `trial_results` (`SkillRun#trial_of`).
 - Split tasks: `Flow` step `parts` (engine ai|macro|person, assignee, model), `FlowRun#complete_part!`, one `AddinCommand` per part, `POST …/flow_runs/:id/complete_part?step=&part=`.
 - `SkillRun` gains engine, nature, cost, estimated_tokens, part_id, trial_of.
-- Tests: 166 Rails runs, 42 JavaScript tests.
+
+
+## Changelog: AI-written, shareable macros
+
+- `Capture::MacroWriter` (Claude writes the script from the task + the AI's note of what it just did; returns language/code/steps/confidence/leaves_to_ai/caveats, nil when it can't script it honestly) and `MacroDraftJob`, enqueued from `FlowRun#record_usage!` after an AI task and from `POST /api/v1/skills/:id/runs`; agents can post `macro: {language, code, …}` with a run instead.
+- `MacroReview` gains written_by / source_run_id / visibility / copied_from / app, `DEFINES_RUN` (a real `run(context)`, not a mention), `copy_to!`, `as_package` / `from_package`, `notify_reviewers!`.
+- Sharing: `/macros/library`, share (private|firm|market), copy onto another task, export `.json`, import. Approved macros ride along in `Capture::Bundle` and the add-in skill payload; the pane can run a skill's macro directly.
+- Tests: 170 Rails runs, 42 JavaScript tests.
 

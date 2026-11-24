@@ -8,6 +8,7 @@ import { registerRibbon, showPane } from "addin/ribbon";
 import { plan as planSheet, apply as applySheet, colLetter } from "addin/worksheet_builder";
 import { observeCells } from "addin/sheet_capture";
 import { createFlowPane } from "addin/flow_pane";
+import { runMacro } from "addin/macro_runner";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -326,6 +327,7 @@ async function renderSkill(name) {
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
       <div class="flex flex-wrap gap-1 mb-3">
+        ${s.macro?.runnable ? `<button data-action="run-skill-macro" class="${btnPrimary}">⚙ Run macro (no AI)</button>` : ""}
         ${s.worksheet ? `<button data-action="build-sheet" data-name="${esc(s.name)}" class="${btnPrimary}">▦ Build worksheet</button>` : ""}
         <button data-action="remember" class="${s.worksheet ? btn : btnPrimary}">Add to memory</button>
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
@@ -333,6 +335,7 @@ async function renderSkill(name) {
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
         ${s.can_send ? `<button data-action="send-skill" class="${btn}">⇢ Send to coworker</button>` : ""}
       </div>
+      ${s.macro?.runnable ? `<p class="text-xs text-emerald-800 mb-2">⚙ An approved macro does this without the AI${s.macro.leaves_to_ai?.length ? `, except: ${esc(s.macro.leaves_to_ai.join(", "))}` : ""}.</p>` : ""}
       <div id="send-box"></div>
       <article class="border-t pt-2">${renderMarkdown(s.body)}</article>
       ${s.directions?.written ? `<details class="border-t mt-3 pt-2"><summary class="cursor-pointer font-medium">Directions for this road</summary>
@@ -689,6 +692,16 @@ document.addEventListener("click", async (ev) => {
     }
     else if (a === "resume-recording") { state.capture.restoreRecording(state.recovered.steps); state.recovered = null; renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recovered") { state.recovered = null; settings.set(DRAFT_KEY, null); renderRecord(); }
+    else if (a === "run-skill-macro") {
+      const s = state.openSkill;
+      t.disabled = true; t.textContent = "Running the macro…";
+      try {
+        const { note, duration_ms } = await runMacro(s.macro.code, { host: state.host });
+        await api.reportRun(s.name, { model: "macro", engine: "macro", input_tokens: 0, output_tokens: 0, duration_ms });
+        flash(`⚙ Macro done, no tokens: ${note}`);
+      } catch (e) { flash(`The macro stopped: ${e.message}`, "error"); }
+      render();
+    }
     else if (a === "send-skill") { await renderSendBox(); }
     else if (a === "cancel-send") { document.getElementById("send-box").innerHTML = ""; }
     else if (a === "accept-transfer" || a === "decline-transfer") {

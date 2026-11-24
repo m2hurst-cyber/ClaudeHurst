@@ -4,7 +4,7 @@
   <div>
     <div class="text-xs text-slate-500"><%= link_to "Macro review", macro_reviews_path, class: "hover:underline" %> ›</div>
     <h1 class="text-2xl font-bold"><%= r.title %></h1>
-    <p class="text-sm text-slate-500"><%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> <code><%= r.subject_key %></code> · screened <%= time_ago_in_words(r.created_at) %> ago<%= " · #{r.status}" %><%= " by #{r.reviewed_by.name}" if r.reviewed_by %></p>
+    <p class="text-sm text-slate-500"><%= r.written_by_ai? ? "✍ Written by the AI from its first run" : (r.copied_from ? "Copied from “#{r.copied_from.title}”" : "Screened from the task's words") %><%= " · #{r.confidence} confidence" if r.confidence %> · <%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> <code><%= r.subject_key %></code> · screened <%= time_ago_in_words(r.created_at) %> ago<%= " · #{r.status}" %><%= " by #{r.reviewed_by.name}" if r.reviewed_by %></p>
   </div>
   <%= render "shared/llm_menu", url: macro_review_path(r, format: :md), filename: "macro-#{r.subject_key.parameterize}" %>
 </div>
@@ -17,6 +17,8 @@
       <span class="text-slate-500"><%= r.language_label %></span>
     </div>
     <p class="mb-3"><%= r.reason %></p>
+    <% if r.leaves_to_ai.any? %><div class="rounded border border-amber-200 bg-amber-50 p-2 mb-3"><strong>The macro leaves this to the AI:</strong> <%= r.leaves_to_ai.to_sentence %>. Split the task so the macro does its part and the AI does the rest.</div><% end %>
+    <% if r.caveats.any? %><ul class="list-disc ml-5 mb-3 text-slate-600"><% r.caveats.each do |c| %><li><%= c %></li><% end %></ul><% end %>
     <div class="grid sm:grid-cols-2 gap-3 mb-3">
       <div><h3 class="font-medium text-xs text-slate-500 mb-1">Points to a macro</h3><ul class="list-disc ml-5"><% Array(r.signals["for"]).each do |s| %><li><%= s %></li><% end %><% if Array(r.signals["for"]).empty? %><li class="list-none -ml-5 text-slate-500">Nothing</li><% end %></ul></div>
       <div><h3 class="font-medium text-xs text-slate-500 mb-1">Points to the AI</h3><ul class="list-disc ml-5"><% Array(r.signals["against"]).each do |s| %><li><%= s %></li><% end %><% if Array(r.signals["against"]).empty? %><li class="list-none -ml-5 text-slate-500">Nothing</li><% end %></ul></div>
@@ -46,6 +48,29 @@
       <p class="text-slate-600">About <strong><%= number_with_delimiter(e["tokens"]) %> tokens</strong> and <strong><%= number_to_currency(e["cost"], unit: "", precision: 3) %> credits</strong> per run, by the current estimate (<%= e["basis"] %>).</p>
       <% if r.runs_saved.positive? %><p class="mt-1 text-emerald-800">Already saved <%= number_with_delimiter(r.tokens_saved) %> tokens over <%= pluralize(r.runs_saved, "run") %>.</p><% end %>
     </div>
+    <% if r.approved? %>
+      <div class="bg-white border rounded p-3">
+        <h2 class="font-semibold mb-1">Share it</h2>
+        <p class="text-slate-600 mb-2">Now <%= { "private" => "kept to yourself", "firm" => "shared with the firm", "market" => "in the market" }[r.visibility] %>.</p>
+        <% if @can_review %>
+          <div class="flex flex-wrap gap-1">
+            <% MacroReview::VISIBILITIES.each do |v| %>
+              <%= button_to({ "private" => "🔒 Only me", "firm" => "🏢 The firm", "market" => "🌐 Market" }[v], share_macro_review_path(r, visibility: v), method: :patch,
+                            class: "px-2 py-1 rounded border text-xs #{v == r.visibility ? 'bg-slate-900 text-white' : 'bg-white'}", form_class: "inline") %>
+            <% end %>
+          </div>
+        <% end %>
+        <%= link_to "Export as a file", export_macro_review_path(r), class: "block mt-2 text-sky-700 hover:underline" %>
+        <%= form_with url: copy_macro_review_path(r), method: :post, class: "mt-2 flex gap-1" do %>
+          <select name="target" class="flex-1 border rounded px-1.5 py-1 text-xs" aria-label="Use this macro on">
+            <option value="">Use it on another task…</option>
+            <% @targets.each do |value, label| %><option value="<%= value %>"><%= label %></option><% end %>
+          </select>
+          <button class="px-2 py-1 rounded border text-xs">Take it</button>
+        <% end %>
+        <% if @copies.any? %><p class="text-xs text-slate-500 mt-2">Also used on: <%= safe_join(@copies.map { |c| link_to(c.title, macro_review_path(c), class: "text-sky-700 hover:underline") }, ", ") %></p><% end %>
+      </div>
+    <% end %>
     <% if r.review_notes.present? %><div class="bg-white border rounded p-3"><h2 class="font-semibold mb-1">Review notes</h2><p class="text-slate-600"><%= r.review_notes %></p></div><% end %>
   </aside>
 </div>

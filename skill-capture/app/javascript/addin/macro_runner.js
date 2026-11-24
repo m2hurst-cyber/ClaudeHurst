@@ -4,7 +4,8 @@
 export const MACRO_TIMEOUT_MS = 60_000;
 
 export function compile(code) {
-  if (typeof code !== "string" || !/\brun\s*\(/.test(code)) throw new Error("The macro has no run(context) function.");
+  const definesRun = /(^|[^\w$])(async\s+)?function\s+run\s*\(|(^|[^\w$])(const|let|var)\s+run\s*=\s*(async\s*)?(\(|function)/;
+  if (typeof code !== "string" || !definesRun.test(code)) throw new Error("The macro has no run(context) function.");
   // eslint-disable-next-line no-new-func
   return new Function("context", `${code}\nreturn run(context);`);
 }

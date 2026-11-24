@@ -6,6 +6,7 @@
   </div>
   <div class="flex items-center gap-3 text-sm">
     <span class="text-slate-600">Saved so far <strong><%= number_with_delimiter(@saved[:tokens]) %></strong> tokens over <strong><%= @saved[:runs] %></strong> runs</span>
+    <%= link_to "Library", library_macro_reviews_path, class: "px-3 py-1.5 rounded border bg-white" %>
     <% if @can_review %><%= button_to "Screen everything", screen_all_macro_reviews_path, class: "px-3 py-1.5 rounded bg-slate-900 text-white" %><% end %>
   </div>
 </div>
@@ -22,7 +23,7 @@
               <span class="text-xs text-slate-500">score <%= r.score %></span>
             </span>
           </div>
-          <div class="text-xs text-slate-500"><%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> · <code><%= r.subject_key %></code><%= " · saved #{number_with_delimiter(r.tokens_saved)} tokens over #{r.runs_saved} runs" if r.runs_saved.positive? %></div>
+          <div class="text-xs text-slate-500"><%= r.written_by_ai? ? "✍ written by the AI" : (r.copied_from_id ? "copied" : "screened") %> · <%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> · <code><%= r.subject_key %></code><%= " · saved #{number_with_delimiter(r.tokens_saved)} tokens over #{r.runs_saved} runs" if r.runs_saved.positive? %></div>
           <p class="text-slate-600 mt-1"><%= r.reason %></p>
         </li>
       <% end %>

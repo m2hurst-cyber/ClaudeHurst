@@ -1,0 +1,44 @@
+<% content_for :title, "Macro library" %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <div class="text-xs text-slate-500"><%= link_to "Macro review", macro_reviews_path, class: "hover:underline" %> ›</div>
+    <h1 class="text-2xl font-bold">Macro library</h1>
+    <p class="text-sm text-slate-500">Approved macros anyone can put to work. Take one onto another task, export it as a file for another install, or import one someone sent you. A copy always goes back through review, because the same script on a different sheet is a different macro.</p>
+  </div>
+  <% if @can_review %>
+    <details class="text-sm"><summary class="cursor-pointer px-3 py-1.5 rounded border bg-white list-none">Import a macro file</summary>
+      <%= form_with url: import_macro_reviews_path, method: :post, class: "mt-2 p-3 border rounded bg-white w-96 space-y-2" do %>
+        <label class="block text-xs">Paste the .json file<textarea name="package" rows="6" class="mt-1 w-full border rounded px-2 py-1 font-mono text-xs" placeholder='{"format":"skill-capture.macro/1", …}'></textarea></label>
+        <button class="w-full px-3 py-1.5 rounded bg-slate-900 text-white">Import</button>
+      <% end %>
+    </details>
+  <% end %>
+</div>
+
+<% if @macros.empty? && @mine.empty? %>
+  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No shared macros yet. Approve one on <%= link_to "Macro review", macro_reviews_path, class: "text-sky-700 hover:underline" %>, then share it with the firm.</p>
+<% end %>
+
+<div class="grid md:grid-cols-2 gap-3">
+  <% (@macros + @mine).uniq.each do |r| %>
+    <article class="bg-white border rounded p-4 text-sm flex flex-col gap-2">
+      <div class="flex justify-between gap-2">
+        <%= link_to r.title, macro_review_path(r), class: "font-semibold text-sky-700 hover:underline" %>
+        <span class="text-xs px-1.5 py-0.5 rounded <%= { 'market' => 'bg-sky-100 text-sky-900', 'firm' => 'bg-slate-100 text-slate-700', 'private' => 'bg-amber-100 text-amber-900' }[r.visibility] %>"><%= { "market" => "🌐 Market", "firm" => "🏢 Firm", "private" => "🔒 Mine" }[r.visibility] %></span>
+      </div>
+      <div class="text-xs text-slate-500"><%= r.language_label %><%= " · #{r.app}" if r.app %> · <%= r.written_by_ai? ? "written by the AI" : "written by a person" %><%= " · saved #{number_with_delimiter(r.tokens_saved)} tokens over #{r.runs_saved} runs" if r.runs_saved.positive? %></div>
+      <p class="text-slate-600"><%= r.reason %></p>
+      <% if r.leaves_to_ai.any? %><p class="text-xs text-amber-800">Still needs the AI for: <%= r.leaves_to_ai.to_sentence %></p><% end %>
+      <div class="flex flex-wrap items-center gap-2 border-t pt-2">
+        <%= form_with url: copy_macro_review_path(r), method: :post, class: "flex gap-1 items-center flex-1" do %>
+          <select name="target" class="flex-1 border rounded px-1.5 py-1 text-xs" aria-label="Use this macro on">
+            <option value="">Use it on…</option>
+            <% @targets.each do |value, label| %><option value="<%= value %>"><%= label %></option><% end %>
+          </select>
+          <button class="px-2 py-1 rounded border text-xs">Take it</button>
+        <% end %>
+        <%= link_to "Export", export_macro_review_path(r), class: "text-xs text-sky-700 hover:underline" %>
+      </div>
+    </article>
+  <% end %>
+</div>

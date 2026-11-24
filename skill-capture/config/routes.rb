@@ -139,8 +139,17 @@ Rails.application.routes.draw do
       member { post :run }
     end
     resources :macro_reviews, path: "macros", only: %i[index show update] do
-      member { post :screen }
-      collection { post :screen_all }
+      member do
+        post :screen
+        post :copy
+        patch :share
+        get :export
+      end
+      collection do
+        post :screen_all
+        post :import
+        get :library
+      end
     end
     resources :model_profiles, path: "models", only: %i[index update]
     resources :flow_runs, path: "flow-runs", only: :show do

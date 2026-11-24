@@ -230,6 +230,7 @@ class FlowRun < ApplicationRecord
     if engine == "macro" && (review = Capture::MacroScreen.approved_for_step(flow_id, step) || Capture::MacroScreen.approved_for_skill(step["skill_name"]))
       review.record_saving!(est["tokens"].to_i.positive? ? est["tokens"] : Capture::Estimator.for_step(step.merge("engine" => "ai"), flow_id: flow_id)["tokens"])
     end
+    draft_macro_from!(step, unit, usage, part_id: part_id) if engine == "ai"
     return unless step["skill_name"].present? && (skill = Skill.current(step["skill_name"]))
     return if engine == "ai" && usage.blank?
     SkillRun.from_report(skill, usage, agent: source ? source.name : "#{user&.name} (flow)", source: source, user: user,
@@ -243,6 +244,16 @@ class FlowRun < ApplicationRecord
       r.trial_of = usage["trial_of"].presence
       r.save!
     end
+  end
+
+  # The AI has just done a scriptable task: ask it to write the script for next time.
+  def draft_macro_from!(step, unit, usage, part_id: nil)
+    kind, key = part_id ? ["flow_step", "#{flow_id}:#{step['id']}:#{part_id}"] : ["flow_step", "#{flow_id}:#{step['id']}"]
+    existing = MacroReview.for_subject(kind, key)
+    return if existing&.approved? || existing&.status == "rejected"
+    MacroDraftJob.perform_later(kind, key, unit["title"].presence || step["title"],
+                                app: step["app"], instructions: unit["instructions"].presence || step["instructions"],
+                                skill_name: step["skill_name"], note: unit["note"] || steps[current_index]["note"], usage: usage, run_id: id)
   end
 
   def set_step(i, attrs)

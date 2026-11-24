@@ -10,6 +10,9 @@ module Api
                                      agent: params[:agent].to_s.strip.presence || "Office add-in (#{current_token.host || 'Office'})", user: current_user)
           run.engine = params[:engine].to_s.presence_in(%w[ai macro person]) || "ai"
           run.cost = Capture::Models.cost(run.model, run.input_tokens, run.output_tokens)
+          if run.engine == "macro" && (mr = Capture::MacroScreen.approved_for_skill(skill.name))
+            mr.record_saving!(Capture::Estimator.for_step({ "title" => skill.title, "skill_name" => skill.name, "engine" => "ai" })["tokens"])
+          end
           if run.save
             render json: { id: run.id, usage: Capture::Intensity.for(skill.name) }, status: :created
           else

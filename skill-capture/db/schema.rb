@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000020) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000021) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -188,8 +188,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000020) do
     t.bigint "tokens_saved", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "written_by", default: "rules", null: false
+    t.bigint "source_run_id"
+    t.string "visibility", default: "firm", null: false
+    t.bigint "copied_from_id"
+    t.string "app"
+    t.index ["copied_from_id"], name: "index_macro_reviews_on_copied_from_id"
     t.index ["proposed_by_id"], name: "index_macro_reviews_on_proposed_by_id"
     t.index ["reviewed_by_id"], name: "index_macro_reviews_on_reviewed_by_id"
+    t.index ["status", "visibility"], name: "index_macro_reviews_on_status_and_visibility"
     t.index ["subject_kind", "subject_key"], name: "index_macro_reviews_on_subject_kind_and_subject_key", unique: true
   end
 
