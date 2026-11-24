@@ -1,0 +1,199 @@
+# Job costing formula library for a roofing and solar contractor: the small Excel formulas the estimating,
+# billing and dashboard worksheets are built from. Plain Excel, no data provider.
+# Every command installs unverified until someone who prices jobs here checks it against how this company
+# actually estimates (console: Formulas).
+provider: jobcost
+commands:
+  squares:
+    name: Squares from area
+    category: Takeoff
+    syntax: =ROUND({area}/100,2)
+    description: Roofing squares from a plane's area in square feet (100 sq ft to the square).
+  pitch_factor:
+    name: Pitch factor
+    category: Takeoff
+    syntax: =SQRT(1+({rise}/12)^2)
+    defaults:
+      rise: 6
+    description: Slope multiplier for a pitch given as rise in 12; multiply plan area by it to get sloped area.
+  sloped_area:
+    name: Sloped area
+    category: Takeoff
+    syntax: =ROUND({plan_area}*SQRT(1+({rise}/12)^2),0)
+    defaults:
+      rise: 6
+    description: Sloped roof area from the plan (footprint) area and the pitch.
+  waste_qty:
+    name: Quantity with waste
+    category: Takeoff
+    syntax: =ROUNDUP({qty}*(1+{waste}),0)
+    defaults:
+      waste: 0.12
+    description: Order quantity after the waste factor for the cut-up (simple 10%, hips and valleys 12-15%, complex more).
+  bundles:
+    name: Bundles from squares
+    category: Takeoff
+    syntax: =ROUNDUP({squares}*{bundles_per_square},0)
+    defaults:
+      bundles_per_square: 3
+    description: Bundle count from squares, at the bundles per square the product packs.
+  crew_days:
+    name: Crew days
+    category: Labour
+    syntax: =ROUNDUP({squares}/{squares_per_day},1)
+    defaults:
+      squares_per_day: 12
+    description: Days on site from squares and the crew's real production rate.
+  labour_hours:
+    name: Labour hours
+    category: Labour
+    syntax: =ROUND({crew_days}*{crew_size}*{hours_per_day},1)
+    defaults:
+      crew_size: 5
+      hours_per_day: 8
+    description: Crew hours from days, crew size and the working day.
+  burdened_rate:
+    name: Burdened labour rate
+    category: Labour
+    syntax: =ROUND({wage}*(1+{burden}),2)
+    defaults:
+      burden: 0.38
+    description: Wage plus payroll taxes, insurance, workers' compensation and benefits. Estimating on an unburdened wage is how a job looks profitable and isn't.
+  labour_cost:
+    name: Labour cost
+    category: Labour
+    syntax: =ROUND({hours}*{burdened_rate},0)
+    description: Labour cost from hours at the burdened rate.
+  line_cost:
+    name: Line cost
+    category: Estimate
+    syntax: =ROUND({qty}*{unit_cost},2)
+    description: Cost of one estimate line.
+  overhead:
+    name: Overhead applied
+    category: Estimate
+    syntax: =ROUND({direct_cost}*{overhead_rate},0)
+    defaults:
+      overhead_rate: 0.18
+    description: Overhead applied to direct cost at the company's rate.
+  price_from_margin:
+    name: Price from margin
+    category: Estimate
+    syntax: =ROUND({total_cost}/(1-{margin}),0)
+    defaults:
+      margin: 0.22
+    description: Sell price that leaves the target gross margin. Margin is a share of price, not of cost.
+  margin_pct:
+    name: Gross margin percentage
+    category: Estimate
+    syntax: =IF({price}=0,0,({price}-{cost})/{price})
+    description: Gross margin as a share of the sell price.
+  markup_from_margin:
+    name: Markup from margin
+    category: Estimate
+    syntax: ={margin}/(1-{margin})
+    defaults:
+      margin: 0.22
+    description: The markup on cost that produces a target margin, for anyone used to quoting markup.
+  price_per_square:
+    name: Price per square
+    category: Estimate
+    syntax: =IF({squares}=0,0,ROUND({price}/{squares},2))
+    description: Sell price per roofing square, for comparing a quote with your recent jobs.
+  pct_complete:
+    name: Percent complete
+    category: Billing
+    syntax: =IF({scheduled_value}=0,0,MIN(({completed}+{stored})/{scheduled_value},1))
+    description: Completed and stored against the scheduled value for a line, capped at 100%.
+  earned:
+    name: Earned to date
+    category: Billing
+    syntax: =ROUND({scheduled_value}*{pct_complete},2)
+    description: Value earned on a line at its percentage complete.
+  retainage:
+    name: Retainage held
+    category: Billing
+    syntax: =ROUND({completed_and_stored}*{retainage_pct},2)
+    defaults:
+      retainage_pct: 0.1
+    description: Retainage withheld at the contract rate.
+  payment_due:
+    name: Current payment due
+    category: Billing
+    syntax: =ROUND({completed_and_stored}-{retainage}-{previous_payments},2)
+    description: "What this application asks for: earned and stored, less retainage, less what has already been paid."
+  balance_to_finish:
+    name: Balance to finish
+    category: Billing
+    syntax: =ROUND({contract_to_date}-{completed_and_stored},2)
+    description: Contract plus signed changes, less what has been completed and stored.
+  days_outstanding:
+    name: Days outstanding
+    category: Collections
+    syntax: =MAX(0,{as_of}-{invoice_date})
+    description: Age of an invoice in days at the statement date.
+  aging_bucket:
+    name: Aging bucket
+    category: Collections
+    syntax: "=IF({days}<=30,\"Current\",IF({days}<=60,\"31-60\",IF({days}<=90,\"61-90\",\"90+\")))"
+    description: Which column of the aging an invoice falls in.
+  lien_days_left:
+    name: Days left to file a lien
+    category: Collections
+    syntax: =MAX(0,{last_work_date}+{deadline_days}-{as_of})
+    description: Days remaining to a lien deadline counted from the last day of work. Confirm the count and the trigger for your state.
+  cost_to_date:
+    name: Cost to date
+    category: Job costing
+    syntax: =SUM({material},{labour},{equipment},{subcontract},{other})
+    description: Job cost to date across the cost codes.
+  cost_to_complete:
+    name: Cost to complete
+    category: Job costing
+    syntax: =MAX({estimated_cost}-{cost_to_date},0)
+    description: What is left to spend, if the estimate still holds. Ask the person running the job before trusting it.
+  over_under_billing:
+    name: Over or under billing
+    category: Job costing
+    syntax: =ROUND({billed_to_date}-({contract_to_date}*{pct_complete}),0)
+    description: Positive is billed ahead of the work; negative is work ahead of the billing, which is where cash disappears.
+  variance_pct:
+    name: Variance against estimate
+    category: Job costing
+    syntax: =IF({estimate}=0,0,({actual}-{estimate})/{estimate})
+    description: How far a cost code landed from its estimate.
+  backlog_months:
+    name: Backlog in months
+    category: Job costing
+    syntax: =IF({monthly_capacity}=0,0,ROUND({signed_not_started}/{monthly_capacity},1))
+    description: Signed work not yet started, against what the crews can turn over in a month.
+  kw_dc:
+    name: Array size (kW DC)
+    category: Solar
+    syntax: =ROUND({modules}*{watts_per_module}/1000,2)
+    defaults:
+      watts_per_module: 440
+    description: Direct-current array size from module count and module wattage.
+  annual_production:
+    name: Annual production estimate (kWh)
+    category: Solar
+    syntax: =ROUND({kw_dc}*{sun_hours}*365*{derate},0)
+    defaults:
+      sun_hours: 4.5
+      derate: 0.8
+    description: First-year production estimate. Use peak sun hours for the site and a derate that matches your own monitoring, not a brochure.
+  price_per_watt:
+    name: Price per watt
+    category: Solar
+    syntax: =IF({kw_dc}=0,0,ROUND({price}/({kw_dc}*1000),2))
+    description: Installed price per watt, the number solar is compared on.
+  simple_payback:
+    name: Simple payback (years)
+    category: Solar
+    syntax: =IF({annual_saving}=0,0,ROUND({net_cost}/{annual_saving},1))
+    description: Net cost after incentives divided by the first-year saving. Simple payback ignores escalation, degradation and the time value of money.
+  performance_ratio:
+    name: Performance against estimate
+    category: Solar
+    syntax: =IF({estimated_kwh}=0,0,{actual_kwh}/{estimated_kwh})
+    description: Metered production against the model, the number a monitoring review turns on.

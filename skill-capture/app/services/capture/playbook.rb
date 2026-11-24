@@ -40,6 +40,13 @@ module Capture
     def mainline = data["mainline"] || []
     def mainline_names = mainline.map { |m| m["name"] }
     def pack? = data["kind"] == "pack"
+    # What one run of this playbook is called, and who the instructions come from. A tax return is a
+    # "return" prepared by a CPA; a roofing job is a "job" run by a job manager.
+    def wording
+      d = data["labels"] || {}
+      { "run" => d["run"] || "return", "runs" => d["runs"] || "returns", "expert" => d["expert"] || "CPA",
+        "owner" => d["owner"] || "filer", "reference" => d["reference"] || "Reference" }
+    end
     def provider = data["provider"]
     def runnable? = mainline.any? # returns are worked through a mainline; packs are libraries of routes
     # Named routes; a playbook with a mainline has one.

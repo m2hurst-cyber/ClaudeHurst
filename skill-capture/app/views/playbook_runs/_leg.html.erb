@@ -48,7 +48,7 @@
               class: st["prepared_at"] ? "#{btn} text-xs" : "#{btn_primary} text-xs" %>
       <% end %>
       <% if st["prepared_at"] %><span class="text-xs text-slate-500"><%= st["prepared_by"] == "ai" ? "✨ Prepared by AI" : "Prepared by rules" %> <%= time_ago_in_words(Time.zone.parse(st["prepared_at"])) %> ago</span><% end %>
-      <details class="text-xs ml-auto"><summary class="cursor-pointer text-sky-700">CPA instructions</summary>
+      <details class="text-xs ml-auto"><summary class="cursor-pointer text-sky-700"><%= (defined?(labels) && labels ? labels["expert"] : "CPA") %> instructions</summary>
         <div class="border rounded p-3 mt-1 bg-slate-50 text-sm"><%= skill_markdown(skill.body) %></div></details>
     </div>
 

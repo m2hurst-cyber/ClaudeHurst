@@ -1,0 +1,175 @@
+# How each leg of a roofing or solar job is prepared and what has to be true before it counts as done.
+# Same machinery as a tax return: figures come from confirmed documents (kind.field), from what the
+# job manager enters (input.key) and from other totals (totals.key).
+totals:
+  contract_value: [signed-contract.contract_value]
+  change_orders: [change-order.amount]
+  contract_to_date: "totals.contract_value + totals.change_orders"
+  squares: [measurement-report.squares]
+  material_cost: [material-invoice.amount]
+  sub_cost: [subcontractor-invoice.amount]
+  crew_hours: [daily-log.hours]
+  squares_installed: [daily-log.squares_installed]
+  labour_cost: "round(totals.crew_hours * input.burdened_labour_rate)"
+  cost_to_date: "totals.material_cost + totals.sub_cost + totals.labour_cost"
+  completed_to_date: [pay-application.completed_to_date]
+  retainage_held: [pay-application.retainage]
+  billed_net: "totals.completed_to_date - totals.retainage_held"
+  payments_received: [customer-payment.amount]
+  open_receivable: "totals.billed_net - totals.payments_received"
+  gross_margin: "totals.contract_to_date - totals.cost_to_date"
+  permit_fee: [permit.fee]
+  corrections_outstanding: [inspection-report.corrections]
+  install_complete: "gt(totals.squares_installed, totals.squares * 0.98)"
+  supplement_approved: [supplement-approval.approved_amount]
+  claim_value: "adjuster-scope.rcv + totals.supplement_approved"
+
+inputs:
+  job_number: {label: Job number, type: text}
+  job_type: {label: Job type, type: select, options: [Residential re-roof, Commercial re-roof, New construction, Repair, Solar only, Roof and solar]}
+  burdened_labour_rate: {label: Burdened labour rate per crew hour (wages plus taxes, insurance and benefits), type: money}
+  estimated_cost: {label: Estimated total cost from the approved estimate, type: money}
+  target_margin_pct: {label: Target gross margin percentage, type: number}
+  lien_deadline_days: {label: Days from last work to your lien deadline in this state, type: number}
+
+legs:
+  qualify-the-roofing-lead:
+    inputs: [job_number, job_type]
+    checks:
+      - {type: input, key: job_number}
+      - {type: input, key: job_type}
+      - {type: answered}
+      - {type: attest, key: decision_maker, text: "I know who decides, who pays, and how the work is funded"}
+  survey-the-roof-and-site:
+    documents: [measurement-report]
+    show: [squares]
+    checks:
+      - {type: document, kind: measurement-report, label: A measurement and condition report is on file}
+      - {type: attest, key: photos, text: "The site photos are indexed to the plane they belong to"}
+      - {type: attest, key: unknowns, text: "What could not be inspected is written down"}
+  price-the-roofing-job:
+    inputs: [estimated_cost, target_margin_pct, burdened_labour_rate]
+    show: [squares]
+    checks:
+      - {type: prior_legs}
+      - {type: input, key: estimated_cost}
+      - {type: input, key: target_margin_pct}
+      - {type: input, key: burdened_labour_rate}
+      - {type: attest, key: quotes, text: "Subcontract and material prices come from current quotes, not memory"}
+      - {type: ai_review}
+  write-the-roofing-proposal:
+    checks:
+      - {type: prior_legs}
+      - {type: attest, key: exclusions, text: "Exclusions and allowances in the price appear in the proposal"}
+      - {type: attest, key: warranty_terms, text: "The warranty offered is one this job actually qualifies for"}
+  contract-the-roofing-job:
+    documents: [signed-contract]
+    show: [contract_value]
+    checks:
+      - {type: document, kind: signed-contract, where: {signed: "yes"}, label: The contract is signed}
+      - {type: attest, key: notices, text: "Preliminary notice and cancellation deadlines for this job are diarised"}
+      - {type: attest, key: budget, text: "The job budget by cost code ties to the estimate that won the work"}
+  permit-the-roofing-job:
+    documents: [permit]
+    checks:
+      - {type: prior_legs}
+      - {type: document, kind: permit, where: {issued: "yes"}, label: The permit is issued}
+      - {type: attest, key: inspection_points, text: "Every inspection the permit requires is in the schedule"}
+  order-materials-and-schedule-the-crew:
+    documents: [material-invoice]
+    checks:
+      - {type: prior_legs}
+      - {type: attest, key: po_job_number, text: "Every purchase order carries the job number"}
+      - {type: attest, key: lead_times, text: "Lead times were checked against the install window"}
+  install-the-roof:
+    documents: [daily-log]
+    show: [squares_installed, crew_hours]
+    checks:
+      - {type: document, kind: daily-log, label: Daily logs are on file}
+      - {type: at_least, left: totals.squares_installed, right: 0, label: Quantities installed are recorded}
+      - {type: attest, key: safety, text: "Toolbox talks and fall protection are signed for every day on site"}
+      - {type: ai_review}
+  inspect-and-sign-off-the-roof:
+    documents: [inspection-report]
+    show: [corrections_outstanding]
+    checks:
+      - {type: prior_legs}
+      - {type: document, kind: inspection-report, where: {result: passed}, label: A passed inspection is on file}
+      - {type: at_most, left: totals.corrections_outstanding, right: 0, label: No corrections outstanding}
+      - {type: attest, key: punch, text: "The punch list is closed, item by item, with evidence"}
+  bill-the-roofing-job:
+    documents: [pay-application, lien-waiver, change-order]
+    show: [completed_to_date, retainage_held, billed_net, contract_to_date]
+    checks:
+      - {type: document, kind: pay-application, label: A pay application is prepared}
+      - {type: at_most, left: totals.completed_to_date, right: totals.contract_to_date, label: Billed no more than the contract and signed changes}
+      - {type: document, kind: lien-waiver, label: The lien waiver the payment requires is prepared}
+      - {type: attest, key: quantities, text: "Percentage complete comes from measured quantities in the daily log"}
+      - {type: ai_review}
+  close-out-the-roofing-job:
+    documents: [warranty-registration, customer-payment]
+    show: [payments_received, open_receivable]
+    checks:
+      - {type: prior_legs}
+      - {type: document, kind: warranty-registration, where: {registered: "yes"}, label: The manufacturer warranty is registered}
+      - {type: attest, key: packet, text: "The closeout packet has been sent and acknowledged"}
+      - {type: attest, key: sub_waivers, text: "Final waivers are held from every subcontractor and supplier paid"}
+  review-the-job-margin:
+    show: [contract_to_date, cost_to_date, gross_margin, open_receivable]
+    checks:
+      - {type: prior_legs}
+      - {type: attest, key: variance, text: "Every variance over the threshold has a one-line reason"}
+      - {type: attest, key: rates_fed_back, text: "Production rates from this job went back into the estimating workbook"}
+      - {type: reviewer}
+  interconnect-the-solar-array:
+    documents: [interconnection-approval, pto-letter]
+    checks:
+      - {type: document, kind: interconnection-approval, where: {approved: "yes"}, label: The utility approved the interconnection}
+      - {type: document, kind: pto-letter, where: {granted: "yes"}, label: Permission to operate is granted}
+      - {type: attest, key: commissioning, text: "The system is commissioned and monitoring is handed over"}
+  work-the-insurance-claim:
+    documents: [adjuster-scope, supplement-approval]
+    show: [claim_value]
+    checks:
+      - {type: document, kind: adjuster-scope, label: The carrier scope of loss is on file}
+      - {type: attest, key: scope_compared, text: "The carrier scope was compared line by line with our measurements"}
+      - {type: attest, key: deductible, text: "The customer knows what they owe, including the deductible, and it is not being waived"}
+  answer-the-commercial-bid:
+    documents: [bid-form, bid-bond, certificate-of-insurance]
+    checks:
+      - {type: document, kind: bid-form, where: {signed: "yes"}, label: The bid form is complete and signed}
+      - {type: document, kind: certificate-of-insurance, label: The insurance certificate is attached}
+      - {type: attest, key: addenda, text: "Every addendum is acknowledged on the bid form"}
+      - {type: attest, key: deliverables, text: "A second person checked the package against the deliverable list"}
+  manage-the-subcontractors:
+    documents: [subcontract, certificate-of-insurance, subcontractor-invoice, lien-waiver]
+    show: [sub_cost]
+    checks:
+      - {type: document, kind: subcontract, where: {signed: "yes"}, label: The subcontract is signed}
+      - {type: document, kind: certificate-of-insurance, where: {workers_comp: "yes"}, label: A current certificate of insurance is on file}
+      - {type: attest, key: sub_waiver, text: "No subcontractor payment is released without their waiver"}
+  price-the-hidden-damage:
+    documents: [change-order]
+    show: [change_orders]
+    checks:
+      - {type: document, kind: change-order, where: {signed: "yes"}, label: The change order is signed}
+      - {type: attest, key: evidence, text: "What was uncovered is measured and photographed"}
+      - {type: attest, key: rates, text: "The change is priced at the contract's unit rates"}
+  file-certified-payroll:
+    documents: [daily-log]
+    checks:
+      - {type: attest, key: classifications, text: "Every worker is classified by the work they actually performed"}
+      - {type: attest, key: filed, text: "The week's certified payroll is filed with the awarding body"}
+  start-the-maintenance-agreement:
+    checks:
+      - {type: attest, key: scheduled, text: "The visits are in the service calendar and the invoicing is set"}
+      - {type: attest, key: warranty_interval, text: "Any inspection the warranty depends on is covered by the agreement"}
+  collect-the-overdue-balance:
+    documents: [customer-payment, pay-application]
+    show: [open_receivable, payments_received]
+    inputs: [lien_deadline_days]
+    checks:
+      - {type: input, key: lien_deadline_days}
+      - {type: attest, key: deadlines, text: "Notice and lien deadlines for this job are diarised"}
+      - {type: attest, key: promise, text: "A payment date was asked for and confirmed in writing"}
+      - {type: ai_review}

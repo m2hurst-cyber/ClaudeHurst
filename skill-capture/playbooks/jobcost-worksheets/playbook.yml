@@ -1,0 +1,453 @@
+# Estimating and billing worksheets for a roofing and solar contractor. Every formula comes from the
+# job costing command library (commands.yml); the defaults in it are placeholders until this company's
+# own rates replace them.
+key: jobcost-worksheets
+version: 1
+kind: pack
+provider: jobcost
+title: Estimating and billing worksheets
+area: jobcost
+stage: local
+description: 'Skills that build the Excel sheets a roofing and solar contractor prices and bills from: an estimate that compares cut-up scenarios,
+  a pay application with retainage, solar array sizing and payback, and a margin sensitivity grid. Every formula comes from the job costing command
+  library.'
+disclaimer: Starter formulas and default rates (waste, burden, overhead, margin, production, sun hours, derate) are placeholders from general
+  trade practice, not this company's numbers. Replace each with your own and mark the command verified before anyone quotes from a sheet.
+fields:
+- path: field-services
+  name: Field services
+  keywords:
+  - contractor
+  - trade
+  - field
+  - crew
+- path: field-services/estimating-and-bids
+  name: Estimating and bids
+  keywords:
+  - estimate
+  - takeoff
+  - bid
+  - pricing
+  - margin
+- path: field-services/billing-and-collections
+  name: Billing and collections
+  keywords:
+  - pay application
+  - retainage
+  - invoice
+  - statement
+- path: field-services/solar
+  name: Solar
+  keywords:
+  - solar
+  - pv
+  - kw
+  - production
+  - payback
+- path: field-services/job-costing
+  name: Job costing
+  keywords:
+  - job cost
+  - margin
+  - wip
+  - sensitivity
+routes:
+  estimating:
+    title: Estimating
+    steps:
+    - name: jobcost-estimate-summary
+      title: Build the estimate summary (cost to price)
+      description: 'Builds an Excel estimate that takes a roof''s footprint area to a sell price three ways: simple gable, hips and valleys, complex
+        cut-up, each with its own waste and production rate. Use when pricing a roofing job, before the proposal is written.'
+      fields:
+      - field-services/estimating-and-bids
+      steps:
+      - - excel
+        - Enter the area, wage and material price
+      - - excel
+        - Build the Estimate sheet from the add-in
+      - - excel
+        - Compare price per square with your recent jobs
+      notes:
+      - Waste, burden, overhead, margin and production rates are placeholders until someone here verifies them.
+      - 'Margin is a share of price, not of cost: the sell price row uses cost divided by one minus the margin.'
+      - Check price per square against the last few jobs of this type before sending the number out.
+      worksheet:
+        kind: table
+        sheet: Estimate
+        title: 'Estimate: cost to price'
+        row_header: Line
+        inputs:
+        - key: plan_area
+          label: Plan (footprint) area, sq ft
+          default: 2600
+        - key: wage
+          label: Crew wage per hour
+          default: 32
+          format: '0.00'
+        - key: material_per_square
+          label: Material cost per square
+          default: 210
+          format: '0.00'
+        - key: equipment_cost
+          label: Equipment, dumpsters and permits
+          default: 1450
+          format: '#,##0'
+        - key: subcontract_cost
+          label: Subcontract cost
+          default: 0
+          format: '#,##0'
+        columns:
+        - label: Simple gable
+          params:
+            rise: 4
+            waste: 0.1
+            squares_per_day: 14
+        - label: Hips and valleys
+          params:
+            rise: 6
+            waste: 0.13
+            squares_per_day: 11
+        - label: Complex cut-up
+          params:
+            rise: 9
+            waste: 0.18
+            squares_per_day: 8
+        rows:
+        - key: sloped_area
+          label: Sloped area, sq ft
+          command: sloped_area
+          params:
+            plan_area: '{input:plan_area}'
+          format: '#,##0'
+        - key: squares
+          label: Squares
+          command: squares
+          params:
+            area: '{row:sloped_area}'
+          format: '0.0'
+        - key: squares_ordered
+          label: Squares to order, with waste
+          command: waste_qty
+          params:
+            qty: '{row:squares}'
+          format: '0'
+        - key: material
+          label: Material cost
+          formula: "=ROUND({row:squares_ordered}*{input:material_per_square},0)"
+          format: '#,##0'
+        - key: crew_days
+          label: Crew days
+          command: crew_days
+          params:
+            squares: '{row:squares}'
+          format: '0.0'
+        - key: hours
+          label: Crew hours
+          command: labour_hours
+          params:
+            crew_days: '{row:crew_days}'
+          format: '0'
+        - key: rate
+          label: Burdened rate per hour
+          command: burdened_rate
+          params:
+            wage: '{input:wage}'
+          format: '0.00'
+        - key: labour
+          label: Labour cost
+          command: labour_cost
+          params:
+            hours: '{row:hours}'
+            burdened_rate: '{row:rate}'
+          format: '#,##0'
+        - key: direct
+          label: Direct cost
+          formula: "={row:material}+{row:labour}+{input:equipment_cost}+{input:subcontract_cost}"
+          format: '#,##0'
+        - key: overhead
+          label: Overhead applied
+          command: overhead
+          params:
+            direct_cost: '{row:direct}'
+          format: '#,##0'
+        - key: total_cost
+          label: Total cost
+          formula: "={row:direct}+{row:overhead}"
+          format: '#,##0'
+        - key: price
+          label: Sell price
+          command: price_from_margin
+          params:
+            total_cost: '{row:total_cost}'
+          format: '#,##0'
+        - key: margin
+          label: Gross margin
+          command: margin_pct
+          params:
+            price: '{row:price}'
+            cost: '{row:total_cost}'
+          format: 0.0%
+        - key: per_square
+          label: Price per square
+          command: price_per_square
+          params:
+            price: '{row:price}'
+            squares: '{row:squares}'
+          format: '0.00'
+    - name: jobcost-margin-sensitivity
+      title: Test the margin against production and material price
+      description: Builds a grid of the price per square the job must charge to hold its target margin, as the crew's production rate and the material price per square move.
+        Use before committing to a price on a job where either could slip.
+      fields:
+      - field-services/job-costing
+      steps:
+      - - excel
+        - Build the estimate sheet first
+      - - excel
+        - Build the sensitivity grid from the add-in
+      - - excel
+        - Decide the price with the downside in view
+      notes:
+      - The grid reads the estimate sheet; build that one first with the same inputs.
+      - Production rate is the line most estimates get wrong; a two-square-a-day miss is visible here.
+      worksheet:
+        kind: sensitivity
+        sheet: Margin sensitivity
+        title: 'Price per square needed to hold a 22% margin'
+        source: jobcost-estimate-summary
+        row_param:
+          label: Squares per crew day
+          values:
+          - 8
+          - 10
+          - 12
+          - 14
+          - 16
+          format: '0'
+        col_param:
+          label: Material cost per square
+          values:
+          - 180
+          - 195
+          - 210
+          - 225
+          - 240
+          format: '0'
+        formula: "=ROUND((ROUNDUP(ROUND({src_input:plan_area}*SQRT(1+(6/12)^2)/100,2)*1.13,0)*{col}+ROUNDUP(ROUND({src_input:plan_area}*SQRT(1+(6/12)^2)/100,2)/{row},1)*5*8*ROUND({src_input:wage}*1.38,2)+{src_input:equipment_cost}+{src_input:subcontract_cost})*1.18/(1-0.22)/ROUND({src_input:plan_area}*SQRT(1+(6/12)^2)/100,2),2)"
+        format: 0.0%
+    - name: jobcost-estimate-chart
+      title: Chart the price per square by cut-up
+      description: Charts price per square and gross margin across the three cut-up scenarios on the estimate sheet. Use when showing an owner
+        or a general contractor why a complex roof costs more.
+      fields:
+      - field-services/estimating-and-bids
+      steps:
+      - - excel
+        - Build the estimate sheet first
+      - - excel
+        - Add the chart from the add-in
+      notes:
+      - The chart reads the estimate sheet beside it.
+      worksheet:
+        kind: chart
+        source: jobcost-estimate-summary
+        chart: ColumnClustered
+        title: Price per square by cut-up
+        series:
+        - per_square
+        - margin
+  billing:
+    title: Billing
+    steps:
+    - name: jobcost-pay-application
+      title: Build the pay application
+      description: 'Builds the period''s pay application: contract plus signed changes, completed and stored to date, percent complete, retainage,
+        payment due, balance to finish, and whether the job is billed ahead of the work. Use at each billing cycle on a progress-billed job.'
+      fields:
+      - field-services/billing-and-collections
+      steps:
+      - - excel
+        - Enter the contract, changes and this period's completion
+      - - excel
+        - Build the Pay application sheet from the add-in
+      - - excel
+        - Check the arithmetic ties before sending
+      notes:
+      - Percent complete should come from measured quantities in the daily log, not from a feeling.
+      - Over-billing shows as a positive on the last line; it hides a margin problem until the final period.
+      - Attach the lien waivers the payment requires; the forms are set by your state.
+      worksheet:
+        kind: table
+        sheet: Pay application
+        title: Pay application with retainage
+        row_header: Line
+        inputs:
+        - key: contract_value
+          label: Original contract sum
+          default: 146000
+          format: '#,##0'
+        - key: change_orders
+          label: Net change by signed change orders
+          default: 7400
+          format: '#,##0'
+        - key: completed_previously
+          label: Completed in earlier periods
+          default: 38700
+          format: '#,##0'
+        - key: completed_this_period
+          label: Completed this period
+          default: 51800
+          format: '#,##0'
+        - key: stored_materials
+          label: Stored materials on site
+          default: 7200
+          format: '#,##0'
+        - key: previous_payments
+          label: Less previous payments
+          default: 34830
+          format: '#,##0'
+        columns:
+        - label: This application
+          params:
+            retainage_pct: 0.1
+        rows:
+        - key: contract_to_date
+          label: Contract sum to date
+          formula: "={input:contract_value}+{input:change_orders}"
+          format: '#,##0'
+        - key: completed_and_stored
+          label: Total completed and stored to date
+          formula: "={input:completed_previously}+{input:completed_this_period}+{input:stored_materials}"
+          format: '#,##0'
+        - key: pct
+          label: Percent complete
+          command: pct_complete
+          params:
+            scheduled_value: '{row:contract_to_date}'
+            completed: '{input:completed_previously}+{input:completed_this_period}'
+            stored: '{input:stored_materials}'
+          format: 0.0%
+        - key: retainage
+          label: Retainage held
+          command: retainage
+          params:
+            completed_and_stored: '{row:completed_and_stored}'
+          format: '#,##0'
+        - key: earned_net
+          label: Total earned less retainage
+          formula: "={row:completed_and_stored}-{row:retainage}"
+          format: '#,##0'
+        - key: due
+          label: Current payment due
+          command: payment_due
+          params:
+            completed_and_stored: '{row:completed_and_stored}'
+            retainage: '{row:retainage}'
+            previous_payments: '{input:previous_payments}'
+          format: '#,##0'
+        - key: balance
+          label: Balance to finish, including retainage
+          command: balance_to_finish
+          params:
+            contract_to_date: '{row:contract_to_date}'
+            completed_and_stored: '{row:completed_and_stored}'
+          format: '#,##0'
+        - key: over_under
+          label: Over (+) or under (-) billing
+          command: over_under_billing
+          params:
+            billed_to_date: '{row:completed_and_stored}'
+            contract_to_date: '{row:contract_to_date}'
+            pct_complete: '{row:pct}'
+          format: '#,##0'
+  solar:
+    title: Solar
+    steps:
+    - name: jobcost-solar-sizing
+      title: Size the array and show the payback
+      description: 'Builds a sheet comparing three array sizes: kW DC, first-year production, installed price, net cost after incentive, first-year
+        saving, simple payback and price per watt. Use when quoting solar, alongside the roofing estimate.'
+      fields:
+      - field-services/solar
+      steps:
+      - - excel
+        - Enter the site's sun hours, price per watt and utility rate
+      - - excel
+        - Build the Solar sizing sheet from the add-in
+      - - excel
+        - Check production against a site model before quoting
+      notes:
+      - 'Production here is a rule-of-thumb estimate: use peak sun hours for the site and a derate matched to your own monitoring.'
+      - 'Incentive rules and amounts change and differ by state and utility: confirm the current ones before quoting a payback.'
+      - Simple payback ignores escalation, degradation and the time value of money; say so when you show it.
+      worksheet:
+        kind: table
+        sheet: Solar sizing
+        title: Array size, production and payback
+        row_header: Line
+        inputs:
+        - key: price_per_watt_installed
+          label: Installed price per watt
+          default: 3.1
+          format: '0.00'
+        - key: incentive_pct
+          label: Incentive as a share of price (check current rules)
+          default: 0.3
+          format: 0%
+        - key: utility_rate
+          label: Utility rate per kWh
+          default: 0.17
+          format: '0.000'
+        - key: sun_hours_site
+          label: Peak sun hours for this site
+          default: 4.5
+          format: '0.0'
+        columns:
+        - label: 16 modules
+          params:
+            modules: 16
+        - label: 24 modules
+          params:
+            modules: 24
+        - label: 32 modules
+          params:
+            modules: 32
+        rows:
+        - key: kw_dc
+          label: Array size, kW DC
+          command: kw_dc
+          format: '0.00'
+        - key: production
+          label: First-year production, kWh
+          command: annual_production
+          params:
+            kw_dc: '{row:kw_dc}'
+            sun_hours: '{input:sun_hours_site}'
+          format: '#,##0'
+        - key: price
+          label: Installed price
+          formula: "=ROUND({row:kw_dc}*1000*{input:price_per_watt_installed},0)"
+          format: '#,##0'
+        - key: net_cost
+          label: Net cost after incentive
+          formula: "=ROUND({row:price}*(1-{input:incentive_pct}),0)"
+          format: '#,##0'
+        - key: saving
+          label: First-year saving
+          formula: "=ROUND({row:production}*{input:utility_rate},0)"
+          format: '#,##0'
+        - key: payback
+          label: Simple payback, years
+          command: simple_payback
+          params:
+            net_cost: '{row:net_cost}'
+            annual_saving: '{row:saving}'
+          format: '0.0'
+        - key: ppw
+          label: Price per watt
+          command: price_per_watt
+          params:
+            price: '{row:price}'
+            kw_dc: '{row:kw_dc}'
+          format: '0.00'

@@ -1,0 +1,159 @@
+# The job jacket: what each document on a roofing or solar job looks like, and the figures taken off it.
+# Customer names and addresses are not fields; the jacket holds figures and dates, not an identity file.
+# type: money (number), number, text, code, date, yes_no
+kinds:
+  signed-contract:
+    name: Signed contract
+    issued_by: Customer
+    fields:
+      - {key: signed, label: Signed by the customer, type: yes_no}
+      - {key: signed_date, label: Date signed, type: date}
+      - {key: contract_value, label: Contract value, type: money}
+      - {key: retainage_pct, label: Retainage percentage, type: number}
+      - {key: payment_days, label: Payment terms in days, type: number}
+  measurement-report:
+    name: Measurement and condition report
+    issued_by: Surveyor
+    fields:
+      - {key: squares, label: Total squares, type: number}
+      - {key: predominant_pitch, label: Predominant pitch, type: code}
+      - {key: layers, label: Existing layers, type: number}
+      - {key: deck_concern, label: Deck condition concern noted, type: yes_no}
+      - {key: survey_date, label: Date surveyed, type: date}
+  permit:
+    name: Building or electrical permit
+    issued_by: Authority having jurisdiction
+    fields:
+      - {key: permit_number, label: Permit number, type: code}
+      - {key: issued, label: Issued, type: yes_no}
+      - {key: issued_date, label: Date issued, type: date}
+      - {key: expires_on, label: Expires on, type: date}
+      - {key: inspections_required, label: Inspections required, type: number}
+      - {key: fee, label: Permit fee, type: money}
+  certificate-of-insurance:
+    name: Certificate of insurance
+    issued_by: Insurer or subcontractor
+    fields:
+      - {key: general_liability, label: General liability limit, type: money}
+      - {key: workers_comp, label: Workers' compensation in force, type: yes_no}
+      - {key: expires_on, label: Expires on, type: date}
+      - {key: additional_insured, label: Additional insured as required, type: yes_no}
+  subcontract:
+    name: Signed subcontract
+    issued_by: Subcontractor
+    fields:
+      - {key: signed, label: Signed, type: yes_no}
+      - {key: amount, label: Subcontract amount, type: money}
+      - {key: scope, label: Scope summary, type: text}
+  change-order:
+    name: Signed change order
+    issued_by: Customer
+    fields:
+      - {key: signed, label: Signed by the customer, type: yes_no}
+      - {key: amount, label: Change amount, type: money}
+      - {key: days_added, label: Days added to the schedule, type: number}
+      - {key: reason, label: What was found, type: text}
+  material-invoice:
+    name: Material invoice
+    issued_by: Supplier
+    fields:
+      - {key: amount, label: Invoice amount, type: money}
+      - {key: invoice_date, label: Invoice date, type: date}
+      - {key: job_referenced, label: Job number on the invoice, type: yes_no}
+  subcontractor-invoice:
+    name: Subcontractor invoice
+    issued_by: Subcontractor
+    fields:
+      - {key: amount, label: Invoice amount, type: money}
+      - {key: retainage_held, label: Retainage held, type: money}
+  daily-log:
+    name: Daily log
+    issued_by: Crew lead
+    fields:
+      - {key: log_date, label: Date, type: date}
+      - {key: crew_size, label: Crew on site, type: number}
+      - {key: hours, label: Crew hours, type: number}
+      - {key: squares_installed, label: Squares installed, type: number}
+      - {key: weather_delay, label: Weather delay, type: yes_no}
+      - {key: safety_signed, label: Toolbox talk and tie-off signed, type: yes_no}
+  inspection-report:
+    name: Inspection report
+    issued_by: Inspector
+    fields:
+      - {key: inspection_type, label: Inspection type, type: text}
+      - {key: result, label: "Result (passed, passed with conditions, failed)", type: code}
+      - {key: inspection_date, label: Date, type: date}
+      - {key: corrections, label: Corrections outstanding, type: number}
+  pay-application:
+    name: Pay application
+    issued_by: Us
+    fields:
+      - {key: period_end, label: Period end, type: date}
+      - {key: completed_to_date, label: Total completed and stored to date, type: money}
+      - {key: retainage, label: Retainage held, type: money}
+      - {key: previous_payments, label: Less previous payments, type: money}
+      - {key: amount_due, label: Current payment due, type: money}
+  lien-waiver:
+    name: Lien waiver
+    issued_by: Us, a subcontractor or a supplier
+    fields:
+      - {key: waiver_type, label: "Type (conditional progress, unconditional progress, conditional final, unconditional final)", type: code}
+      - {key: through_date, label: Through date, type: date}
+      - {key: amount, label: Amount covered, type: money}
+      - {key: from_party, label: "Who gave it (us, sub, supplier)", type: code}
+  customer-payment:
+    name: Customer payment
+    issued_by: Customer
+    fields:
+      - {key: amount, label: Amount received, type: money}
+      - {key: received_date, label: Date received, type: date}
+      - {key: applies_to, label: Pay application it pays, type: text}
+  warranty-registration:
+    name: Manufacturer warranty registration
+    issued_by: Manufacturer
+    fields:
+      - {key: registered, label: Registered, type: yes_no}
+      - {key: registration_number, label: Registration number, type: code}
+      - {key: term_years, label: Warranty term in years, type: number}
+      - {key: registered_date, label: Date registered, type: date}
+  interconnection-approval:
+    name: Interconnection approval
+    issued_by: Utility
+    fields:
+      - {key: approved, label: Approved to install, type: yes_no}
+      - {key: application_number, label: Application number, type: code}
+      - {key: system_kw_dc, label: System size (kW DC), type: number}
+      - {key: approved_date, label: Date approved, type: date}
+  pto-letter:
+    name: Permission to operate
+    issued_by: Utility
+    fields:
+      - {key: granted, label: Granted, type: yes_no}
+      - {key: granted_date, label: Date granted, type: date}
+  adjuster-scope:
+    name: Carrier scope of loss
+    issued_by: Insurance carrier
+    fields:
+      - {key: rcv, label: Replacement cost value, type: money}
+      - {key: acv, label: Actual cash value, type: money}
+      - {key: deductible, label: Deductible, type: money}
+      - {key: squares, label: Squares in the carrier scope, type: number}
+  supplement-approval:
+    name: Supplement approval
+    issued_by: Insurance carrier
+    fields:
+      - {key: approved_amount, label: Approved supplement amount, type: money}
+      - {key: approved_date, label: Date approved, type: date}
+  bid-form:
+    name: Completed bid form
+    issued_by: Us
+    fields:
+      - {key: base_bid, label: Base bid, type: money}
+      - {key: addenda_acknowledged, label: Addenda acknowledged, type: number}
+      - {key: signed, label: Signed and sealed as required, type: yes_no}
+  bid-bond:
+    name: Bid bond or security
+    issued_by: Surety
+    fields:
+      - {key: amount, label: Bond amount, type: money}
+      - {key: percent_of_bid, label: Percent of bid, type: number}

@@ -1,0 +1,249 @@
+# A roofing and solar contractor's job, end to end: lead → survey → price → bid → contract → permit →
+# install → inspect → bill → close out → review the margin. Each job carries its own document jacket
+# (contract, permit, inspections, pay applications, lien waivers), and every leg has to verify before
+# the next one counts as ready.
+#
+# Written from how the trade generally works, not from any one company's process. Every step, document
+# and check is meant to be corrected by the people who actually do the work: edit the step, branch it,
+# or capture what you really do and let it replace this.
+key: roofing-solar
+version: 1
+title: Roofing and solar job
+area: field-services
+stage: firm
+description: >-
+  A roofing and solar contractor's workflow for one job: qualify the lead, survey the roof, price the
+  work, bid or propose, contract, permit and interconnect, order and schedule, install, inspect and
+  commission, bill (progress billing and retainage), close out with warranties, then review the margin.
+labels:
+  run: job
+  runs: jobs
+  expert: field and office
+  owner: job manager
+  reference: Job number
+disclaimer: >-
+  Trade practice, not legal or code advice. Permits, licensing, lien deadlines and waiver forms,
+  prevailing wage, interconnection rules and incentive paperwork differ by state, utility and
+  jurisdiction, and they change. Confirm each against your own authority and counsel before relying on
+  it, and correct these steps to match how your company actually works.
+
+fields:
+  - path: field-services
+    name: Field services
+    keywords: [contractor, trade, field, crew, job site]
+  - path: field-services/roofing
+    name: Roofing
+    keywords: [roof, shingle, tpo, membrane, tear-off, squares, flashing, decking]
+  - path: field-services/solar
+    name: Solar
+    keywords: [solar, pv, array, inverter, interconnection, pto, kw, battery]
+  - path: field-services/estimating-and-bids
+    name: Estimating and bids
+    keywords: [estimate, takeoff, bid, rfp, proposal, scope, pricing, margin]
+  - path: field-services/job-execution
+    name: Job execution
+    keywords: [permit, schedule, crew, install, inspection, punch list, safety]
+  - path: field-services/billing-and-collections
+    name: Billing and collections
+    keywords: [invoice, pay application, progress billing, retainage, lien waiver, statement, collections]
+  - path: field-services/job-costing
+    name: Job costing
+    keywords: [job cost, margin, wip, overhead, labor, backlog, dashboard]
+
+resources:
+  folder: Field services/Roofing and solar
+  items:
+    - name: Roof measurement and condition report
+      file: roof-measurement-report.xlsx
+      description: "Field survey sheet: planes, pitch, squares, penetrations, deck condition, access and photo index."
+    - name: Estimate and takeoff workbook
+      file: estimate-takeoff.xlsx
+      description: "Takeoff to price: materials with waste, labor hours, equipment, subcontractors, overhead and margin."
+    - name: Proposal and scope letter
+      file: proposal-scope-letter.docx
+      description: What is included, what is excluded, the schedule, the payment terms and the warranty offered.
+    - name: Commercial bid response checklist
+      file: commercial-bid-checklist.xlsx
+      description: "Everything an RFP asks for: bid form, bonds, insurance, references, submittals, addenda, due date."
+    - name: Schedule of values and pay application
+      file: schedule-of-values.xlsx
+      description: Line items, scheduled value, work completed this period, stored materials, retainage and balance.
+    - name: Job closeout packet
+      file: job-closeout-packet.docx
+      description: As-builts, warranties, inspection sign-offs, lien waivers, O&M and the final release.
+
+# The mainline, in order. steps: [app, label] pairs (what the work looks like in Office).
+mainline:
+  - name: qualify-the-roofing-lead
+    fields: [field-services/estimating-and-bids]
+    steps:
+      - [excel, Log the lead and how it came in]
+      - [outlook, Ask the qualifying questions]
+      - [excel, Decide to bid or decline, and book the survey]
+  - name: survey-the-roof-and-site
+    fields: [field-services/roofing]
+    resources: [Roof measurement and condition report]
+    steps:
+      - [excel, Record measurements and pitch by plane]
+      - [excel, Record deck condition, penetrations and access]
+      - [excel, Index the site photos]
+  - name: price-the-roofing-job
+    fields: [field-services/estimating-and-bids]
+    resources: [Estimate and takeoff workbook]
+    steps:
+      - [excel, Turn measurements into a material takeoff]
+      - [excel, Price labor, equipment and subcontractors]
+      - [excel, Set overhead and margin, and check the price]
+  - name: write-the-roofing-proposal
+    fields: [field-services/estimating-and-bids]
+    resources: [Proposal and scope letter]
+    steps:
+      - [word, "Write the scope: included and excluded"]
+      - [word, Set the schedule, payment terms and warranty]
+      - [outlook, Send the proposal and log the follow-up]
+  - name: contract-the-roofing-job
+    fields: [field-services/job-execution]
+    steps:
+      - [word, Issue the contract with the agreed scope and price]
+      - [excel, Record the payment schedule and retainage]
+      - [excel, "Open the job: number, budget and cost codes"]
+  - name: permit-the-roofing-job
+    fields: [field-services/job-execution]
+    steps:
+      - [excel, Assemble the permit application and drawings]
+      - [outlook, File with the authority and track the review]
+      - [excel, Record the permit, conditions and inspection points]
+  - name: order-materials-and-schedule-the-crew
+    fields: [field-services/job-execution]
+    steps:
+      - [excel, Convert the takeoff into purchase orders]
+      - [outlook, Confirm delivery, dumpster and equipment dates]
+      - [excel, Assign the crew and book the install window]
+  - name: install-the-roof
+    fields: [field-services/job-execution]
+    steps:
+      - [excel, "Keep the daily log: crew, hours, weather, quantities"]
+      - [excel, Record field changes and hidden conditions]
+      - [excel, File the daily photos and safety sign-offs]
+  - name: inspect-and-sign-off-the-roof
+    fields: [field-services/job-execution]
+    steps:
+      - [excel, Book the inspections the permit requires]
+      - [excel, Record each result and clear the corrections]
+      - [word, Walk the punch list with the customer]
+  - name: bill-the-roofing-job
+    fields: [field-services/billing-and-collections]
+    resources: [Schedule of values and pay application]
+    steps:
+      - [excel, Update the schedule of values to this period]
+      - [excel, Build the pay application with retainage]
+      - [outlook, Send the application with the lien waivers]
+  - name: close-out-the-roofing-job
+    fields: [field-services/job-execution]
+    resources: [Job closeout packet]
+    steps:
+      - [word, Assemble the closeout packet]
+      - [excel, Register the manufacturer warranty]
+      - [outlook, Send the packet and request the final release]
+  - name: review-the-job-margin
+    fields: [field-services/job-costing]
+    steps:
+      - [excel, Compare final cost to the estimate by cost code]
+      - [excel, Update the WIP and backlog schedules]
+      - [powerpoint, "Report the month: margin, backlog and collections"]
+
+# Situations: asked when the job is opened; "yes" adds the branch after the step it hangs off.
+situations:
+  - key: solar-array
+    documents: [interconnection-approval, pto-letter]
+    question: Does the job include a solar array (or does the roof have to carry one later)?
+    forms: [Utility interconnection application, AHJ electrical permit, Permission to operate]
+    keywords: [solar, pv, array, panels, inverter, interconnection, net meter, pto, kw]
+    after: permit-the-roofing-job
+    branch: interconnect-the-solar-array
+    fields: [field-services/solar]
+    steps:
+      - [excel, Size the array and model production]
+      - [excel, File the interconnection application and track it]
+      - [excel, Record approval, commissioning and permission to operate]
+  - key: insurance-claim
+    documents: [adjuster-scope, supplement-approval]
+    question: Is the work being paid through an insurance claim (storm, hail or wind damage)?
+    forms: [Carrier scope of loss, Supplement request]
+    keywords: [insurance, claim, adjuster, hail, storm, wind, carrier, deductible, supplement, xactimate]
+    after: price-the-roofing-job
+    branch: work-the-insurance-claim
+    fields: [field-services/estimating-and-bids]
+    steps:
+      - [excel, Compare the carrier scope to your own measurements]
+      - [word, Write the supplement with photos and code items]
+      - [outlook, Track the adjuster's decision and the revised scope]
+  - key: commercial-rfp
+    documents: [bid-form, bid-bond, certificate-of-insurance]
+    question: Is this a commercial bid with an RFP, ITB or bid package to answer?
+    forms: [Bid form, Bid bond, Submittal register, Addenda acknowledgment]
+    keywords: [rfp, itb, bid package, invitation to bid, general contractor, submittals, addenda, bond, prevailing wage]
+    after: write-the-roofing-proposal
+    branch: answer-the-commercial-bid
+    fields: [field-services/estimating-and-bids]
+    steps:
+      - [excel, List every deliverable the package asks for]
+      - [excel, Price the alternates and unit prices]
+      - [word, "Assemble the bid: forms, bonds, insurance and submittals"]
+  - key: subcontracted-work
+    documents: [subcontract, certificate-of-insurance, lien-waiver]
+    question: Will any part of the work be subcontracted (crane, electrical, sheet metal, framing)?
+    forms: [Subcontract, Certificate of insurance, Conditional and final waivers]
+    keywords: [subcontractor, sub, crane, electrician, sheet metal, framing, 1099 crew]
+    after: order-materials-and-schedule-the-crew
+    branch: manage-the-subcontractors
+    fields: [field-services/job-execution]
+    steps:
+      - [word, Issue the subcontract with the scope and price]
+      - [excel, Collect insurance certificates before anyone starts]
+      - [excel, Track sub invoices and their lien waivers]
+  - key: hidden-damage
+    documents: [change-order]
+    question: Could the tear-off uncover rotten deck, wet insulation or structural damage?
+    forms: [Change order]
+    keywords: [tear-off, rotten, rot, deck replacement, wet insulation, structural, hidden, unforeseen]
+    after: install-the-roof
+    branch: price-the-hidden-damage
+    fields: [field-services/job-execution]
+    steps:
+      - [excel, Measure and photograph what was uncovered]
+      - [excel, Price the change at the contract unit rates]
+      - [outlook, Get the change order signed before continuing]
+  - key: prevailing-wage
+    question: Is this public work or otherwise subject to prevailing wage and certified payroll?
+    forms: [Certified payroll, Wage determination]
+    keywords: [prevailing wage, davis-bacon, certified payroll, public works, school district, municipal]
+    after: install-the-roof
+    branch: file-certified-payroll
+    fields: [field-services/billing-and-collections]
+    steps:
+      - [excel, Classify each worker against the wage determination]
+      - [excel, Build the certified payroll for the week]
+      - [outlook, File it with the awarding body]
+  - key: maintenance-agreement
+    question: Will the customer hold a maintenance or monitoring agreement after this job?
+    forms: [Maintenance agreement, Inspection schedule]
+    keywords: [maintenance, service agreement, monitoring, annual inspection, ndl, recurring, warranty service]
+    after: close-out-the-roofing-job
+    branch: start-the-maintenance-agreement
+    fields: [field-services/billing-and-collections]
+    steps:
+      - [word, "Write the agreement: visits, scope and price"]
+      - [excel, Schedule the inspections and the invoicing]
+  - key: collections
+    documents: [customer-payment]
+    question: Is any invoice on this job past its terms?
+    forms: [Statement, Preliminary notice, Notice of intent to lien]
+    keywords: [past due, unpaid, collections, aging, lien, notice, statement, slow pay]
+    after: bill-the-roofing-job
+    branch: collect-the-overdue-balance
+    fields: [field-services/billing-and-collections]
+    steps:
+      - [excel, Age the balance and check the lien deadlines]
+      - [outlook, Send the statement and ask for a payment date]
+      - [excel, Record the promise and escalate if it is missed]

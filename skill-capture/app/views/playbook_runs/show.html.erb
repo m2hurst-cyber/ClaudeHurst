@@ -1,10 +1,11 @@
 <% r = @run; pb = @playbook; done, total = r.progress; mine = r.user_id == current_user.id %>
-<% content_for :title, "Return #{r.reference}" %>
+<% lb = r.playbook.wording %>
+<% content_for :title, "#{lb['run'].capitalize} #{r.reference}" %>
 <% if @documents.any? { |d| d.status == "reading" } %><% content_for :head do %><meta http-equiv="refresh" content="5"><% end %><% end %>
 <div class="flex flex-wrap justify-between items-start gap-3 mb-3">
   <div>
     <div class="text-xs text-slate-500 mb-1"><%= link_to "Playbooks", playbooks_path, class: "hover:underline" %> / <%= link_to pb.title, playbook_path(pb.key), class: "hover:underline" %></div>
-    <h1 class="text-2xl font-bold">Return <%= r.reference %><%= " · #{r.inputs['tax_year']}" if r.inputs["tax_year"] %></h1>
+    <h1 class="text-2xl font-bold"><%= lb["run"].capitalize %> <%= r.reference %><%= " · #{r.inputs['tax_year']}" if r.inputs["tax_year"] %></h1>
     <div class="flex items-center gap-2 mt-2 text-sm">
       <div class="w-48 h-2 rounded bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow="<%= done %>" aria-valuemax="<%= total %>"><div class="h-full bg-emerald-600" style="width: <%= total.zero? ? 0 : (100 * done / total) %>%"></div></div>
       <span class="text-slate-600"><%= done %> of <%= total %> legs verified</span>
@@ -25,7 +26,7 @@
 
 <div class="grid lg:grid-cols-[1fr_25rem] gap-4">
   <div class="bg-white border rounded p-4" id="route">
-    <h2 class="font-semibold mb-1">The road for this return</h2>
+    <h2 class="font-semibold mb-1">The road for this <%= lb["run"] %></h2>
     <p class="text-xs text-slate-500 mb-3">Each leg: upload its documents, <%= Capture::Config.llm_enabled? ? "let the AI prepare it" : "prepare it" %>, resolve what the checks flag. A leg is done only when it verifies.</p>
     <ol>
       <% n = 0 %>
@@ -39,7 +40,7 @@
             <span class="text-xs text-amber-700">branch in review with the tax reviewers: handle by judgment for now</span>
           </li>
         <% else %>
-          <%= render "leg", step: step, number: n, last: i == @route.size - 1 %>
+          <%= render "leg", step: step, number: n, last: i == @route.size - 1, labels: lb %>
         <% end %>
       <% end %>
     </ol>
@@ -92,7 +93,7 @@
         <p class="text-xs text-slate-500 mb-2">Describe what's different about this client's year. A known situation joins the road; a new one is proposed as a branch for the tax reviewers. Numbers and emails are removed before the AI sees it.</p>
         <%= form_with url: situation_playbook_run_path(r), method: :post do %>
           <textarea name="text" rows="3" required minlength="8" class="<%= input_css %>" placeholder="e.g. Client sold their main home this year"></textarea>
-          <button class="<%= btn %> mt-2 w-full justify-center">Check with the CPA advisor</button>
+          <button class="<%= btn %> mt-2 w-full justify-center">Check with the <%= lb["expert"] %> advisor</button>
         <% end %>
       </div>
     <% end %>

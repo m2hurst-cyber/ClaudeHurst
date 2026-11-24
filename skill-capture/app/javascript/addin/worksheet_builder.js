@@ -48,7 +48,16 @@ function commandFormula(cmdKey, params, ctx, warnings, where) {
   const cmd = ctx.commands[cmdKey];
   if (!cmd) { warnings.push(`${where}: unknown command ${cmdKey}`); return `="?${cmdKey}"`; }
   if (cmd.status !== "verified") ctx.unverified.add(cmdKey);
-  const all = { ...(cmd.defaults || {}), ...params };
+  // A parameter can point at another part of the sheet ("{row:squares}", "{input:wage}", "{cell:total}"),
+  // so one library command can feed another instead of being rewritten as a bare formula.
+  const resolveParam = (v) => (typeof v === "string" && v.includes("{")
+    ? v.replace(TOKEN, (m, type, key) => {
+        const r = key === undefined ? ctx.inputs[type] : ctx.resolve(type, key);
+        if (r === undefined || r === null) { warnings.push(`${where}: can't resolve ${m}`); return m; }
+        return String(r);
+      })
+    : v);
+  const all = { ...(cmd.defaults || {}), ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, resolveParam(v)])) };
   const tpl = String(cmd.syntax);
   return tpl.replace(TOKEN, (m, type, key, offset) => {
     let v;
