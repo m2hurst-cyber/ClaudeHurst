@@ -17,6 +17,7 @@ class FormulasController < ApplicationController
       scope = scope.where("key ILIKE :t OR name ILIKE :t OR syntax ILIKE :t OR description ILIKE :t", t: t)
     end
     @commands = scope.order(:category, :name).to_a
+    return render_markdown(Capture::LlmMarkdown.formulas(@provider, @commands), "#{@provider}-formulas") if request.format.md?
     @usage = Skill.published.where(domain: @provider).where("skills.source -> 'worksheet' IS NOT NULL").each_with_object(Hash.new { |h, k| h[k] = [] }) do |s, h|
       Capture::Worksheets.command_keys(s.source["worksheet"]).each { |k| h[k] << s }
     end
@@ -28,6 +29,7 @@ class FormulasController < ApplicationController
   def guide
     @guide = Capture::Playbook.all.find { |pb| pb.pack? && pb.provider == @provider }&.guide
     raise ActiveRecord::RecordNotFound unless @guide
+    render_markdown(@guide, "#{@provider}-AGENT") if request.format.md?
   end
 
   def create

@@ -11,7 +11,9 @@ class WorksheetCapturesController < ApplicationController
     @captures = (scope.limit(100).to_a | reviewing)
   end
 
-  def show; end
+  def show
+    return render_markdown(Capture::LlmMarkdown.capture(@capture), "capture-#{@capture.sheet_name}") if request.format.md?
+  end
 
   def file
     body = @capture.files[params[:file]] or raise ActiveRecord::RecordNotFound

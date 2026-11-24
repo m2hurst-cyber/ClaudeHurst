@@ -1,0 +1,33 @@
+<%# Split button: "Copy for LLM" copies this page as Markdown; the menu views it as .md, downloads it, or copies its .md link (for agents). %>
+<% filename = "#{local_assigns[:filename].presence || 'document'}.md" %>
+<div class="relative inline-flex text-sm" data-controller="llm-copy" data-llm-copy-url-value="<%= url %>" data-llm-copy-filename-value="<%= filename %>">
+  <div class="inline-flex rounded-lg border border-slate-300 bg-white shadow-sm overflow-hidden">
+    <button type="button" data-action="llm-copy#copy" data-llm-copy-target="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold hover:bg-slate-50" title="Copy this page as Markdown, ready to paste into an LLM">
+      <svg viewBox="0 0 20 20" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13H7"/></svg>
+      <span data-llm-copy-target="label">Copy for LLM</span>
+    </button>
+    <button type="button" data-action="llm-copy#toggle" class="px-2 border-l border-slate-300 hover:bg-slate-50" aria-haspopup="menu" aria-expanded="false" data-llm-copy-target="chevron" aria-label="More Markdown options">
+      <svg viewBox="0 0 20 20" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+    </button>
+  </div>
+  <div data-llm-copy-target="menu" hidden role="menu" class="absolute right-0 top-full mt-1 z-30 w-60 rounded-lg border bg-white shadow-lg py-1">
+    <button type="button" role="menuitem" data-action="llm-copy#view" class="w-full text-left px-3 py-2 hover:bg-slate-50"><span class="font-medium">View as Markdown</span><span class="block text-xs text-slate-500">See the <%= filename %> before copying</span></button>
+    <a role="menuitem" href="<%= url %><%= url.include?('?') ? '&' : '?' %>download=1" class="block px-3 py-2 hover:bg-slate-50"><span class="font-medium">Download .md</span><span class="block text-xs text-slate-500">Save <%= filename %></span></a>
+    <button type="button" role="menuitem" data-action="llm-copy#copyLink" class="w-full text-left px-3 py-2 hover:bg-slate-50"><span class="font-medium">Copy .md link</span><span class="block text-xs text-slate-500">For agents that fetch Markdown</span></button>
+  </div>
+  <dialog data-llm-copy-target="dialog" class="m-auto rounded-xl border p-0 shadow-2xl w-[min(46rem,calc(100vw-2rem))] backdrop:bg-slate-900/40 text-left" aria-label="<%= filename %>">
+    <div class="flex items-start gap-3 px-5 py-4 border-b bg-white">
+      <svg viewBox="0 0 20 20" class="w-5 h-5 mt-1 text-slate-500 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z"/><path d="M11.5 2.5V6H15M7.5 10h5M7.5 12.5h5M7.5 15h3"/></svg>
+      <h2 class="flex-1 font-semibold text-lg leading-snug break-words"><%= filename %></h2>
+      <button type="button" data-action="llm-copy#close" class="rounded-lg border px-2.5 py-1.5 hover:bg-slate-50" aria-label="Close"><svg viewBox="0 0 20 20" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    </div>
+    <pre data-llm-copy-target="pre" class="px-5 py-4 max-h-[60vh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-relaxed bg-slate-50 text-slate-900"></pre>
+    <div class="flex items-center justify-end gap-3 px-5 py-3 border-t bg-white">
+      <span data-llm-copy-target="status" class="text-xs text-slate-500" role="status"></span>
+      <button type="button" data-action="llm-copy#copyFromDialog" class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-medium hover:bg-slate-50">
+        <svg viewBox="0 0 20 20" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13H7"/></svg>
+        Copy markdown
+      </button>
+    </div>
+  </dialog>
+</div>

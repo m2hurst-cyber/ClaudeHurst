@@ -5,6 +5,7 @@
     <p class="text-sm text-slate-500">The small commands worksheet skills are built from. A skill names a command (for example <code>revenue</code>); the library holds the provider's exact formula. Commands start <strong>unverified</strong> until someone with access to the provider checks them.</p>
   </div>
   <div class="flex flex-wrap gap-2 items-center text-sm">
+  <%= render "shared/llm_menu", url: formulas_path(provider: @provider, format: :md), filename: "#{@provider}-formulas" %>
   <%= link_to "Agent guide", guide_formulas_path(provider: @provider), class: "px-3 py-1.5 rounded border bg-white hover:bg-slate-50", title: "Observe → Interpret → Document → Write: how a worksheet becomes a skill" %>
   <%= link_to "Captured worksheets", worksheet_captures_path, class: "px-3 py-1.5 rounded border bg-white hover:bg-slate-50" %>
   <nav class="flex rounded border overflow-hidden text-sm" aria-label="Provider">

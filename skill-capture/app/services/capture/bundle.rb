@@ -19,6 +19,7 @@ module Capture
         stage: skill.stage, area: skill.domain, fields: c ? c.ordered_fields.map(&:label) : [], apps: c&.apps || [],
         skill_md: skill.to_skill_md, directions: directions,
         usage: Intensity.for(skill.name),
+        markdown: LlmMarkdown.skill(skill, viewer: viewer),
         report_usage: Intensity.report_instructions(Rails.application.routes.url_helpers.api_v1_skill_runs_path(skill.name)),
         resources: ResourceLibrary.for_skill(skill.name, viewer.nil? ? nil : viewer).map { |r| ResourceLibrary.describe(r, download_url: url_for.(r)) }
       }.merge(worksheet(skill))

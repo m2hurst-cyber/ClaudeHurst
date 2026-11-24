@@ -14,6 +14,7 @@
     </div>
     <div class="flex items-center gap-2 text-sm">
       <span data-flow-map-target="status" class="text-xs text-slate-500"></span>
+      <%= render "shared/llm_menu", url: flow_path(@flow, format: :md), filename: @flow.name.parameterize %>
       <button type="button" data-action="flow-map#save" class="px-3 py-1.5 rounded border bg-white">Save</button>
       <%= button_to "▶ Run", run_flow_path(@flow), class: "px-3 py-1.5 rounded bg-emerald-700 text-white", form: { data: { action: "submit->flow-map#beforeRun" } } %>
     </div>

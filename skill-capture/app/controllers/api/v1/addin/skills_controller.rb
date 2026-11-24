@@ -16,7 +16,7 @@ module Api
           next_up = SkillLink.neighbours(skill.name, direction: :next).filter_map do |l|
             (s = Skill.current(l[:name])) && s.visible_to?(current_user) && { name: s.name, title: s.title, traffic: l[:traffic] }
           end
-          render json: summary(skill).merge(body: skill.body, can_send: SkillTransfer.sendable?(skill, current_user), usage: Capture::Intensity.for(skill.name), can_sell: SkillTransfer.sellable?(skill, current_user), url: skill_url(skill), contributors: Array(skill.source["contributors"]),
+          render json: summary(skill).merge(body: skill.body, can_send: SkillTransfer.sendable?(skill, current_user), usage: Capture::Intensity.for(skill.name), markdown: Capture::LlmMarkdown.skill(skill, viewer: current_user), can_sell: SkillTransfer.sellable?(skill, current_user), url: skill_url(skill), contributors: Array(skill.source["contributors"]),
                                             next_up: next_up.first(3), traffic: traffic(skill.name),
                                             directions: place("road:#{skill.name}"), junction: next_up.any? ? place("junction:#{skill.name}") : nil,
                                             fix_url: new_skill_candidate_url(fix: skill.name),

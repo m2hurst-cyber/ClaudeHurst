@@ -14,6 +14,8 @@
     <h1 class="text-2xl font-bold"><%= r.flow.name %></h1>
     <p class="text-sm text-slate-500">Started by <%= r.user.name %> <%= time_ago_in_words(r.created_at) %> ago · <%= r.done_count %> of <%= r.steps.size %> done</p>
   </div>
+  <div class="flex gap-2 items-center">
+  <%= render "shared/llm_menu", url: flow_run_path(r, format: :md), filename: "#{r.flow.name.parameterize}-run-#{r.id}" %>
   <% if owner && r.active? %>
     <div class="flex gap-2">
       <% if r.status == "on_hold" %><%= button_to "▶ Resume run", release_flow_run_path(r), class: "px-3 py-1.5 rounded bg-emerald-700 text-white text-sm" %>
@@ -21,6 +23,7 @@
       <%= button_to "Stop", cancel_flow_run_path(r), class: "px-3 py-1.5 rounded border bg-white text-sm", form: { data: { turbo_confirm: "Stop this run?" } } %>
     </div>
   <% end %>
+  </div>
 </div>
 
 <% if r.active? && cur %>

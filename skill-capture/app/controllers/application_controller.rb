@@ -11,6 +11,12 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # A .md response for LLMs and agents (?download=1 saves it as a file).
+  def render_markdown(text, name)
+    send_data text.to_s, type: "text/markdown; charset=utf-8", filename: "#{name.to_s.parameterize.presence || 'document'}.md",
+                         disposition: params[:download].present? ? "attachment" : "inline"
+  end
+
   def unread_notifications_count
     current_user ? current_user.notifications.unread.count : 0
   end

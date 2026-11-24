@@ -45,7 +45,7 @@ module Api
         end
 
         def summary(r)
-          Api::V1::FlowRunsController.summary(r).merge(url: flow_run_url(r), mine: r.running? && r.doer?(user: current_user), owner: r.owner?(current_user))
+          Api::V1::FlowRunsController.summary(r).merge(url: flow_run_url(r), markdown: Capture::LlmMarkdown.run(r), mine: r.running? && r.doer?(user: current_user), owner: r.owner?(current_user))
         end
       end
     end

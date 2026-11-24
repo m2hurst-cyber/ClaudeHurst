@@ -20,6 +20,7 @@ class FlowsController < ApplicationController
   end
 
   def show
+    return render_markdown(Capture::LlmMarkdown.flow(@flow), @flow.name) if request.format.md?
     @palette = Skill.published.visible_to(current_user).order(:title).limit(400).to_a
     @classes = SkillClassification.where(skill_name: @palette.map(&:name)).index_by(&:skill_name)
     @agents = Source.active.where(kind: "integration").order(:name)

@@ -329,6 +329,7 @@ async function renderSkill(name) {
         ${s.worksheet ? `<button data-action="build-sheet" data-name="${esc(s.name)}" class="${btnPrimary}">▦ Build worksheet</button>` : ""}
         <button data-action="remember" class="${s.worksheet ? btn : btnPrimary}">Add to memory</button>
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
+        ${llmButtons(`${s.name}.md`)}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
         ${s.can_send ? `<button data-action="send-skill" class="${btn}">⇢ Send to coworker</button>` : ""}
       </div>
@@ -431,7 +432,7 @@ function renderMemory() {
 function renderMemoryItem(name) {
   const m = memory.get(name);
   if (!m) return renderMemory();
-  state.openSkill = { title: m.title, body: String(m.skill_md || "").replace(/^---[\s\S]*?---\s*/, ""), name: m.name };
+  state.openSkill = { title: m.title, body: String(m.skill_md || "").replace(/^---[\s\S]*?---\s*/, ""), name: m.name, markdown: m.markdown || [m.skill_md, memory.asContext(name)].filter(Boolean).join("\n\n") };
   panel().innerHTML = `
     <button data-action="back-memory" class="text-sky-700 mb-2">← Memory</button>
     <h2 class="text-base font-semibold">${esc(m.title)}</h2>
@@ -439,7 +440,7 @@ function renderMemoryItem(name) {
     <div class="flex gap-1 mb-2">
       ${m.worksheet ? `<button data-action="build-sheet" data-name="${esc(m.name)}" data-from="memory" class="${btnPrimary}">▦ Build worksheet</button>` : ""}
       ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
-      <button data-action="copy-context" data-name="${esc(m.name)}" class="${btn}">Copy for AI</button>
+      ${llmButtons(`${m.name}.md`)}
     </div>
     ${m.resources?.length ? `<div class="mb-2"><div class="text-xs text-slate-500 mb-1">Resources</div>${m.resources.map((r) => `<div class="text-xs">📎 <button data-action="open-url" data-url="${esc(r.url)}" class="text-sky-700 hover:underline">${esc(r.name)}</button> <span class="text-slate-400">${esc(r.key)}</span></div>`).join("")}</div>` : ""}
     <article class="border-t pt-2">${renderMarkdown(state.openSkill.body)}</article>
@@ -660,6 +661,13 @@ document.addEventListener("click", async (ev) => {
     else if (a === "forget") { memory.remove(t.dataset.name); render(); }
     else if (a === "forget-all") { memory.clear(); render(); }
     else if (a === "back-memory") { renderMemory(); }
+    else if (a === "llm-copy" || a === "llm-view") {
+      const md = currentMarkdown();
+      if (a === "llm-copy") { const ok = await copyText(md); t.querySelector("[data-llm-label]").textContent = ok ? "Copied ✓" : "Copy failed"; setTimeout(() => { const l = t.querySelector("[data-llm-label]"); if (l) l.textContent = "Copy for LLM"; }, 2000); }
+      else showMarkdown(t.dataset.filename, md);
+    }
+    else if (a === "md-copy") { const ok = await copyText(document.getElementById("md-pre")?.textContent || ""); document.getElementById("md-status").textContent = ok ? "Copied ✓" : "Copy failed"; }
+    else if (a === "md-close") { document.getElementById("md-modal")?.remove(); }
     else if (a === "copy-context") {
       await navigator.clipboard?.writeText(memory.asContext(t.dataset.name)).catch(() => {});
       flash("Copied the skill, its directions and resources for your AI."); render(); renderMemoryItem(t.dataset.name);
@@ -780,3 +788,37 @@ document.addEventListener("pointerup", (ev) => { if (state.tab === "flows") flow
 document.addEventListener("pointercancel", (ev) => { if (state.tab === "flows") flowPane().onPointerUp(ev); });
 document.addEventListener("input", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });
 document.addEventListener("change", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });
+
+// ---------- Copy for LLM · View as Markdown ----------
+const COPY_ICON = '<svg viewBox="0 0 20 20" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13H7"/></svg>';
+function llmButtons(filename) {
+  return `<span class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+    <button data-action="llm-copy" class="inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold bg-white hover:bg-slate-50">${COPY_ICON}<span data-llm-label>Copy for LLM</span></button>
+    <button data-action="llm-view" data-filename="${esc(filename)}" class="px-2 border-l border-slate-300 bg-white hover:bg-slate-50 text-xs font-medium" title="View as Markdown">.md</button></span>`;
+}
+// The open skill's (or memory item's) Markdown, ready for an LLM.
+function currentMarkdown() {
+  return state.openSkill?.markdown || state.openSkill?.body || "";
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {
+    const t = document.createElement("textarea"); t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select(); const ok = document.execCommand("copy"); t.remove(); return ok;
+  }
+}
+function showMarkdown(filename, text) {
+  document.getElementById("md-modal")?.remove();
+  const el = document.createElement("div");
+  el.id = "md-modal";
+  el.className = "fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-2";
+  el.innerHTML = `<div role="dialog" aria-modal="true" aria-label="${esc(filename)}" class="bg-white rounded-xl border shadow-xl w-full max-h-[92vh] flex flex-col">
+    <div class="flex items-start gap-2 px-3 py-2.5 border-b"><span class="text-slate-500" aria-hidden="true">📄</span><h2 class="flex-1 font-semibold break-words">${esc(filename)}</h2>
+      <button data-action="md-close" class="rounded-lg border px-2 py-0.5" aria-label="Close">✕</button></div>
+    <pre id="md-pre" class="flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed bg-slate-50 px-3 py-2">${esc(text)}</pre>
+    <div class="flex items-center justify-end gap-2 px-3 py-2 border-t"><span id="md-status" class="text-xs text-slate-500" role="status"></span>
+      <button data-action="md-copy" class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-medium">${COPY_ICON} Copy markdown</button></div></div>`;
+  el.addEventListener("click", (e) => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+  el.querySelector("[data-action=md-close]").focus();
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.getElementById("md-modal")?.remove(); });

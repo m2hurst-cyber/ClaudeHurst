@@ -4,7 +4,8 @@
     <h1 class="text-2xl font-bold">Agent guide: <%= FormulaCommand.provider_name(@provider) %></h1>
     <p class="text-sm text-slate-500">How the AI (and people) read a worksheet, interpret it, document every formula and write the skill: Observe → Interpret → Document → Write. The worksheet capture in the add-in follows it.</p>
   </div>
-  <div class="flex gap-2 text-sm">
+  <div class="flex gap-2 text-sm items-center">
+    <%= render "shared/llm_menu", url: guide_formulas_path(provider: @provider, format: :md), filename: "#{@provider}-AGENT" %>
     <%= link_to "← Formula library", formulas_path(provider: @provider), class: "px-3 py-1.5 rounded border bg-white" %>
     <%= link_to "Captured worksheets", worksheet_captures_path, class: "px-3 py-1.5 rounded border bg-white" %>
   </div>

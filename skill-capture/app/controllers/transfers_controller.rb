@@ -29,6 +29,7 @@ class TransfersController < ApplicationController
   end
 
   def show
+    return render_markdown(Capture::LlmMarkdown.transfer(@transfer), "transfer-#{@transfer.id}") if request.format.md?
     @skills = @transfer.items.to_h { |i| [i["name"], Skill.current(i["name"])] }
   end
 

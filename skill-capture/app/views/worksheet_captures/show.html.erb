@@ -6,7 +6,10 @@
     <h1 class="text-2xl font-bold"><%= i["title"].presence || @capture.sheet_name %></h1>
     <p class="text-sm text-slate-500">“<%= @capture.sheet_name %>” sheet<%= " (#{@capture.address})" if @capture.address.present? %> · <%= FormulaCommand.provider_name(@capture.provider) %> · captured by <%= @capture.user.name %> <%= time_ago_in_words(@capture.created_at) %> ago · interpreted by <%= @capture.interpreted_by == "ai" ? "AI, following the agent guide" : "rules" %></p>
   </div>
-  <% if FormulaCommand::PROVIDERS.key?(@capture.provider) %><%= link_to "Agent guide", guide_formulas_path(provider: @capture.provider), class: "px-3 py-1.5 rounded border bg-white text-sm" %><% end %>
+  <div class="flex gap-2 items-center">
+    <%= render "shared/llm_menu", url: worksheet_capture_path(@capture, format: :md), filename: "capture-#{@capture.sheet_name.parameterize}" %>
+    <% if FormulaCommand::PROVIDERS.key?(@capture.provider) %><%= link_to "Agent guide", guide_formulas_path(provider: @capture.provider), class: "px-3 py-1.5 rounded border bg-white text-sm" %><% end %>
+  </div>
 </div>
 
 <ol class="grid md:grid-cols-4 gap-2 mb-4 text-sm" aria-label="Stages">

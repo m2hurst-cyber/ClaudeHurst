@@ -4,6 +4,7 @@ class FlowRunsController < ApplicationController
   def show
     respond_to do |f|
       f.html
+      f.md { render_markdown(Capture::LlmMarkdown.run(@run), "#{@run.flow.name}-run-#{@run.id}") }
       f.json { render json: { status: @run.status, current_index: @run.current_index, states: @run.steps.map { |s| s["state"] }, updated_at: @run.updated_at.to_f } }
     end
   end

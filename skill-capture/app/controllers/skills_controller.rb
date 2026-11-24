@@ -14,7 +14,12 @@ class SkillsController < ApplicationController
     @classifications = SkillClassification.includes(:field, :updated_by).where(skill_name: @skills.map(&:name)).index_by(&:skill_name)
   end
 
-  def show; end
+  def show
+    respond_to do |f|
+      f.html
+      f.md { render_markdown(Capture::LlmMarkdown.skill(@skill, viewer: current_user), @skill.name) }
+    end
+  end
 
   # Which process is better? The skill and its alternatives (same lineage), side by side.
   def compare

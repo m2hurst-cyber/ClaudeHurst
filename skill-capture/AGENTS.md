@@ -367,5 +367,10 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - Steps can be pauses (`kind: pause`, `pause_mode` manual | timer, `pause_minutes`); `FlowResumeJob` ends timed pauses.
 - `FlowRun`: states pending / ready / paused / done / skipped; status running / on_hold / completed / cancelled; `start!(from:, only:)`, `resume_pause!`, `hold!` / `release!`, `jump_to!` (cancels the withdrawn task's pending `AddinCommand`), `skip!`, `insert!` (a step without a lane takes the previous step's lane).
 - Console map: ✕ and Delete key, arrow keys (reorder, change lane), Pause in the palette, Run from here / Run just this task, live run overlay (polls `flow_runs/:id.json`); run page refreshes itself (`run_refresh_controller.js`). Add-in: ✕ per task, press-and-hold or ⋮⋮ grip drag (pointer events, touch), pause, deploy now, skip, insert pause, pause/resume run.
-- Tests: 154 Rails runs, 40 JavaScript tests.
+
+
+## Changelog: Copy for LLM
+
+- `Capture::LlmMarkdown` (skill, flow, run, capture, formulas, transfer); `.md` formats via `ApplicationController#render_markdown` (`?download=1` for an attachment); `shared/_llm_menu` partial + `llm_copy_controller.js` (copy, view in a `<dialog>`, download, copy link). Skill bundles and the add-in skill/run JSON carry `markdown`; the pane's `llmButtons` / `showMarkdown`.
+- Tests: 157 Rails runs, 40 JavaScript tests.
 
