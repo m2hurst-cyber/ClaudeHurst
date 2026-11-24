@@ -25,15 +25,45 @@
   <aside class="bg-white border rounded p-4 text-sm space-y-2 self-start">
     <% if t.pending? && current_user.id == t.recipient_id %>
       <% unless t.free? %><p>Costs <strong><%= credits(t.price) %></strong>. You have <strong><%= credits(current_user.credits) %></strong>.</p><% end %>
-      <%= button_to (t.free? ? "Accept into my library" : "Pay & accept"), accept_transfer_path(t), class: "w-full px-3 py-2 rounded bg-emerald-700 text-white", disabled: !t.free? && current_user.credits < t.price %>
+      <%= button_to (t.free? ? "Accept into my library" : "Pay into escrow & accept"), accept_transfer_path(t), class: "w-full px-3 py-2 rounded bg-emerald-700 text-white", disabled: !t.free? && current_user.credits < t.price %>
       <%= button_to "Decline", decline_transfer_path(t), class: "w-full px-3 py-2 rounded border" %>
     <% elsif t.pending? && current_user.id == t.sender_id %>
       <p>Waiting for <%= t.recipient.name %>.</p>
       <%= button_to "Withdraw", cancel_transfer_path(t), class: "w-full px-3 py-2 rounded border" %>
-    <% elsif t.status == "accepted" %>
+    <% elsif t.settled? %>
       <p><%= t.recipient.name %> has these in their library under <strong>Sent to me</strong>, at the stage they're at. They see later versions too.</p>
       <%= link_to "Open my received skills", skills_path(level: "received"), class: "block text-sky-700 hover:underline" if current_user.id == t.recipient_id %>
+    <% end %>
+    <% if t.settled? && current_user.id == t.recipient_id %>
+      <div class="border-t pt-2"><div class="text-xs text-slate-500 mb-1">Delivered exactly as fingerprinted</div>
+        <% t.items.each do |i| %><%= link_to "#{i['name']} v#{i['version']} SKILL.md", delivered_transfer_path(t, name: i["name"]), class: "block font-mono text-xs text-sky-700 hover:underline" %><% end %></div>
     <% end %>
     <p class="text-xs text-slate-500"><%= t.allow_forward ? "May be passed on, for free." : "Not to be passed on." %></p>
   </aside>
 </div>
+
+<section class="mt-4 bg-white border rounded p-4 text-sm" aria-label="Escrow contract">
+  <div class="flex flex-wrap justify-between gap-2 mb-3">
+    <h2 class="font-semibold">Escrow contract</h2>
+    <span class="text-xs font-mono text-slate-500" title="sha256 of the parties, skills, fingerprints, price and expiry">terms <%= t.terms_hash.to_s.first(16) %>…</span>
+  </div>
+  <% skill_in = t.contract_log.any? { |e| e["event"] == "skill_leg_deposited" } %>
+  <% pay_in = t.free? || t.contract_log.any? { |e| e["event"] == "payment_leg_deposited" } %>
+  <% crossed = t.settled? %>
+  <ol class="grid sm:grid-cols-3 gap-2 mb-3">
+    <% [["Skill leg", skill_in, "#{pluralize(t.items.size, 'skill')} fingerprinted and held (#{t.sender.name})"],
+        ["Payment leg", pay_in, t.free? ? "Free: nothing to hold" : "#{credits(t.price)} #{%w[settled refunded].include?(t.status) ? (t.price == 1 ? 'was held' : 'were held') : (pay_in ? 'held' : 'not yet deposited')} (#{t.recipient.name})"],
+        ["Cross", crossed, crossed ? "Swapped in one step: credits to #{t.sender.name}, skills to #{t.recipient.name}" : (t.status == "refunded" ? "Didn't cross: refunded" : "Happens when both legs are in and verified")]].each do |label, done, text| %>
+      <li class="border rounded p-2 <%= done ? 'border-emerald-300 bg-emerald-50' : (t.status == 'refunded' && label == 'Cross' ? 'border-red-200 bg-red-50' : '') %>">
+        <div class="font-medium"><%= done ? "✓" : "○" %> <%= label %></div><div class="text-xs text-slate-600"><%= text %></div>
+      </li>
+    <% end %>
+  </ol>
+  <h3 class="font-medium mb-1">Contract log <span class="text-xs font-normal <%= t.log_intact? ? 'text-emerald-700' : 'text-red-700' %>"><%= t.log_intact? ? "✓ hash chain intact" : "⚠ hash chain broken" %></span></h3>
+  <ol class="text-xs space-y-1 font-mono">
+    <% t.contract_log.each do |e| %>
+      <li class="flex flex-wrap gap-x-2"><span class="text-slate-400"><%= e["seq"] %>.</span><span class="font-semibold"><%= e["event"].humanize %></span><span class="text-slate-500"><%= Time.zone.parse(e["at"]).to_fs(:short) rescue e["at"] %><%= " · #{e['by']}" if e["by"] %></span>
+        <% if e["detail"].present? %><span class="text-slate-600 break-all"><%= e["detail"].map { |k, v| "#{k}: #{Array(v).join(', ')}" }.join(" · ") %></span><% end %><span class="text-slate-400">#<%= e["hash"].first(10) %></span></li>
+    <% end %>
+  </ol>
+</section>

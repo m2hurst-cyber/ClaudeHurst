@@ -48,8 +48,55 @@ class SkillTransfersTest < ActionDispatch::IntegrationTest
     assert_raises(SkillTransfer::Error) { t.accept!(by: @sam) }
     t.accept!(by: @dee)
     assert_equal [5, 50], [@dee.credits.to_i, @rae.credits.to_i]
-    assert_equal 2, t.credit_entries.count
+    assert_equal %w[escrow_hold escrow_release], t.credit_entries.order(:id).pluck(:kind)
+    assert_equal ["settled", 0], [t.status, t.escrow_balance.to_i]
     assert @a.visible_to?(@dee)
+    assert_equal %w[terms_agreed_by_sender skill_leg_deposited terms_agreed_by_buyer payment_leg_deposited crossed], t.contract_log.map { |e| e["event"] }
+    assert t.log_intact?
+  end
+
+  test "escrow: if the skill changes before the swap, nothing crosses and the credits come back" do
+    CreditEntry.create!(user: @dee, amount: 40, reason: "bounty")
+    t = SkillTransfer.offer!(sender: @rae, recipient: @dee, names: %w[rae-alpha], price: 25)
+    @a.update_columns(body: "1. something else entirely")
+    e = assert_raises(SkillTransfer::Error) { t.accept!(by: @dee) }
+    assert_match(/changed since it was offered.*refunded/, e.message)
+    assert_equal ["refunded", 40, 0], [t.reload.status, @dee.credits.to_i, @rae.credits.to_i]
+    assert_equal %w[escrow_hold escrow_refund], t.credit_entries.order(:id).pluck(:kind)
+    refute @a.visible_to?(@dee)
+    assert t.log_intact?
+
+    # Tampering with the log is detectable
+    log = t.contract_log.deep_dup
+    log[1]["detail"]["skills"] = ["something-else"]
+    t.update_columns(contract_log: log)
+    refute t.reload.log_intact?
+
+    # A funded contract that never crossed is refunded by the sweep; unfunded offers expire
+    t2 = SkillTransfer.offer!(sender: @rae, recipient: @dee, names: %w[rae-beta], price: 10)
+    t2.fund!(by: @dee)
+    assert_equal 30, @dee.credits.to_i
+    t2.update_columns(funded_at: 2.hours.ago)
+    t3 = SkillTransfer.offer!(sender: @rae, recipient: @sam, names: %w[rae-beta])
+    t3.update_columns(expires_at: 1.minute.ago)
+    SkillTransfer.sweep!
+    assert_equal ["refunded", "expired", 40], [t2.reload.status, t3.reload.status, @dee.credits.to_i]
+  end
+
+  test "a promotion between offer and swap doesn't break the fingerprint; the buyer can download what was delivered" do
+    t = SkillTransfer.offer!(sender: @rae, recipient: @dee, names: %w[rae-alpha])
+    @a.update!(stage: "firm")
+    t.accept!(by: @dee)
+    assert t.settled?
+    sign_in @dee
+    get delivered_transfer_path(t, name: "rae-alpha")
+    assert_includes response.body, "name: rae-alpha"
+    get transfer_path(t)
+    assert_select "section[aria-label='Escrow contract'] li", text: /Cross/
+    assert_select "span", text: /hash chain intact/
+    sign_in @sam
+    get delivered_transfer_path(t, name: "rae-alpha")
+    assert_response :redirect
   end
 
   test "rules: what you can send, what you can sell, who can respond" do
@@ -99,7 +146,7 @@ class SkillTransfersTest < ActionDispatch::IntegrationTest
     sign_in @dee
     get transfers_path
     assert_select "a", text: "Transfers (1)"
-    assert_select "button", text: "Pay & accept"
+    assert_select "button", text: "Pay into escrow"
     post accept_transfer_path(t)
     follow_redirect!
     assert_select "p", text: /Sent to me/
@@ -127,7 +174,7 @@ class SkillTransfersTest < ActionDispatch::IntegrationTest
     post "/api/v1/addin/transfers/#{id}/accept", headers: token.(@sam)
     assert_response :not_found
     post "/api/v1/addin/transfers/#{id}/accept", headers: token.(@dee)
-    assert_equal "accepted", response.parsed_body["status"]
+    assert_equal "settled", response.parsed_body["status"]
     get "/api/v1/addin/skills", params: { level: "received" }, headers: token.(@dee)
     assert_equal %w[rae-alpha], response.parsed_body.map { |s| s["name"] }
   end

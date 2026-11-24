@@ -1,0 +1,43 @@
+<% content_for :title, "Flows" %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Flows</h1>
+    <p class="text-sm text-slate-500">Sequence tasks across apps, people and agents on a process map. Run a flow and each task happens in order: when one is done, it hands off to the next, in the app (or agent) that does it.</p>
+  </div>
+  <div class="flex gap-2 text-sm">
+    <%= link_to "Blank process map", new_flow_path, class: "px-3 py-1.5 rounded border bg-white" %>
+    <% Flow::TEMPLATES.each do |k, t| %><%= link_to "From template: #{t[:name]}", new_flow_path(template: k), class: "px-3 py-1.5 rounded bg-slate-900 text-white" %><% end %>
+  </div>
+</div>
+<% if @assigned.any? %>
+  <section class="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm">
+    <h2 class="font-semibold mb-1">Waiting on you</h2>
+    <% @assigned.each do |r| %><div><%= link_to "#{r.flow.name}: task #{r.current_index + 1}, #{r.current['title']}", flow_run_path(r), class: "text-sky-700 hover:underline" %> <span class="text-slate-500">(from <%= r.user.name %>)</span></div><% end %>
+  </section>
+<% end %>
+<div class="grid md:grid-cols-2 gap-4">
+  <section>
+    <h2 class="font-semibold mb-2">Your flows</h2>
+    <% if @flows.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4">None yet. Start from the template or a blank map.</p><% end %>
+    <ul class="space-y-2">
+      <% @flows.each do |f| %>
+        <li class="bg-white border rounded p-3 text-sm">
+          <div class="flex justify-between gap-2"><%= link_to f.name, flow_path(f), class: "font-medium text-sky-700 hover:underline" %><span class="text-xs text-slate-500"><%= pluralize(f.steps.size, "task") %></span></div>
+          <div class="text-xs text-slate-500 mt-1"><%= f.steps.map { |s| s["app"] }.chunk_while { |a, b| a == b }.map(&:first).join(" → ") %></div>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+  <section>
+    <h2 class="font-semibold mb-2">Runs</h2>
+    <% if @runs.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4">No runs yet.</p><% end %>
+    <ul class="space-y-2">
+      <% @runs.each do |r| %>
+        <li class="bg-white border rounded p-3 text-sm flex justify-between gap-2">
+          <span><%= link_to r.flow.name, flow_run_path(r), class: "text-sky-700 hover:underline" %> <span class="text-xs text-slate-500"><%= time_ago_in_words(r.created_at) %> ago</span></span>
+          <span class="text-xs"><%= r.status == "running" ? "Task #{r.current_index + 1} of #{r.steps.size}" : r.status.capitalize %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+</div>

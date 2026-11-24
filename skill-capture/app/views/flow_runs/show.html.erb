@@ -1,0 +1,73 @@
+<% r = @run %>
+<% content_for :wide, true %>
+<% content_for :title, "#{r.flow.name}: run" %>
+<% w, h, label, nw, nh = 214, 96, 110, 160, 70 %>
+<% lanes = Flow::LANES & r.steps.map { |s| s["app"] } %>
+<% width = label + [r.steps.size, 5].max * w %>
+<% pos = r.steps.each_with_index.map { |s, i| [label + i * w + (w - nw) / 2, [lanes.index(s["app"]) || lanes.size - 1, 0].max * h + (h - nh) / 2] } %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+  <div>
+    <div class="text-xs text-slate-500"><%= link_to "Flows", flows_path, class: "hover:underline" %> › <%= link_to r.flow.name, flow_path(r.flow), class: "hover:underline" if r.flow.visible_to?(current_user) %></div>
+    <h1 class="text-2xl font-bold"><%= r.flow.name %></h1>
+    <p class="text-sm text-slate-500">Started by <%= r.user.name %> <%= time_ago_in_words(r.created_at) %> ago · <%= r.done_count %> of <%= r.steps.size %> done ·
+      <%= r.status == "running" ? "now: task #{r.current_index + 1}, #{r.current['title']} (#{Flow.assignee_label(r.current['assignee'], owner: r.user)}, #{r.current['app']})" : r.status %></p>
+  </div>
+  <% if r.running? && (current_user.id == r.user_id || current_user.admin?) %><%= button_to "Stop", cancel_flow_run_path(r), class: "px-3 py-1.5 rounded border bg-white text-sm" %><% end %>
+</div>
+
+<div class="bg-white border rounded overflow-auto mb-4" aria-label="Run map">
+  <svg width="<%= width %>" height="<%= lanes.size * h %>" role="img" aria-label="<%= r.steps.each_with_index.map { |s, i| "#{i + 1}. #{s['title']}: #{s['state']}" }.join('; ') %>">
+    <defs><marker id="rarrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>
+    <% lanes.each_with_index do |l, i| %>
+      <rect x="0" y="<%= i * h %>" width="<%= width %>" height="<%= h %>" fill="<%= i.odd? ? '#f8fafc' : '#ffffff' %>"/>
+      <text x="12" y="<%= i * h + h / 2 + 4 %>" font-size="12" fill="#64748b"><%= l %></text>
+    <% end %>
+    <% r.steps.each_cons(2).with_index do |(a, b), i| %>
+      <% x1, y1 = pos[i][0] + nw, pos[i][1] + nh / 2 %><% x2, y2 = pos[i + 1][0], pos[i + 1][1] + nh / 2 %><% mx = (x1 + x2) / 2 %>
+      <% crossing = a["app"] != b["app"] || a["assignee"] != b["assignee"] %>
+      <path d="M<%= x1 %>,<%= y1 %> C<%= mx %>,<%= y1 %> <%= mx %>,<%= y2 %> <%= x2 - 6 %>,<%= y2 %>" fill="none" stroke-width="2" stroke="<%= a['state'] == 'done' ? '#047857' : (crossing ? '#0284c7' : '#94a3b8') %>" <%= 'stroke-dasharray=5,4' if crossing %> marker-end="url(#rarrow)"/>
+    <% end %>
+    <% r.steps.each_with_index do |s, i| %>
+      <% x, y = pos[i] %>
+      <% fill, stroke = { "done" => ["#ecfdf5", "#047857"], "ready" => ["#fffbeb", "#d97706"], "pending" => ["#ffffff", "#cbd5e1"] }[s["state"]] || ["#fff", "#cbd5e1"] %>
+      <g>
+        <rect x="<%= x %>" y="<%= y %>" width="<%= nw %>" height="<%= nh %>" rx="6" fill="<%= fill %>" stroke="<%= stroke %>" stroke-width="<%= s['state'] == 'ready' ? 3 : 1.5 %>"/>
+        <text x="<%= x + 8 %>" y="<%= y + 18 %>" font-size="11" font-weight="600" fill="#0f172a"><%= "#{i + 1}. #{s['title'].truncate(24)}" %></text>
+        <text x="<%= x + 8 %>" y="<%= y + 34 %>" font-size="10" fill="#475569"><%= Flow.assignee_label(s["assignee"], owner: r.user).truncate(26) %></text>
+        <text x="<%= x + 8 %>" y="<%= y + 52 %>" font-size="10" fill="<%= stroke %>"><%= { "done" => "✓ done#{" · #{s.dig('usage', 'input_tokens').to_i + s.dig('usage', 'output_tokens').to_i} tok" if s['usage']}", "ready" => "▶ now", "pending" => "waiting" }[s["state"]] %></text>
+      </g>
+    <% end %>
+  </svg>
+</div>
+
+<div class="grid lg:grid-cols-[1fr_20rem] gap-4">
+  <ol class="bg-white border rounded divide-y text-sm">
+    <% r.steps.each_with_index do |s, i| %>
+      <li class="p-3 <%= 'bg-amber-50' if s['state'] == 'ready' %>">
+        <div class="flex justify-between gap-2"><span class="font-medium"><%= i + 1 %>. <%= s["title"] %></span><span class="text-xs text-slate-500"><%= s["app"] %> · <%= Flow.assignee_label(s["assignee"], owner: r.user) %></span></div>
+        <% if s["skill_name"] && (sk = Skill.current(s["skill_name"])) %><div class="text-xs">📘 <%= link_to sk.title, skill_path(sk), class: "text-sky-700 hover:underline" %></div><% end %>
+        <% if s["instructions"] %><p class="text-slate-600 text-xs mt-0.5"><%= s["instructions"] %></p><% end %>
+        <% if s["state"] == "done" %>
+          <p class="text-xs text-emerald-800 mt-1">✓ <%= s["by"] %><%= " · #{Time.zone.parse(s['finished_at']).to_fs(:short)}" if s["finished_at"] %><%= ": #{s['note']}" if s["note"] %></p>
+          <% if (u = s["usage"]) %><p class="text-xs text-slate-500"><%= u["model"] %> · <%= number_with_delimiter(u["input_tokens"].to_i) %> in / <%= number_with_delimiter(u["output_tokens"].to_i) %> out<%= " · #{(u['duration_ms'].to_i / 1000.0).round(1)} s" if u["duration_ms"] %></p><% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+  <aside class="bg-white border rounded p-4 text-sm self-start">
+    <% if r.running? && r.doer?(user: current_user) %>
+      <h2 class="font-semibold mb-1">Your turn: task <%= r.current_index + 1 %></h2>
+      <p class="text-slate-600 mb-2"><%= r.current["title"] %><%= " (in #{r.current['app']})" unless r.current["app"] == "Agent" %><%= ". Standing in for the agent." if r.current["assignee"].to_s.start_with?("agent:") %></p>
+      <%= form_with url: complete_flow_run_path(r, step: r.current_index), method: :post do %>
+        <label class="block">What you did, or where the output is<textarea name="note" rows="3" class="mt-1 w-full border rounded px-2 py-1"></textarea></label>
+        <button class="mt-2 w-full px-3 py-2 rounded bg-emerald-700 text-white">Done: hand off to <%= r.current_index + 1 < r.steps.size ? "task #{r.current_index + 2}" : "finish" %></button>
+      <% end %>
+    <% elsif r.running? %>
+      <p>Waiting on <strong><%= Flow.assignee_label(r.current["assignee"], owner: r.user) %></strong> for task <%= r.current_index + 1 %>. They were sent it<%= " in #{r.current['app']}" unless r.current["app"] == "Agent" %>.</p>
+    <% else %>
+      <p><%= r.status == "completed" ? "✓ Every task is done." : "Stopped." %></p>
+    <% end %>
+    <% tok = r.steps.sum { |s| s.dig("usage", "input_tokens").to_i + s.dig("usage", "output_tokens").to_i } %>
+    <% if tok.positive? %><p class="text-xs text-slate-500 mt-3">AI usage so far: <%= number_with_delimiter(tok) %> tokens across <%= pluralize(r.steps.count { |s| s['usage'] }, 'task') %>.</p><% end %>
+  </aside>
+</div>

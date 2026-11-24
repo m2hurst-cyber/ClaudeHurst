@@ -7,6 +7,7 @@ import { memory } from "addin/memory";
 import { registerRibbon, showPane } from "addin/ribbon";
 import { plan as planSheet, apply as applySheet, colLetter } from "addin/worksheet_builder";
 import { observeCells } from "addin/sheet_capture";
+import { createFlowPane } from "addin/flow_pane";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -21,6 +22,7 @@ const state = { host: null, me: null, tab: "library", capture: null, wired: null
                 area: settings.get("skillcapture.area") || "", level: settings.get("skillcapture.level") || "" };
 const LEVELS = [["", "All"], ["mine", "Mine"], ["received", "Sent to me"], ["department", "Department"], ["firm", "Firm"], ["industry", "Industry"], ["global", "Global"]];
 let flushTimer = null;
+let flows = null; // created once the helpers below exist
 
 const btn = "inline-flex items-center justify-center px-3 py-1.5 rounded border bg-white hover:bg-slate-50";
 const btnPrimary = "inline-flex items-center justify-center px-3 py-1.5 rounded bg-slate-900 text-white hover:bg-slate-700";
@@ -165,8 +167,17 @@ async function checkInbox() {
     } catch { /* offline */ }
   }
   try {
-    const cmds = await api.commands(state.host, window.Office?.context?.diagnostics?.platform);
+    let cmds = await api.commands(state.host, window.Office?.context?.diagnostics?.platform);
     if (!cmds.length) return;
+    const task = cmds.find((c) => c.kind === "flow_task")?.task;
+    if (task) {
+      flash(`Your turn: ${task.title} (task ${task.step_index + 1} in “${task.flow}”)${task.previous ? `, handed off by ${task.previous.by}` : ""}.`);
+      await flowPane().showTask(task).catch(() => {});
+      state.tab = "flows";
+    }
+    cmds.filter((c) => c.kind === "flow_task").forEach((c) => (c.bundles || []).forEach((b) => memory.add(b, c.from)));
+    cmds = cmds.filter((c) => c.kind !== "flow_task");
+    if (!cmds.length) return render();
     let added = 0;
     const names = [];
     cmds.forEach((c) => c.bundles.forEach((b) => { memory.add(b, c.from); added++; names.push(b.title); }));
@@ -180,12 +191,12 @@ async function checkInbox() {
 // ---------- rendering ----------
 function render() {
   if (!state.me) return renderConnect();
-  const tabs = [["library", "Library"], ["memory", `Memory${memory.list().length ? ` (${memory.list().length})` : ""}`], ["record", "Record"]];
+  const tabs = [["library", "Library"], ["flows", "Flows"], ["memory", `Memory${memory.list().length ? ` (${memory.list().length})` : ""}`], ["record", "Record"]];
   if (state.me.reviewer) tabs.push(["review", `Review${state.me.open_reviews ? ` (${state.me.open_reviews})` : ""}`]);
   tabs.push(["settings", "Settings"]);
   view.innerHTML = `
     <div class="flex justify-end -mt-1 mb-1"><span id="capture-badge" class="text-xs"></span></div>
-    <nav class="flex mb-3 border-b" role="tablist">
+    <nav class="flex mb-3 border-b overflow-x-auto" role="tablist">
       ${tabs.map(([id, label]) => `<button role="tab" data-tab="${id}" aria-selected="${state.tab === id}"
          class="px-2 py-1.5 -mb-px border-b-2 whitespace-nowrap ${state.tab === id ? "border-slate-900 font-semibold" : "border-transparent text-slate-500"}">${esc(label)}</button>`).join("")}
     </nav>
@@ -194,7 +205,7 @@ function render() {
     <section id="panel"></section>`;
   renderPromptCard();
   updateCaptureBadge();
-  ({ library: renderLibrary, memory: renderMemory, record: renderRecord, review: renderReview, settings: renderSettings }[state.tab])();
+  ({ library: renderLibrary, flows: () => flowPane().render(), memory: renderMemory, record: renderRecord, review: renderReview, settings: renderSettings }[state.tab])();
 }
 
 // ---------- save / extend / branch prompts ----------
@@ -268,7 +279,7 @@ async function renderLibrary(q = state.query || "", area = state.area || "") {
     if (!el || !t.incoming?.length) return;
     el.innerHTML = t.incoming.map((o) => `
       <div class="rounded border border-sky-200 bg-sky-50 p-2 mb-2">
-        <div><strong>${esc(o.from)}</strong> sent you <strong>${esc(o.label)}</strong> · ${o.free ? "free" : `${esc(o.price)} credits`}</div>
+        <div><strong>${esc(o.from)}</strong> sent you <strong>${esc(o.label)}</strong> · ${o.free ? "free" : `${esc(o.price)} credits, held in escrow until delivery`}</div>
         ${o.skills.length > 1 ? `<div class="text-xs text-slate-600">${o.skills.map((x) => esc(x.title)).join(", ")}</div>` : ""}
         ${o.message ? `<div class="text-xs italic text-slate-600 mt-0.5">“${esc(o.message)}”</div>` : ""}
         <div class="flex gap-1 mt-1.5">
@@ -311,6 +322,7 @@ async function renderSkill(name) {
       <div class="text-xs text-slate-500 mb-2">${stageLabel(s.stage)} · ${esc(s.name)} · v${s.version}${s.contributors.length ? ` · from ${esc(s.contributors.join(", "))}` : ""}</div>
       ${s.field_label || s.apps?.length ? `<div class="text-xs mb-2"><span class="text-slate-500">Field</span> ${esc(s.field_label || "—")} ${s.classified_by === "person" ? "✓" : "✨"} · <span class="text-slate-500">Apps</span> ${esc((s.apps || []).join(", ") || "—")}</div>` : ""}
       <div id="vote-box" class="flex items-center gap-2 mb-2">${voteHtml(s)}</div>
+      ${s.usage ? `<div class="text-xs mb-2"><span class="text-slate-500">AI usage</span> ${Number(s.usage.avg_tokens).toLocaleString()} tokens/run${s.usage.avg_seconds ? ` · ${s.usage.avg_seconds} s` : ""} · ${s.usage.runs} runs${s.usage.intensity ? ` · <strong>${esc(s.usage.intensity)}</strong>` : ""}${s.usage.models?.[0] ? ` · mostly ${esc(s.usage.models[0].model)}` : ""}</div>` : ""}
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
       <div class="flex flex-wrap gap-1 mb-3">
@@ -618,6 +630,7 @@ function renderSettings() {
 
 // ---------- actions ----------
 document.addEventListener("click", async (ev) => {
+  if (state.tab === "flows" && flowPane().onClick(ev)) return;
   const t = ev.target.closest("[data-tab],[data-action],[data-skill],[data-candidate],[data-area],[data-memory]");
   if (!t) return;
   if (t.dataset.memory) return renderMemoryItem(t.dataset.memory);
@@ -628,6 +641,7 @@ document.addEventListener("click", async (ev) => {
 
   const a = t.dataset.action;
   try {
+    if (a?.startsWith("flow-")) { await flowPane().onAction(a, t); return; }
     if (a === "connect") {
       const url = `${root.dataset.connectUrl}?host=${encodeURIComponent(state.host || "")}&platform=${encodeURIComponent(window.Office?.context?.diagnostics?.platform || "")}`;
       if (!state.host) { window.open(url, "_blank", "noopener"); return; }
@@ -671,8 +685,8 @@ document.addEventListener("click", async (ev) => {
     else if (a === "cancel-send") { document.getElementById("send-box").innerHTML = ""; }
     else if (a === "accept-transfer" || a === "decline-transfer") {
       const r = await (a === "accept-transfer" ? api.acceptTransfer(t.dataset.id) : api.declineTransfer(t.dataset.id));
-      flash(r.status === "accepted" ? `Added ${r.label} to your library (Sent to me).` : "Declined.");
-      if (r.status === "accepted") { state.level = "received"; settings.set("skillcapture.level", "received"); }
+      flash(r.status === "settled" ? `Contract settled: ${r.label} is in your library (Sent to me).` : "Declined.");
+      if (r.status === "settled") { state.level = "received"; settings.set("skillcapture.level", "received"); }
       render();
     }
     else if (a === "set-level") { state.level = t.dataset.level; settings.set("skillcapture.level", state.level || null); renderLibrary(); }
@@ -727,6 +741,7 @@ document.addEventListener("submit", async (ev) => {
   const data = Object.fromEntries(new FormData(f));
   try {
     if (f.dataset.form === "search") return renderLibrary(data.q, state.area);
+    if (f.dataset.form?.startsWith("flow-")) { await flowPane().onSubmit(f, data); return; }
     if (f.dataset.form === "send") {
       const r = await api.sendSkills({ skills: [state.openSkill.name], recipient_id: data.recipient_id, price: data.price || 0, message: data.message, allow_forward: data.allow_forward === "1" });
       document.getElementById("send-box").innerHTML = `<p class="rounded border border-emerald-200 bg-emerald-50 p-2 mb-2">Sent to ${esc(r.to)}${r.free ? "" : ` for ${esc(r.price)} credits`}. They'll see it next time they open their library.</p>`;
@@ -750,3 +765,14 @@ document.addEventListener("submit", async (ev) => {
 window.addEventListener("pagehide", () => state.capture?.flush().catch(() => {}));
 
 boot();
+
+// ---------- flows (drag-and-drop flowchart) ----------
+function flowPane() {
+  flows ||= createFlowPane({ api, panel, esc, btn, btnPrimary, input, flash, rerender: () => render(), host: () => state.host });
+  return flows;
+}
+document.addEventListener("dragstart", (ev) => { if (state.tab === "flows") flowPane().onDragStart(ev); });
+document.addEventListener("dragover", (ev) => { if (state.tab === "flows") flowPane().onDragOver(ev); });
+document.addEventListener("drop", (ev) => { if (state.tab === "flows") flowPane().onDrop(ev); });
+document.addEventListener("input", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });
+document.addEventListener("change", (ev) => { if (state.tab === "flows") flowPane().onInput(ev); });

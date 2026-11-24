@@ -2,7 +2,7 @@
 <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
   <div>
     <h1 class="text-2xl font-bold">Transfers</h1>
-    <p class="text-sm text-slate-500">Send a skill, or a selection, straight to a coworker: free, or for credits. Nothing moves up a level; the skill stays at its stage and the coworker gets it in their library under <strong>Sent to me</strong>.</p>
+    <p class="text-sm text-slate-500">Send a skill, or a selection, straight to a coworker: free, or for credits. Each transfer is an escrow contract: the skills are fingerprinted and held when offered, the credits are held when accepted, then both cross in one step, or the credits are refunded. Nothing moves up a level; the coworker gets the skills under <strong>Sent to me</strong>.</p>
   </div>
   <div class="flex items-center gap-3 text-sm">
     <span>Your credits <strong><%= credits(current_user.credits) %></strong></span>
@@ -29,7 +29,7 @@
                 <td class="px-3 py-2 text-xs text-slate-500"><%= time_ago_in_words(t.created_at) %> ago</td>
                 <td class="px-3 py-2 text-right whitespace-nowrap">
                   <% if t.pending? && who == :sender %>
-                    <%= button_to (t.free? ? "Accept" : "Pay & accept"), accept_transfer_path(t), class: "inline-block px-2 py-1 rounded bg-emerald-700 text-white text-xs", form_class: "inline" %>
+                    <%= button_to (t.free? ? "Accept" : "Pay into escrow"), accept_transfer_path(t), class: "inline-block px-2 py-1 rounded bg-emerald-700 text-white text-xs", form_class: "inline" %>
                     <%= button_to "Decline", decline_transfer_path(t), class: "inline-block px-2 py-1 rounded border text-xs", form_class: "inline" %>
                   <% elsif t.pending? %>
                     <%= button_to "Withdraw", cancel_transfer_path(t), class: "inline-block px-2 py-1 rounded border text-xs", form_class: "inline" %>

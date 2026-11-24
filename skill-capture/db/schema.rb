@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -103,6 +103,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
     t.string "reason", null: false
     t.datetime "created_at", null: false
     t.bigint "skill_transfer_id"
+    t.string "kind", default: "bounty", null: false
     t.index ["bounty_id"], name: "index_credit_entries_on_bounty_id"
     t.index ["skill_transfer_id"], name: "index_credit_entries_on_skill_transfer_id"
     t.index ["user_id"], name: "index_credit_entries_on_user_id"
@@ -121,6 +122,29 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
     t.index ["created_by_id"], name: "index_fields_on_created_by_id"
     t.index ["parent_id"], name: "index_fields_on_parent_id"
     t.index ["path"], name: "index_fields_on_path", unique: true
+  end
+
+  create_table "flow_runs", force: :cascade do |t|
+    t.bigint "flow_id", null: false
+    t.bigint "user_id", null: false
+    t.string "status", default: "running", null: false
+    t.jsonb "steps", default: [], null: false
+    t.integer "current_index", default: 0, null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["flow_id"], name: "index_flow_runs_on_flow_id"
+    t.index ["user_id"], name: "index_flow_runs_on_user_id"
+  end
+
+  create_table "flows", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.jsonb "steps", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_flows_on_user_id"
   end
 
   create_table "formula_commands", force: :cascade do |t|
@@ -482,6 +506,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
     t.index ["skill_name", "resource_id"], name: "index_skill_resources_on_skill_name_and_resource_id", unique: true
   end
 
+  create_table "skill_runs", force: :cascade do |t|
+    t.string "skill_name", null: false
+    t.integer "skill_version"
+    t.string "agent", null: false
+    t.string "model"
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.integer "duration_ms"
+    t.string "status", default: "succeeded", null: false
+    t.bigint "source_id"
+    t.bigint "user_id"
+    t.bigint "flow_run_id"
+    t.integer "step_index"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["flow_run_id"], name: "index_skill_runs_on_flow_run_id"
+    t.index ["skill_name", "occurred_at"], name: "index_skill_runs_on_skill_name_and_occurred_at"
+    t.index ["source_id"], name: "index_skill_runs_on_source_id"
+    t.index ["user_id"], name: "index_skill_runs_on_user_id"
+  end
+
   create_table "skill_transfers", force: :cascade do |t|
     t.bigint "sender_id", null: false
     t.bigint "recipient_id", null: false
@@ -494,6 +540,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
     t.datetime "responded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "contract_log", default: [], null: false
+    t.string "terms_hash"
+    t.datetime "funded_at"
+    t.datetime "settled_at"
     t.index ["recipient_id", "status"], name: "index_skill_transfers_on_recipient_id_and_status"
     t.index ["recipient_id"], name: "index_skill_transfers_on_recipient_id"
     t.index ["sender_id"], name: "index_skill_transfers_on_sender_id"
@@ -804,6 +854,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
   add_foreign_key "credit_entries", "users"
   add_foreign_key "fields", "fields", column: "parent_id"
   add_foreign_key "fields", "users", column: "created_by_id"
+  add_foreign_key "flow_runs", "flows"
+  add_foreign_key "flow_runs", "users"
+  add_foreign_key "flows", "users"
   add_foreign_key "formula_commands", "users", column: "created_by_id"
   add_foreign_key "formula_commands", "users", column: "verified_by_id"
   add_foreign_key "notifications", "users"
@@ -837,6 +890,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000018) do
   add_foreign_key "skill_prompts", "users"
   add_foreign_key "skill_resources", "resources"
   add_foreign_key "skill_resources", "users", column: "added_by_id"
+  add_foreign_key "skill_runs", "flow_runs"
+  add_foreign_key "skill_runs", "sources"
+  add_foreign_key "skill_runs", "users"
   add_foreign_key "skill_transfers", "users", column: "recipient_id"
   add_foreign_key "skill_transfers", "users", column: "sender_id"
   add_foreign_key "skill_votes", "users"

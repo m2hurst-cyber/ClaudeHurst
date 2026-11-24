@@ -353,5 +353,12 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - `SkillTransfer` (offer → accepted / declined / cancelled / expired; items pinned to the sent version; price in credits) and `SkillGrant` (recipient can see the skill at its stage; `Skill.visible_to` includes grants; level `received`, "Sent to me").
 - Payment uses `CreditEntry` (now with `skill_transfer_id`): two entries per paid transfer, balances locked during acceptance. A real payment processor would plug in at `SkillTransfer#accept!`.
 - Console `/transfers` (inbox, sent, ledger, send form with multi-select), "Send to a coworker" on skill pages; add-in API `/api/v1/addin/transfers` (index, create, accept, decline, coworkers) and pane UI.
-- Tests: 143 Rails runs, 36 JavaScript tests.
+
+
+## Changelog: escrow, agent usage, flows
+
+- Escrow: `SkillTransfer` states offered → funded → settled | refunded (also declined, cancelled, expired); `content_fingerprint` (name, version, title, description, body; not stage), `terms_hash`, hash-chained `contract_log` (canonical, key-sorted JSON, since jsonb reorders keys), `CreditEntry.kind` escrow_hold / escrow_release / escrow_refund, `SkillTransfer.sweep!` (expire; refund stuck funded). A real payment rail would replace the credit entries in `fund!` and `cross!`.
+- Usage: `SkillRun`, `Capture::Intensity` (90-day window, percentile thirds), `POST /api/v1/skills/:id/runs` (Source token) and `/api/v1/addin/skills/:id/runs`; usage in bundles, the skill page and the add-in.
+- Flows: `Flow` (steps: id, title, app lane, assignee me | user:<id> | agent:<source id>, skill_name, instructions; template `research-report`), `FlowRun` (start!, complete!, hand off via `AddinCommand` kind `flow_task`, delivered only to the add-in in the task's app). Console `/flows` (process map, `flow_map_controller.js`), `/flow-runs/:id`; agent API `POST /api/v1/flow_runs/:id/complete?step=n`; add-in Flows tab (`addin/flow_pane.js`), shared logic `addin/flow_model.js`.
+- Tests: 149 Rails runs, 39 JavaScript tests.
 

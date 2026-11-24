@@ -1,0 +1,22 @@
+<% u = Capture::Intensity.for(s.name) %>
+<div class="bg-white border rounded p-4 text-sm" id="agent-usage">
+  <div class="flex items-center justify-between gap-2 mb-1">
+    <h2 class="font-semibold">AI agent usage</h2>
+    <% if u&.dig(:intensity) %><span class="px-1.5 py-0.5 rounded text-xs <%= { "light" => "bg-emerald-100 text-emerald-900", "moderate" => "bg-amber-100 text-amber-900", "heavy" => "bg-red-100 text-red-800" }[u[:intensity]] %>"><%= u[:intensity].capitalize %> intensity</span><% end %>
+  </div>
+  <% if u %>
+    <dl class="grid grid-cols-2 gap-x-3 gap-y-1">
+      <dt class="text-slate-500">Runs (90 days)</dt><dd><%= number_with_delimiter(u[:runs]) %><%= " · #{(u[:success_rate] * 100).round}% succeeded" if u[:success_rate] %></dd>
+      <dt class="text-slate-500">Tokens per run</dt><dd><%= number_with_delimiter(u[:avg_tokens]) %> <span class="text-xs text-slate-500">(<%= number_with_delimiter(u[:avg_input_tokens]) %> in · <%= number_with_delimiter(u[:avg_output_tokens]) %> out)</span></dd>
+      <dt class="text-slate-500">Time per run</dt><dd><%= u[:avg_seconds] ? "#{u[:avg_seconds]} s" : "—" %></dd>
+      <dt class="text-slate-500">Tokens per minute</dt><dd><%= u[:tokens_per_minute] ? number_with_delimiter(u[:tokens_per_minute]) : "—" %></dd>
+    </dl>
+    <table class="w-full text-xs mt-2">
+      <thead class="text-slate-500 text-left"><tr><th class="py-1">Model</th><th>Runs</th><th>Tokens/run</th><th>Time</th></tr></thead>
+      <tbody><% u[:models].each do |m| %><tr class="border-t"><td class="py-1 font-mono break-all"><%= m[:model] %></td><td><%= m[:runs] %></td><td><%= number_with_delimiter(m[:avg_tokens]) %></td><td><%= m[:avg_seconds] ? "#{m[:avg_seconds]} s" : "—" %></td></tr><% end %></tbody>
+    </table>
+    <p class="text-xs text-slate-500 mt-1">Last run <%= time_ago_in_words(Time.zone.parse(u[:last_run_at])) %> ago.</p>
+  <% else %>
+    <p class="text-slate-500">No agent runs reported yet. Agents report each run (model, tokens, time) to <code class="text-xs">POST <%= api_v1_skill_runs_path(s.name) %></code>; the skill's intensity appears here.</p>
+  <% end %>
+</div>

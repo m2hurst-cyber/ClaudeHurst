@@ -1,0 +1,48 @@
+<% content_for :title, @flow.name %>
+<% content_for :wide, true %>
+<% assignees = [{ value: "me", label: "Me (whoever runs it)" }] + @people.map { |u| { value: "user:#{u.id}", label: u.name } } + @agents.map { |a| { value: "agent:#{a.id}", label: "🤖 #{a.name}" } } %>
+<div data-controller="flow-map" data-flow-map-steps-value="<%= @flow.steps.to_json %>" data-flow-map-url-value="<%= flow_path(@flow) %>"
+     data-flow-map-assignees-value="<%= assignees.to_json %>" data-flow-map-skills-value="<%= @palette.map { |s| { name: s.name, title: s.title } }.to_json %>">
+  <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+    <div class="flex-1 min-w-64">
+      <div class="text-xs text-slate-500"><%= link_to "Flows", flows_path, class: "hover:underline" %> ›</div>
+      <input data-flow-map-target="name" data-action="input->flow-map#rename" value="<%= @flow.name %>" aria-label="Flow name" class="text-2xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-slate-500 outline-none w-full">
+      <p class="text-sm text-slate-500">Lanes are where the work happens; tasks run left to right. A dashed arrow is a <span class="text-sky-700">handoff</span> to another app, person or agent.</p>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+      <span data-flow-map-target="status" class="text-xs text-slate-500"></span>
+      <button type="button" data-action="flow-map#save" class="px-3 py-1.5 rounded border bg-white">Save</button>
+      <%= button_to "▶ Run", run_flow_path(@flow), class: "px-3 py-1.5 rounded bg-emerald-700 text-white", form: { data: { action: "submit->flow-map#beforeRun" } } %>
+    </div>
+  </div>
+  <div class="grid lg:grid-cols-[15rem_1fr_17rem] gap-3">
+    <aside class="bg-white border rounded p-3 text-sm self-start">
+      <h2 class="font-semibold mb-1">Palette</h2>
+      <p class="text-xs text-slate-500 mb-2">Drag onto a lane, or click to add at the end.</p>
+      <% blank = { title: "New task" } %>
+      <button type="button" draggable="true" data-flow-map-target="paletteItem" data-text="blank task" data-item="<%= blank.to_json %>" data-action="dragstart->flow-map#dragPalette click->flow-map#addFromPalette"
+              class="w-full text-left px-2 py-1.5 mb-2 rounded border border-dashed border-slate-400 cursor-grab hover:bg-slate-50">＋ Blank task</button>
+      <input type="search" data-flow-map-target="filter" data-action="input->flow-map#filter" placeholder="Filter skills" class="w-full border rounded px-2 py-1 mb-2" aria-label="Filter skills">
+      <ul class="max-h-[30rem] overflow-y-auto space-y-1">
+        <% @palette.each do |s| %>
+          <% apps = @classes[s.name]&.apps || [] %>
+          <li><button type="button" draggable="true" data-flow-map-target="paletteItem" data-text="<%= [s.title, s.name, apps.join(' ')].join(' ').downcase %>"
+                      data-item="<%= { name: s.name, title: s.title, apps: apps }.to_json %>" data-action="dragstart->flow-map#dragPalette click->flow-map#addFromPalette"
+                      class="w-full text-left px-2 py-1 rounded border cursor-grab hover:bg-slate-50 text-xs"><span class="font-medium"><%= s.title %></span><span class="block text-slate-500"><%= apps.join(", ").presence || area_name(s.domain) %></span></button></li>
+        <% end %>
+      </ul>
+    </aside>
+    <div class="bg-white border rounded overflow-auto relative" data-flow-map-target="canvas" data-action="dragover->flow-map#over dragleave->flow-map#leave drop->flow-map#drop" aria-label="Process map">
+      <div class="relative" data-flow-map-target="nodes">
+        <svg data-flow-map-target="svg" class="absolute inset-0" aria-hidden="true"></svg>
+        <div data-flow-map-target="marker" class="absolute w-1 rounded bg-sky-600" style="display:none"></div>
+      </div>
+    </div>
+    <aside class="bg-white border rounded p-3 text-sm self-start" data-flow-map-target="editor"></aside>
+  </div>
+  <% if @runs.any? %>
+    <section class="mt-4 text-sm"><h2 class="font-semibold mb-1">Runs</h2>
+      <% @runs.each do |r| %><div><%= link_to "#{time_ago_in_words(r.created_at)} ago", flow_run_path(r), class: "text-sky-700 hover:underline" %> · <%= r.status == "running" ? "task #{r.current_index + 1} of #{r.steps.size}" : r.status %></div><% end %>
+    </section>
+  <% end %>
+</div>

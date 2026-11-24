@@ -40,7 +40,7 @@ module Api
         end
 
         def summary(t)
-          { id: t.id, label: t.label, status: t.pending? ? "offered" : (t.status == "offered" ? "expired" : t.status),
+          { id: t.id, label: t.label, status: t.state_word, terms_hash: t.terms_hash,
             price: t.price.to_s("F"), free: t.free?, message: t.message, from: t.sender.name, to: t.recipient.name,
             skills: t.items.map { |i| i.slice("name", "title", "version") }, url: transfer_url(t) }
         end

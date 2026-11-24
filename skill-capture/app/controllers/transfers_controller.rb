@@ -1,10 +1,10 @@
 # Person-to-person transfers: send one skill or a selection straight to a coworker, free or for credits,
 # without promoting it to a higher level.
 class TransfersController < ApplicationController
-  before_action :set_transfer, only: %i[show accept decline cancel]
+  before_action :set_transfer, only: %i[show accept decline cancel delivered]
 
   def index
-    SkillTransfer.where(status: "offered").where("expires_at <= ?", Time.current).update_all(status: "expired")
+    SkillTransfer.sweep!
     @incoming = current_user.received_transfers.includes(:sender).recent.limit(100)
     @outgoing = current_user.sent_transfers.includes(:recipient).recent.limit(100)
     @ledger = current_user.credit_entries.where.not(skill_transfer_id: nil).order(created_at: :desc).limit(20)
@@ -33,6 +33,13 @@ class TransfersController < ApplicationController
   end
 
   def accept = respond_with { @transfer.accept!(by: current_user) }
+
+  # The exact SKILL.md the buyer received (the escrowed snapshot), once the contract has settled.
+  def delivered
+    md = current_user.id == @transfer.recipient_id || current_user.admin? ? @transfer.delivered_md(params[:name].to_s) : nil
+    raise ActiveRecord::RecordNotFound unless md
+    send_data md, filename: "#{params[:name]}-SKILL.md", type: "text/markdown", disposition: "attachment"
+  end
   def decline = respond_with { @transfer.decline!(by: current_user) }
   def cancel = respond_with { @transfer.cancel!(by: current_user) }
 
@@ -40,7 +47,7 @@ class TransfersController < ApplicationController
 
   def respond_with
     yield
-    msg = { "accepted" => "Added #{@transfer.label} to your library#{@transfer.free? ? '' : " (#{@transfer.price.to_s('F')} credits paid)"}.",
+    msg = { "settled" => "Contract settled: #{@transfer.label} delivered to your library#{@transfer.free? ? '' : ", #{@transfer.price.to_s('F')} credits released from escrow"}.",
             "declined" => "Declined.", "cancelled" => "Withdrawn." }[@transfer.status]
     redirect_to transfer_path(@transfer), notice: msg
   rescue SkillTransfer::Error => e

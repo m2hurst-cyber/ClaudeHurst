@@ -11,6 +11,7 @@ module Api
         out = cmds.map do |c|
           c.update!(status: "delivered", delivered_at: Time.current, delivered_to: current_source.name)
           { id: c.id, kind: c.kind, from: c.sender&.name, note: c.payload["note"],
+            task: c.kind == "flow_task" ? c.payload.merge("complete_url" => request.base_url + c.payload["complete_path"].to_s) : nil,
             bundles: Capture::Bundle.for_names(c.skill_names, viewer: nil, url_for: ->(r) { api_v1_resource_url(r.key.delete_prefix("resource:")) }) }
         end
         render json: out

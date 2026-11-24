@@ -1,7 +1,7 @@
 # A skill (or a whole route) sent from the map to someone's running Office add-in, or to an
 # agent integration. Delivered when the add-in (or agent) next checks in; expires after a day.
 class AddinCommand < ApplicationRecord
-  KINDS = %w[load_skill load_route].freeze
+  KINDS = %w[load_skill load_route flow_task].freeze
 
   belongs_to :sender, class_name: "User", optional: true
   belongs_to :target_user, class_name: "User", optional: true

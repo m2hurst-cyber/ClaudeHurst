@@ -19,6 +19,7 @@ Rails.application.routes.draw do
         resources :events, only: :create
         resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
           member { put :vote }
+          resources :runs, only: :create, controller: :skill_runs
         end
         resources :areas, only: :index
         resources :candidates, only: %i[index show] do
@@ -33,6 +34,11 @@ Rails.application.routes.draw do
         end
         resources :commands, only: :index
         resources :worksheet_captures, only: %i[create show]
+        resources :flows, only: %i[index show create update]
+        resources :flow_runs, only: %i[create show] do
+          member { post :complete }
+        end
+        get :agents, to: "flows#agents"
         resources :transfers, only: %i[index create] do
           member do
             post :accept
@@ -49,12 +55,16 @@ Rails.application.routes.draw do
       resources :events, only: :create
       resources :skills, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
         resources :rest_stops, only: :index
+        resources :runs, only: :create, controller: :skill_runs
       end
       resources :rest_stops, only: :show
       get :route, to: "routes#show"
       get :market, to: "skills#market"
       get :fields, to: "skills#fields"
       get :commands, to: "commands#index"
+      resources :flow_runs, only: :show do
+        member { post :complete }
+      end
       get "bundles/:id", to: "commands#bundle", as: :bundle, constraints: { id: /[a-z0-9-]+/ }
       get :resources, to: "commands#resources"
       get "resources/*path", to: "commands#resource", as: :resource, format: false
@@ -113,11 +123,21 @@ Rails.application.routes.draw do
         get :guide
       end
     end
+    resources :flows do
+      member { post :run }
+    end
+    resources :flow_runs, path: "flow-runs", only: :show do
+      member do
+        post :complete
+        post :cancel
+      end
+    end
     resources :transfers, only: %i[index new create show] do
       member do
         post :accept
         post :decline
         post :cancel
+        get :delivered
       end
     end
     resources :worksheet_captures, path: "captures", only: %i[index show] do
