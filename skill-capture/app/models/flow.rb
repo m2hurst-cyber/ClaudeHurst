@@ -4,6 +4,8 @@
 class Flow < ApplicationRecord
   LANES = %w[Excel Word PowerPoint Outlook Teams Agent].freeze
   MAX_STEPS = 50
+  MAX_PARTS = 4
+  ENGINES = %w[ai macro person].freeze
 
   belongs_to :user
   has_many :runs, class_name: "FlowRun", dependent: :destroy
@@ -64,8 +66,36 @@ class Flow < ApplicationRecord
       "assignee" => pause ? "me" : (s["assignee"].to_s.match?(/\A(me|user:\d+|agent:\d+)\z/) ? s["assignee"].to_s : "me"),
       "skill_name" => (s["skill_name"].to_s.presence unless pause), "instructions" => s["instructions"].to_s.strip.first(2000).presence,
       "pause_mode" => (pause ? (s["pause_mode"] == "timer" ? "timer" : "manual") : nil),
-      "pause_minutes" => (pause && s["pause_mode"] == "timer" ? s["pause_minutes"].to_i.clamp(1, 10_080) : nil) }.compact
+      "pause_minutes" => (pause && s["pause_mode"] == "timer" ? s["pause_minutes"].to_i.clamp(1, 10_080) : nil),
+      "nature" => (s["nature"].to_s.presence_in(Capture::TaskProfile::NATURES.keys) unless pause),
+      "complexity" => (s["complexity"].to_s.presence_in(Capture::TaskProfile::COMPLEXITY) unless pause),
+      "model" => (s["model"].to_s.presence unless pause),
+      "engine" => (s["engine"].to_s.presence_in(ENGINES) unless pause),
+      "parts" => (normalize_parts(s["parts"]).presence unless pause) }.compact
   end
+
+  # A task can be split and run side by side: two agents, or an AI and a macro.
+  def self.normalize_parts(list)
+    Array(list).first(MAX_PARTS).filter_map do |p|
+      p = (p.respond_to?(:to_unsafe_h) ? p.to_unsafe_h : p.to_h).stringify_keys
+      title = p["title"].to_s.squish.first(160)
+      next if title.blank?
+      { "id" => p["id"].to_s.gsub(/[^a-z0-9]/i, "").first(16).presence || SecureRandom.hex(3),
+        "title" => title,
+        "engine" => p["engine"].to_s.presence_in(ENGINES) || "ai",
+        "assignee" => p["assignee"].to_s.match?(/\A(me|user:\d+|agent:\d+)\z/) ? p["assignee"].to_s : "me",
+        "model" => p["model"].to_s.presence, "nature" => p["nature"].to_s.presence_in(Capture::TaskProfile::NATURES.keys),
+        "instructions" => p["instructions"].to_s.strip.first(2000).presence }.compact
+    end.then { |parts| parts.map { |x| x }.uniq { |x| x["id"] } }
+  end
+
+  def self.split?(s) = Array(s["parts"]).size >= 2
+  def self.parts(s) = Array(s["parts"])
+  def self.engine_label(e) = { "macro" => "⚙ Macro (no AI)", "ai" => "🤖 AI", "person" => "🧑 Person" }[e.to_s] || "🤖 AI"
+
+  # A task and its profile: nature, complexity, engine, model and what it should cost.
+  def profile_for(step) = Capture::Estimator.for_step(step, flow_id: id)
+  def estimate = Capture::Estimator.for_steps(steps, flow_id: id)
 
   def self.pause?(s) = s["kind"] == "pause"
   def self.pause_label(s) = s["pause_mode"] == "timer" ? "Wait #{ActiveSupport::Duration.build(s['pause_minutes'].to_i * 60).inspect}" : "Wait until resumed"
@@ -78,6 +108,12 @@ class Flow < ApplicationRecord
     steps.each_with_index do |s, i|
       errors.add(:steps, "task #{i + 1} needs a title") if s["title"].blank?
       errors.add(:steps, "task #{i + 1}: unknown skill #{s['skill_name']}") if s["skill_name"] && !Skill.current(s["skill_name"])
+      errors.add(:steps, "task #{i + 1}: a split task needs at least two parts") if Array(s["parts"]).size == 1
+      Array(s["parts"]).each do |p|
+        if (src = p["assignee"].to_s[/\Aagent:(\d+)\z/, 1]) && !Source.active.exists?(id: src, kind: "integration")
+          errors.add(:steps, "task #{i + 1}: a part names an agent that isn't an active integration")
+        end
+      end
       if (src = s["assignee"].to_s[/\Aagent:(\d+)\z/, 1]) && !Source.active.exists?(id: src, kind: "integration")
         errors.add(:steps, "task #{i + 1}: that agent isn't an active integration")
       end

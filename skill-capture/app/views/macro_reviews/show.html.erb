@@ -1,0 +1,51 @@
+<% r = @review %>
+<% content_for :title, "Macro review: #{r.title}" %>
+<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <div class="text-xs text-slate-500"><%= link_to "Macro review", macro_reviews_path, class: "hover:underline" %> ›</div>
+    <h1 class="text-2xl font-bold"><%= r.title %></h1>
+    <p class="text-sm text-slate-500"><%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> <code><%= r.subject_key %></code> · screened <%= time_ago_in_words(r.created_at) %> ago<%= " · #{r.status}" %><%= " by #{r.reviewed_by.name}" if r.reviewed_by %></p>
+  </div>
+  <%= render "shared/llm_menu", url: macro_review_path(r, format: :md), filename: "macro-#{r.subject_key.parameterize}" %>
+</div>
+
+<div class="grid lg:grid-cols-[1fr_20rem] gap-4">
+  <section class="bg-white border rounded p-4 text-sm">
+    <div class="flex flex-wrap items-center gap-2 mb-2">
+      <span class="px-2 py-0.5 rounded <%= { 'macro' => 'bg-emerald-100 text-emerald-900', 'partial' => 'bg-amber-100 text-amber-900', 'ai' => 'bg-slate-100 text-slate-700' }[r.verdict] %>"><%= r.verdict_label %></span>
+      <span class="text-slate-500">score <%= r.score %></span>
+      <span class="text-slate-500"><%= r.language_label %></span>
+    </div>
+    <p class="mb-3"><%= r.reason %></p>
+    <div class="grid sm:grid-cols-2 gap-3 mb-3">
+      <div><h3 class="font-medium text-xs text-slate-500 mb-1">Points to a macro</h3><ul class="list-disc ml-5"><% Array(r.signals["for"]).each do |s| %><li><%= s %></li><% end %><% if Array(r.signals["for"]).empty? %><li class="list-none -ml-5 text-slate-500">Nothing</li><% end %></ul></div>
+      <div><h3 class="font-medium text-xs text-slate-500 mb-1">Points to the AI</h3><ul class="list-disc ml-5"><% Array(r.signals["against"]).each do |s| %><li><%= s %></li><% end %><% if Array(r.signals["against"]).empty? %><li class="list-none -ml-5 text-slate-500">Nothing</li><% end %></ul></div>
+    </div>
+    <% if @can_review %>
+      <%= form_with url: macro_review_path(r), method: :patch, class: "space-y-2", scope: :macro_review do |f| %>
+        <label class="block">Language
+          <%= f.select :language, MacroReview::LANGUAGES.map { |l| [{ "addin_js" => "Add-in script (Office.js) — the add-in can run this", "office_script" => "Office Script (TypeScript) — run from Excel's Automate tab", "vba" => "VBA — paste into the editor" }[l], l] }, { selected: r.language }, class: "mt-1 w-full border rounded px-2 py-1.5" %></label>
+        <label class="block">The macro<%= f.text_area :code, value: r.code, rows: 14, class: "mt-1 w-full border rounded px-2 py-1.5 font-mono text-xs" %></label>
+        <label class="block">Notes for the record<%= f.text_area :review_notes, value: r.review_notes, rows: 2, class: "mt-1 w-full border rounded px-2 py-1.5" %></label>
+        <div class="flex flex-wrap gap-2">
+          <%= f.button "Save draft", name: "macro_review[status]", value: "needs_work", class: "px-3 py-1.5 rounded border bg-white" %>
+          <%= f.button "Approve: run as a macro", name: "macro_review[status]", value: "approved", class: "px-3 py-1.5 rounded bg-emerald-700 text-white", data: { turbo_confirm: "Approve this macro? It will run in place of the AI wherever this task appears." } %>
+          <%= f.button "Reject: keep the AI", name: "macro_review[status]", value: "rejected", class: "px-3 py-1.5 rounded border bg-white" %>
+        </div>
+        <p class="text-xs text-slate-500">Approving means the add-in runs this instead of calling the AI. Read it line by line first: a wrong macro is quietly wrong on every run.</p>
+      <% end %>
+    <% else %>
+      <pre class="bg-slate-50 border rounded p-2 overflow-x-auto font-mono text-xs"><%= r.code %></pre>
+      <p class="text-xs text-slate-500 mt-2">Area reviewers and admins approve macros.</p>
+    <% end %>
+  </section>
+  <aside class="space-y-3 text-sm">
+    <div class="bg-white border rounded p-3">
+      <h2 class="font-semibold mb-1">What approving saves</h2>
+      <% e = Capture::Estimator.for_step({ "title" => r.title, "nature" => nil }) %>
+      <p class="text-slate-600">About <strong><%= number_with_delimiter(e["tokens"]) %> tokens</strong> and <strong><%= number_to_currency(e["cost"], unit: "", precision: 3) %> credits</strong> per run, by the current estimate (<%= e["basis"] %>).</p>
+      <% if r.runs_saved.positive? %><p class="mt-1 text-emerald-800">Already saved <%= number_with_delimiter(r.tokens_saved) %> tokens over <%= pluralize(r.runs_saved, "run") %>.</p><% end %>
+    </div>
+    <% if r.review_notes.present? %><div class="bg-white border rounded p-3"><h2 class="font-semibold mb-1">Review notes</h2><p class="text-slate-600"><%= r.review_notes %></p></div><% end %>
+  </aside>
+</div>

@@ -42,6 +42,7 @@ export function createApi(base = location.origin) {
     flowRunAct: (id, action, p) => request("POST", `/api/v1/addin/flow_runs/${id}/${action}?${new URLSearchParams(p.step !== undefined ? { step: p.step } : {})}`, p),
     flowRun: (id) => request("GET", `/api/v1/addin/flow_runs/${id}`),
     completeFlowStep: (id, step, p) => request("POST", `/api/v1/addin/flow_runs/${id}/complete?step=${step}`, p),
+    completeFlowPart: (id, step, part, p) => request("POST", `/api/v1/addin/flow_runs/${id}/complete_part?step=${step}&part=${encodeURIComponent(part)}`, p),
     reportRun: (name, p) => request("POST", `/api/v1/addin/skills/${encodeURIComponent(name)}/runs`, p),
     coworkers: (q = "") => request("GET", `/api/v1/addin/transfers/coworkers?q=${encodeURIComponent(q)}`),
     sendSkills: (p) => request("POST", "/api/v1/addin/transfers", p),

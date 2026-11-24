@@ -4,6 +4,10 @@
 <div data-controller="flow-map" data-flow-map-steps-value="<%= @flow.steps.to_json %>" data-flow-map-url-value="<%= flow_path(@flow) %>"
      data-flow-map-assignees-value="<%= assignees.to_json %>" data-flow-map-skills-value="<%= @palette.map { |s| { name: s.name, title: s.title } }.to_json %>"
      data-flow-map-run-url-value="<%= run_flow_path(@flow) %>"
+     data-flow-map-estimate-value="<%= @estimate.to_json %>"
+     data-flow-map-natures-value="<%= Capture::TaskProfile::NATURES.map { |k, v| { value: k, label: v[:label], tier: v[:tier], about: v[:about] } }.to_json %>"
+     data-flow-map-models-value="<%= Capture::Models.catalogue.map { |m| { key: m.key, name: m.name, tier: m.tier } }.to_json %>"
+     data-flow-map-macros-value="<%= @macros.transform_values { |r| { id: r.id, status: r.status, verdict: r.verdict, url: macro_review_path(r) } }.to_json %>"
      data-flow-map-run-value="<%= (@live ? { id: @live.id, json_url: flow_run_path(@live, format: :json), status: @live.status, current_index: @live.current_index,
                                             ids: @live.steps.map { |s| s["id"] }, states: @live.steps.map { |s| s["state"] }, titles: @live.steps.map { |s| s["title"] } } : {}).to_json %>">
   <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
@@ -13,6 +17,7 @@
       <p class="text-sm text-slate-500">Lanes are where the work happens; tasks run left to right. A dashed arrow is a <span class="text-sky-700">handoff</span> to another app, person or agent.</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
+      <span data-flow-map-target="estimate" class="text-xs text-slate-600"></span>
       <span data-flow-map-target="status" class="text-xs text-slate-500"></span>
       <%= render "shared/llm_menu", url: flow_path(@flow, format: :md), filename: @flow.name.parameterize %>
       <button type="button" data-action="flow-map#save" class="px-3 py-1.5 rounded border bg-white">Save</button>

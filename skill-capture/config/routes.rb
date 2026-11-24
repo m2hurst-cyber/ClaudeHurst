@@ -38,6 +38,7 @@ Rails.application.routes.draw do
         resources :flow_runs, only: %i[create show] do
           member do
             post :complete
+            post :complete_part
             post :resume
             post :hold
             post :release
@@ -71,7 +72,10 @@ Rails.application.routes.draw do
       get :fields, to: "skills#fields"
       get :commands, to: "commands#index"
       resources :flow_runs, only: :show do
-        member { post :complete }
+        member do
+          post :complete
+          post :complete_part
+        end
       end
       get "bundles/:id", to: "commands#bundle", as: :bundle, constraints: { id: /[a-z0-9-]+/ }
       get :resources, to: "commands#resources"
@@ -134,9 +138,15 @@ Rails.application.routes.draw do
     resources :flows do
       member { post :run }
     end
+    resources :macro_reviews, path: "macros", only: %i[index show update] do
+      member { post :screen }
+      collection { post :screen_all }
+    end
+    resources :model_profiles, path: "models", only: %i[index update]
     resources :flow_runs, path: "flow-runs", only: :show do
       member do
         post :complete
+        post :complete_part
         post :cancel
         post :resume
         post :hold

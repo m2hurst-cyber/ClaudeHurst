@@ -5,8 +5,11 @@ module Api
     class SkillRunsController < BaseController
       def create
         skill = Skill.current(params[:skill_id]) or raise ActiveRecord::RecordNotFound
-        run = SkillRun.from_report(skill, params.permit(:model, :input_tokens, :output_tokens, :duration_ms, :started_at, :finished_at, :status, :version),
+        run = SkillRun.from_report(skill, params.permit(:model, :input_tokens, :output_tokens, :duration_ms, :started_at, :finished_at, :status, :version, :trial_of, :engine, :nature),
                                    agent: params[:agent].to_s.strip.presence || current_source.name, source: current_source)
+        run.engine = params[:engine].to_s.presence_in(%w[ai macro person]) || "ai"
+        run.nature = params[:nature].to_s.presence_in(Capture::TaskProfile::NATURES.keys) || Capture::TaskProfile.infer([skill.title, skill.description].join(". "))
+        run.cost = Capture::Models.cost(run.model, run.input_tokens, run.output_tokens)
         if run.save
           render json: { id: run.id, usage: Capture::Intensity.for(skill.name) }, status: :created
         else

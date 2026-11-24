@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { LANES, stepFrom, insertAt, move, remove, update, gapIndex, layout, problems, shiftLane, isPause, pauseLabel } from "addin/flow_model"
+import { LANES, stepFrom, newId, insertAt, move, remove, update, gapIndex, layout, problems, shiftLane, isPause, pauseLabel } from "addin/flow_model"
 
 // The process map: lanes (where the work happens) × order (left to right). Drag a skill or a blank task
 // from the palette onto a lane; drag tasks to reorder them or move them to another lane; click a task to
@@ -7,14 +7,15 @@ import { LANES, stepFrom, insertAt, move, remove, update, gapIndex, layout, prob
 const W = 214, H = 96, LABEL = 110, NODE_W = 160, NODE_H = 64
 
 export default class extends Controller {
-  static targets = ["canvas", "svg", "nodes", "marker", "editor", "status", "name", "filter", "paletteItem", "save", "run", "live"]
-  static values = { steps: Array, url: String, assignees: Array, skills: Array, runUrl: String, run: Object }
+  static targets = ["canvas", "svg", "nodes", "marker", "editor", "status", "name", "filter", "paletteItem", "save", "run", "live", "estimate"]
+  static values = { steps: Array, url: String, assignees: Array, skills: Array, runUrl: String, run: Object, estimate: Object, natures: Array, models: Array, macros: Object }
 
   connect() {
     this.steps = this.stepsValue
     this.selected = null
     this.dirty = false
     this.live = this.runValue && this.runValue.id ? this.runValue : null
+    this.est = this.estimateValue || {}
     this.render()
     window.addEventListener("beforeunload", this.warn = (e) => { if (this.dirty) { e.preventDefault(); e.returnValue = "" } })
     if (this.live) this.poll = setInterval(() => this.refreshLive(), 10000)
@@ -94,6 +95,31 @@ export default class extends Controller {
     if (i < 0) return
     this.change(move(this.steps, this.selected, i + Number(e.currentTarget.dataset.by)))
   }
+  addPart() {
+    const s = this.steps.find((x) => x.id === this.selected)
+    if (!s) return
+    const parts = (s.parts || []).slice()
+    if (parts.length >= 4) return this.status("At most four parts.", true)
+    if (!parts.length) parts.push({ id: newId().slice(0, 6), title: s.title, engine: "ai", assignee: s.assignee || "me" })
+    parts.push({ id: newId().slice(0, 6), title: parts.length === 1 ? "Second part" : `Part ${parts.length + 1}`, engine: parts.length === 1 ? "macro" : "ai", assignee: s.assignee || "me" })
+    this.change(update(this.steps, this.selected, { parts }))
+  }
+
+  removePart(e) {
+    e.stopPropagation()
+    const s = this.steps.find((x) => x.id === this.selected)
+    const parts = (s.parts || []).filter((p) => p.id !== e.currentTarget.dataset.id)
+    this.change(update(this.steps, this.selected, { parts: parts.length === 1 ? [] : parts }))
+  }
+
+  editPart(e) {
+    const box = e.target.closest("[data-part]")
+    if (!box || !e.target.name) return
+    const s = this.steps.find((x) => x.id === this.selected)
+    const parts = (s.parts || []).map((p) => (p.id === box.dataset.part ? { ...p, [e.target.name]: e.target.value } : p))
+    this.change(update(this.steps, this.selected, { parts }), { keepEditor: e.target.name !== "engine" })
+  }
+
   removeSelected() { this.change(remove(this.steps, this.selected)); this.selected = null; this.render() }
   removeNode(e) { e.stopPropagation(); const id = e.currentTarget.dataset.id; if (this.selected === id) this.selected = null; this.change(remove(this.steps, id)) }
   key(e) {
@@ -129,6 +155,7 @@ export default class extends Controller {
     const body = await res.json().catch(() => ({}))
     if (!res.ok) return this.status(body.error || "Couldn't save", true)
     this.steps = body.steps; this.dirty = false
+    this.est = body.estimate || this.est
     this.status("Saved"); this.render()
   }
   beforeRun(e) { if (this.dirty) { e.preventDefault(); this.status("Save before running.", true) } }
@@ -172,7 +199,8 @@ export default class extends Controller {
       const badge = live?.current ? (live.state === "paused" ? '<span class="text-amber-800 font-semibold">⏸ waiting now</span>' : this.live.status === "on_hold" ? '<span class="text-amber-800 font-semibold">⏸ run on hold</span>' : '<span class="inline-flex items-center gap-1 text-amber-800 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>running now</span>')
         : live?.state === "done" ? '<span class="text-emerald-700">✓ done</span>' : live?.state === "skipped" ? '<span class="text-slate-500">skipped</span>' : ""
       el.innerHTML = `<div class="flex gap-1 items-start pr-4"><span class="shrink-0 w-4 h-4 rounded-full ${pause ? "bg-amber-600" : "bg-slate-900"} text-white grid place-items-center" style="font-size:9px">${pause ? "⏸" : i + 1}</span><span class="font-medium leading-tight line-clamp-2">${esc(s.title)}</span></div>
-        <div class="text-slate-500 truncate mt-0.5">${badge || esc(pause ? pauseLabel(s) : `${who[s.assignee] || s.assignee}${s.skill_name ? " · 📘" : ""}`)}</div>
+        <div class="text-slate-500 truncate mt-0.5">${badge || esc(pause ? pauseLabel(s) : (s.parts || []).length >= 2 ? `⇶ ${s.parts.length} parts: ${s.parts.map((p) => ({ macro: "⚙", ai: "🤖", person: "🧑" })[p.engine] || "🤖").join(" ")}` : `${s.engine === "macro" ? "⚙ macro · " : ""}${who[s.assignee] || s.assignee}${s.skill_name ? " · 📘" : ""}`)}</div>
+        ${pause ? "" : `<div class="text-[10px] text-slate-400 truncate">${(this.stepEstimate(i) || {}).engine === "macro" ? "no tokens" : `${Number((this.stepEstimate(i) || {}).tokens || 0).toLocaleString()} tok · ${Number((this.stepEstimate(i) || {}).cost || 0).toFixed(2)} cr`}</div>`}
         <button type="button" data-id="${esc(s.id)}" data-action="click->flow-map#removeNode" class="absolute top-0.5 right-1 text-slate-400 hover:text-red-700 opacity-0 group-hover:opacity-100 group-focus:opacity-100 ${this.selected === s.id ? "opacity-100" : ""}" aria-label="Delete task ${i + 1}" title="Delete (or press Delete)">✕</button>`
       this.nodesTarget.appendChild(el)
     })
@@ -181,7 +209,18 @@ export default class extends Controller {
       this.liveTarget.hidden = cur === null
       if (cur !== null) this.liveTarget.querySelector("[data-live-text]").textContent = `${this.live.status === "on_hold" ? "On hold at" : "Running now:"} task ${cur + 1}, ${this.live.titles[cur] || ""}`
     }
+    this.renderEstimate()
     if (!this.steps.length) this.status("Drag a skill or a blank task onto a lane to start.")
+  }
+
+  stepEstimate(i) { return (this.est.steps || [])[i] }
+
+  renderEstimate() {
+    if (!this.hasEstimateTarget) return
+    const e = this.est
+    if (!e || !e.steps) { this.estimateTarget.textContent = ""; return }
+    const mins = Math.round((e.seconds || 0) / 60)
+    this.estimateTarget.innerHTML = `Anticipated <strong>${Number(e.tokens || 0).toLocaleString()}</strong> tokens · <strong>${Number(e.cost || 0).toFixed(2)}</strong> credits · ~${mins} min${e.macro_steps ? ` · <span class="text-emerald-700">${e.macro_steps} macro</span>` : ""}${this.dirty ? " (before your changes)" : ""}`
   }
 
   renderEditor() {
@@ -190,9 +229,13 @@ export default class extends Controller {
     const i = this.steps.indexOf(s)
     const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]))
     const opt = (v, l, cur) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`
+    const est = this.stepEstimate(i) || {}
+    const macro = (this.macrosValue || {})[s.id]
+    const parts = s.parts || []
+    const whoOpts = (cur) => this.assigneesValue.map((a) => opt(a.value, a.label, cur)).join("")
+    const modelOpts = (cur) => `<option value="">Auto: cheapest that fits</option>${this.modelsValue.filter((m) => m.key !== "macro").map((m) => opt(m.key, `${m.name} (${m.tier})`, cur || "")).join("")}`
     this.editorTarget.innerHTML = `
-      <div class="flex items-center justify-between mb-2"><h3 class="font-semibold">Task ${i + 1}</h3>
-        <div class="flex gap-1"><button type="button" data-action="flow-map#nudge" data-by="-1" class="px-2 py-0.5 border rounded" aria-label="Move earlier">←</button><button type="button" data-action="flow-map#nudge" data-by="1" class="px-2 py-0.5 border rounded" aria-label="Move later">→</button></div></div>
+      <div class="flex items-center justify-between mb-2"><h3 class="font-semibold">Task ${i + 1}</h3>        <div class="flex gap-1"><button type="button" data-action="flow-map#nudge" data-by="-1" class="px-2 py-0.5 border rounded" aria-label="Move earlier">←</button><button type="button" data-action="flow-map#nudge" data-by="1" class="px-2 py-0.5 border rounded" aria-label="Move later">→</button></div></div>
       <div class="space-y-2" data-action="input->flow-map#edit change->flow-map#edit">
         <label class="block">Title<input name="title" value="${esc(s.title)}" class="mt-1 w-full border rounded px-2 py-1"></label>
         <label class="block">Where (lane)<select name="app" class="mt-1 w-full border rounded px-2 py-1">${LANES.map((l) => opt(l, l, s.app)).join("")}</select></label>
@@ -200,10 +243,39 @@ export default class extends Controller {
         <label class="block">Pause until<select name="pause_mode" class="mt-1 w-full border rounded px-2 py-1">${opt("manual", "Someone resumes it", s.pause_mode)}${opt("timer", "A set time has passed", s.pause_mode)}</select></label>
         ${s.pause_mode === "timer" ? `<label class="block">Minutes<input name="pause_minutes" type="number" min="1" max="10080" value="${esc(s.pause_minutes || 30)}" class="mt-1 w-full border rounded px-2 py-1"></label>` : ""}` : `
         <label class="block">Who does it<select name="assignee" class="mt-1 w-full border rounded px-2 py-1">${this.assigneesValue.map((a) => opt(a.value, a.label, s.assignee)).join("")}</select></label>
-        <label class="block">Skill to follow<select name="skill_name" class="mt-1 w-full border rounded px-2 py-1"><option value="">None</option>${this.skillsValue.map((k) => opt(k.name, k.title, s.skill_name || "")).join("")}</select></label>`}
+        <label class="block">Skill to follow<select name="skill_name" class="mt-1 w-full border rounded px-2 py-1"><option value="">None</option>${this.skillsValue.map((k) => opt(k.name, k.title, s.skill_name || "")).join("")}</select></label>
+        <div class="grid grid-cols-2 gap-1">
+          <label class="block">Nature<select name="nature" class="mt-1 w-full border rounded px-2 py-1" title="What kind of thinking this needs">${opt("", `Auto: ${est.nature || "—"}`, s.nature || "")}${this.naturesValue.map((n) => opt(n.value, n.label, s.nature || "")).join("")}</select></label>
+          <label class="block">Complexity<select name="complexity" class="mt-1 w-full border rounded px-2 py-1">${opt("", `Auto: ${est.complexity || "—"}`, s.complexity || "")}${["low", "medium", "high"].map((c) => opt(c, c, s.complexity || "")).join("")}</select></label>
+        </div>
+        <label class="block">Runs on<select name="engine" class="mt-1 w-full border rounded px-2 py-1">${opt("", "Auto (macro if one is approved)", s.engine || "")}${opt("ai", "🤖 AI", s.engine || "")}${opt("macro", "⚙ Macro (no AI)", s.engine || "")}${opt("person", "🧑 Person", s.engine || "")}</select></label>
+        <label class="block">Model<select name="model" class="mt-1 w-full border rounded px-2 py-1">${modelOpts(s.model)}</select></label>`}
         <label class="block">${isPause(s) ? "Note" : "Instructions"}<textarea name="instructions" rows="3" class="mt-1 w-full border rounded px-2 py-1">${esc(s.instructions)}</textarea></label>
       </div>
-      ${isPause(s) ? "" : `<div class="flex gap-1 mt-3"><button type="button" data-action="flow-map#runFrom" class="flex-1 px-2 py-1 rounded bg-emerald-700 text-white text-xs">▶ Run from here</button><button type="button" data-action="flow-map#runFrom" data-only="1" class="flex-1 px-2 py-1 rounded border text-xs">Run just this task</button></div>`}
+      ${isPause(s) ? "" : `
+      <div class="mt-3 rounded border bg-slate-50 p-2 text-xs">
+        <div class="font-medium mb-0.5">Anticipated ${est.engine === "macro" ? "— macro, no tokens" : `${Number(est.tokens || 0).toLocaleString()} tokens · ${Number(est.cost || 0).toFixed(3)} credits · ~${Math.round(est.seconds || 0)} s`}</div>
+        ${est.nature ? `<div class="text-slate-600">${esc(est.nature)} · ${esc(est.complexity || "")}</div>` : ""}
+        <div class="text-slate-600">${esc(est.basis || "saves to see the estimate")}${est.model ? ` · ${esc(est.model)}` : ""}</div>
+        ${macro ? `<a href="${esc(macro.url)}" class="text-sky-700 hover:underline">Macro review: ${esc(macro.status)} (${esc(macro.verdict)})</a>` : ""}
+      </div>
+      <div class="mt-3">
+        <div class="flex items-center justify-between"><h4 class="font-medium">Split into parts</h4>
+          <button type="button" data-action="flow-map#addPart" class="px-2 py-0.5 rounded border text-xs">＋ Part</button></div>
+        <p class="text-xs text-slate-500">Two agents, or an AI and a macro, side by side. The task hands off when every part is done.</p>
+        ${parts.length ? `<div class="space-y-1 mt-1" data-action="input->flow-map#editPart change->flow-map#editPart">
+          ${parts.map((p, pi) => `<div class="border rounded p-1.5 bg-white" data-part="${esc(p.id)}">
+            <div class="flex gap-1 items-center"><span class="text-xs text-slate-500">${pi + 1}</span>
+              <input name="title" value="${esc(p.title)}" class="flex-1 border rounded px-1 py-0.5 text-xs" aria-label="Part title">
+              <button type="button" data-action="flow-map#removePart" data-id="${esc(p.id)}" class="text-slate-400 hover:text-red-700" aria-label="Remove part">✕</button></div>
+            <div class="flex gap-1 mt-1">
+              <select name="engine" class="flex-1 border rounded px-1 py-0.5 text-xs" aria-label="Runs on">${opt("ai", "🤖 AI", p.engine)}${opt("macro", "⚙ Macro", p.engine)}${opt("person", "🧑 Person", p.engine)}</select>
+              <select name="assignee" class="flex-1 border rounded px-1 py-0.5 text-xs" aria-label="Who">${whoOpts(p.assignee)}</select>
+            </div>
+            ${p.engine === "ai" ? `<select name="model" class="w-full mt-1 border rounded px-1 py-0.5 text-xs" aria-label="Model">${modelOpts(p.model)}</select>` : ""}
+          </div>`).join("")}</div>` : ""}
+      </div>
+      <div class="flex gap-1 mt-3"><button type="button" data-action="flow-map#runFrom" class="flex-1 px-2 py-1 rounded bg-emerald-700 text-white text-xs">▶ Run from here</button><button type="button" data-action="flow-map#runFrom" data-only="1" class="flex-1 px-2 py-1 rounded border text-xs">Run just this task</button></div>`}
       <button type="button" data-action="flow-map#removeSelected" class="mt-2 text-red-700 text-xs hover:underline">Delete ${isPause(s) ? "pause" : "task"}</button>
       <p class="text-xs text-slate-500 mt-2">Keyboard: ←/→ reorder · ↑/↓ change lane · Delete removes.</p>`
   }

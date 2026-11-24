@@ -30,6 +30,6 @@ class SkillRun < ApplicationRecord
     end
     new(skill_name: skill.name, skill_version: (p["version"].presence || skill.version).to_i, model: p["model"].to_s.strip.presence,
         input_tokens: p["input_tokens"].to_i, output_tokens: p["output_tokens"].to_i, duration_ms: dur,
-        status: p["status"].presence || "succeeded", **attrs)
+        status: p["status"].presence || "succeeded", trial_of: p["trial_of"].presence, **attrs)
   end
 end

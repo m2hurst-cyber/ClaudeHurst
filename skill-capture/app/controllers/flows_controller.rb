@@ -26,6 +26,8 @@ class FlowsController < ApplicationController
     @agents = Source.active.where(kind: "integration").order(:name)
     @people = User.where.not(id: current_user.id).order(:name)
     @runs = @flow.runs.order(created_at: :desc).limit(10)
+    @estimate = @flow.estimate
+    @macros = MacroReview.where(subject_kind: "flow_step", subject_key: @flow.steps.map { |s| "#{@flow.id}:#{s['id']}" }).index_by { |r| r.subject_key.split(":").last }
     @live = @flow.runs.where(status: %w[running on_hold]).order(created_at: :desc).first
   end
 
@@ -33,7 +35,7 @@ class FlowsController < ApplicationController
     @flow.assign_attributes(name: params[:name].presence || @flow.name, description: params[:description], steps: Flow.normalize_steps(params[:steps]))
     if @flow.save
       respond_to do |f|
-        f.json { render json: { ok: true, steps: @flow.steps } }
+        f.json { render json: { ok: true, steps: @flow.steps, estimate: @flow.estimate } }
         f.html { redirect_to flow_path(@flow), notice: "Saved." }
       end
     else

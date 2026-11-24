@@ -2,6 +2,7 @@
 // palette, tasks dragged to reorder), then run: each task happens in order and hands off to the next,
 // in the app or agent that does it.
 import { LANES, stepFrom, insertAt, move, remove, update, problems, isPause, pauseLabel } from "addin/flow_model";
+import { runMacro } from "addin/macro_runner";
 
 const HOLD_MS = 350; // press and hold this long to pick a task up on a touch screen
 
@@ -109,25 +110,34 @@ export function createFlowPane({ api, panel, esc, btn, btnPrimary, input, flash,
     panel().innerHTML = `
       <button data-action="flow-back" class="text-sky-700 mb-2">← Flows</button>
       <h2 class="text-base font-semibold">${esc(r.flow)}</h2>
-      <div class="text-xs mb-2 ${r.status === "on_hold" ? "text-amber-800 font-semibold" : "text-slate-500"}">${r.status === "on_hold" ? "⏸ Run on hold" : active ? `Now: ${isPause(cur) ? "paused" : `task ${r.current_index + 1}`}` : esc(r.status)}</div>
+      <div class="text-xs mb-1 ${r.status === "on_hold" ? "text-amber-800 font-semibold" : "text-slate-500"}">${r.status === "on_hold" ? "⏸ Run on hold" : active ? `Now: ${isPause(cur) ? "paused" : `task ${r.current_index + 1}`}` : esc(r.status)}</div>
+      ${r.budget ? `<div class="text-xs rounded border bg-slate-50 p-1.5 mb-2">Spent <strong>${Number(r.budget.spent_tokens || 0).toLocaleString()}</strong> of about <strong>${Number(r.budget.estimated_tokens || 0).toLocaleString()}</strong> tokens · ${Number(r.budget.spent_cost || 0).toFixed(2)} of ${Number(r.budget.estimated_cost || 0).toFixed(2)} credits${r.budget.projected_cost ? ` · projected ${Number(r.budget.projected_cost).toFixed(2)}` : ""}</div>` : ""}
       ${r.owner && active ? `<div class="flex gap-1 mb-2">${r.status === "on_hold" ? `<button data-action="flow-release" class="${btnPrimary} text-xs">▶ Resume run</button>` : `<button data-action="flow-hold" class="${btn} text-xs">⏸ Pause run</button>`}</div>` : ""}
       <ol class="space-y-1 mb-2">${r.steps.map((s, i) => {
         const now = i === r.current_index && active;
         const mark = s.state === "done" ? "✓" : s.state === "skipped" ? "–" : now ? (s.state === "paused" ? "⏸" : "▶") : isPause(s) ? "⏸" : "○";
         return `<li class="border rounded p-1.5 ${now ? "border-sky-500 bg-sky-50 ring-2 ring-sky-300" : s.state === "done" ? "border-emerald-300 bg-emerald-50" : s.state === "skipped" ? "opacity-50" : isPause(s) ? "border-dashed border-amber-400" : ""}">
           <div class="flex gap-1.5"><span>${mark}</span><span class="flex-1"><span class="font-medium">${isPause(s) ? "" : `${i + 1}. `}${esc(s.title)}${now ? ' <span class="text-sky-700 text-xs font-semibold">running now</span>' : ""}</span>
-          <span class="block text-xs text-slate-500">${isPause(s) ? esc(pauseLabel(s)) : `${appBadge(s.app)} ${esc(s.assignee)}`}${s.note ? ` · ${esc(s.note)}` : ""}</span>
+          <span class="block text-xs text-slate-500">${isPause(s) ? esc(pauseLabel(s)) : `${appBadge(s.app)} ${esc(s.assignee)}${s.engine === "macro" ? " · ⚙ macro" : s.estimate && !s.parts ? ` · ${Number(s.estimate.tokens || 0).toLocaleString()} tok est` : ""}`}${s.note ? ` · ${esc(s.note)}` : ""}</span>
+          ${(s.parts || []).map((p) => `<span class="block text-xs ${p.state === "done" ? "text-emerald-700" : "text-slate-600"}">${{ macro: "⚙", ai: "🤖", person: "🧑" }[p.engine] || "🤖"} ${esc(p.title)} — ${p.state === "done" ? `✓ ${esc(p.by || "")}` : esc(p.assignee)}
+            ${now && p.state !== "done" && String(p.assignee).includes("Me") ? "" : ""}</span>
+            ${now && p.state !== "done" ? `<span class="flex gap-1 mt-0.5">${(r.macros || {})[p.id] ? `<button data-action="flow-macro" data-part="${esc(p.id)}" class="${btnPrimary} text-xs">⚙ Run macro (no AI)</button>` : ""}
+              <button data-action="flow-part-done" data-part="${esc(p.id)}" class="${btn} text-xs">My part is done</button></span>` : ""}`).join("")}
           ${r.owner && active ? `<span class="flex gap-1 mt-1">${!now && !isPause(s) ? `<button data-action="flow-jump" data-index="${i}" class="text-xs text-sky-700 hover:underline">Deploy now</button>` : ""}
             ${["pending", "ready", "paused"].includes(s.state) ? `<button data-action="flow-skip" data-index="${i}" class="text-xs text-slate-600 hover:underline">Skip</button>` : ""}
             ${now && s.state === "paused" ? `<button data-action="flow-resume" data-index="${i}" class="text-xs text-amber-800 font-semibold hover:underline">▶ Resume</button>` : ""}
             ${i >= r.current_index ? `<button data-action="flow-insert-pause" data-index="${i}" class="text-xs text-slate-600 hover:underline">+ Pause after</button>` : ""}</span>` : ""}</span></div></li>`;
       }).join("")}</ol>
-      ${r.mine && cur && r.status === "running" ? `<form data-form="flow-complete" class="rounded border p-2 space-y-1.5">
+      ${r.mine && cur && r.status === "running" && (r.macros || {}).step ? `<div class="rounded border border-emerald-300 bg-emerald-50 p-2 mb-2">
+          <div class="font-medium">⚙ This task runs as a macro</div>
+          <p class="text-xs text-slate-600 mb-1">An approved script does it in the document: no tokens, no AI.</p>
+          <button data-action="flow-macro" class="${btnPrimary} w-full">Run the macro</button></div>` : ""}
+      ${r.mine && cur && r.status === "running" && !(r.macros || {}).step && !(cur.parts || []).length ? `<form data-form="flow-complete" class="rounded border p-2 space-y-1.5">
           <div class="font-medium">Your turn: ${esc(cur.title)}</div>
           ${cur.app !== "Agent" && cur.app !== host() ? `<p class="text-xs text-amber-800">This task is in ${esc(cur.app)}; it's also waiting in the add-in there.</p>` : ""}
           <textarea name="note" rows="2" class="${input}" placeholder="What you did, or where the output is"></textarea>
           <button class="${btnPrimary} w-full">Done: hand off ${nextI >= 0 ? (isPause(r.steps[nextI]) ? "to the pause" : `to task ${nextI + 1} (${esc(r.steps[nextI].app)})`) : "and finish"}</button>
-        </form>` : active && cur && !isPause(cur) && r.status === "running" ? `<p class="text-xs text-slate-500">Waiting on ${esc(cur.assignee)}.</p>` : ""}
+        </form>` : active && cur && !isPause(cur) && r.status === "running" && !r.mine ? `<p class="text-xs text-slate-500">Waiting on ${esc(cur.assignee)}.</p>` : ""}
       <button data-action="open-url" data-url="${esc(r.url)}" class="${btn} mt-2 w-full">Open the process map</button>`;
   }
 
@@ -139,6 +149,29 @@ export function createFlowPane({ api, panel, esc, btn, btnPrimary, input, flash,
     if (a === "flow-run") { const r = await api.startFlow(t.dataset.id); st.run = r; st.view = "run"; flash("Started. Task 1 is ready."); return rerender(); }
     if (a === "flow-open-run") { st.run = await api.flowRun(t.dataset.id); st.view = "run"; return renderRun(); }
     if (a === "flow-back") { if (st.edit?.dirty && st.view === "edit" && !confirm("Leave without saving?")) return; st.view = "list"; st.edit = null; return render(); }
+    if (a === "flow-macro") {
+      const part = t.dataset.part || "step";
+      const m = (st.run.macros || {})[part];
+      if (!m) { flash("No approved macro for this task.", "error"); return rerender(); }
+      t.disabled = true; t.textContent = "Running the macro…";
+      try {
+        const { note, duration_ms } = await runMacro(m.code, { host: host() });
+        const usage = { model: "macro", input_tokens: 0, output_tokens: 0, duration_ms };
+        st.run = part === "step"
+          ? await api.completeFlowStep(st.run.id, st.run.current_index, { note, usage })
+          : await api.completeFlowPart(st.run.id, st.run.current_index, part, { note, usage });
+        flash(`⚙ Macro done, no tokens: ${note}`);
+      } catch (e) {
+        flash(`The macro stopped: ${e.message}`, "error");
+      }
+      return rerender();
+    }
+    if (a === "flow-part-done") {
+      const note = prompt("What did you do? (optional)") ?? "";
+      st.run = await api.completeFlowPart(st.run.id, st.run.current_index, t.dataset.part, { note });
+      flash(st.run.status === "completed" ? "Done: every task is complete." : "Your part is done.");
+      return rerender();
+    }
     if (["flow-jump", "flow-skip", "flow-resume", "flow-hold", "flow-release", "flow-insert-pause"].includes(a)) {
       const i = Number(t.dataset.index), id = st.run.id;
       st.run = a === "flow-jump" ? await api.flowRunAct(id, "jump", { step: i })

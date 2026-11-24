@@ -1,0 +1,42 @@
+<% content_for :title, "Models" %>
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Models and what they cost</h1>
+  <p class="text-sm text-slate-500">Tiers run macro → small → standard → deep. A task's nature and complexity choose the tier; the cheapest model in that tier is the one suggested, unless someone names another. Prices are credits per million tokens: edit them to match your contract.</p>
+</div>
+<div class="bg-white border rounded overflow-x-auto mb-5">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-xs text-slate-500"><tr><th class="px-3 py-2">Model</th><th class="px-3 py-2">Tier</th><th class="px-3 py-2">Input /1M</th><th class="px-3 py-2">Output /1M</th><th class="px-3 py-2">Tokens/s</th><th class="px-3 py-2">Used (90 days)</th><th class="px-3 py-2"></th></tr></thead>
+    <tbody>
+      <% @models.each do |m| %>
+        <% u = @usage[m.key] %>
+        <%= form_with url: model_profile_path(m), method: :patch, scope: :model_profile, html: { class: "contents" } do |f| %>
+          <tr class="border-t <%= 'opacity-50' unless m.active %>">
+            <td class="px-3 py-2"><div class="font-medium"><%= m.name %></div><code class="text-xs text-slate-500"><%= m.key %></code><div class="text-xs text-slate-500"><%= m.notes %></div></td>
+            <td class="px-3 py-2"><% if current_user.admin? %><%= f.select :tier, ModelProfile::TIERS, { selected: m.tier }, class: "border rounded px-1 py-0.5 text-xs" %><% else %><%= m.tier %><% end %></td>
+            <td class="px-3 py-2"><% if current_user.admin? %><%= f.number_field :input_cost, value: m.input_cost, step: 0.01, class: "w-20 border rounded px-1 py-0.5" %><% else %><%= m.input_cost %><% end %></td>
+            <td class="px-3 py-2"><% if current_user.admin? %><%= f.number_field :output_cost, value: m.output_cost, step: 0.01, class: "w-20 border rounded px-1 py-0.5" %><% else %><%= m.output_cost %><% end %></td>
+            <td class="px-3 py-2"><% if current_user.admin? %><%= f.number_field :tokens_per_second, value: m.tokens_per_second, class: "w-20 border rounded px-1 py-0.5" %><% else %><%= m.tokens_per_second %><% end %></td>
+            <td class="px-3 py-2 text-xs"><%= u ? "#{u[:runs]} runs · #{number_with_delimiter(u[:input] + u[:output])} tokens · #{number_to_currency(u[:cost], unit: '', precision: 2)} credits" : "—" %></td>
+            <td class="px-3 py-2"><% if current_user.admin? %><%= f.submit "Save", class: "px-2 py-1 rounded border text-xs bg-white" %><% end %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h2 class="font-semibold mb-2">Which model each kind of task actually ran on</h2>
+<div class="bg-white border rounded p-4 text-sm">
+  <% if @by_nature.empty? %>
+    <p class="text-slate-500">No runs have reported a task nature yet. Flows record it from the task's profile.</p>
+  <% else %>
+    <table class="w-full">
+      <thead class="text-left text-xs text-slate-500"><tr><th class="py-1">Nature</th><th>Suggested tier</th><th>Model used</th><th>Runs</th><th>Avg tokens</th></tr></thead>
+      <tbody>
+        <% @by_nature.sort_by { |n, _, c, _| [Capture::TaskProfile::ORDER.index(n) || 9, -c] }.each do |nature, model, runs, avg| %>
+          <tr class="border-t"><td class="py-1"><%= Capture::TaskProfile.label(nature) %></td><td><%= Capture::TaskProfile.tier(nature) %></td><td class="font-mono text-xs"><%= model %></td><td><%= runs %></td><td><%= number_with_delimiter(avg.to_f.round) %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

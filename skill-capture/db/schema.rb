@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000020) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -133,6 +133,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
     t.datetime "finished_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "estimate", default: {}, null: false
     t.index ["flow_id"], name: "index_flow_runs_on_flow_id"
     t.index ["user_id"], name: "index_flow_runs_on_user_id"
   end
@@ -167,6 +168,44 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
     t.index ["provider", "category"], name: "index_formula_commands_on_provider_and_category"
     t.index ["provider", "key"], name: "index_formula_commands_on_provider_and_key", unique: true
     t.index ["verified_by_id"], name: "index_formula_commands_on_verified_by_id"
+  end
+
+  create_table "macro_reviews", force: :cascade do |t|
+    t.string "subject_kind", null: false
+    t.string "subject_key", null: false
+    t.string "title", null: false
+    t.string "verdict", null: false
+    t.integer "score", default: 0, null: false
+    t.jsonb "signals", default: {}, null: false
+    t.jsonb "suggestion", default: {}, null: false
+    t.text "reason"
+    t.string "status", default: "proposed", null: false
+    t.bigint "proposed_by_id"
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
+    t.text "review_notes"
+    t.integer "runs_saved", default: 0, null: false
+    t.bigint "tokens_saved", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["proposed_by_id"], name: "index_macro_reviews_on_proposed_by_id"
+    t.index ["reviewed_by_id"], name: "index_macro_reviews_on_reviewed_by_id"
+    t.index ["subject_kind", "subject_key"], name: "index_macro_reviews_on_subject_kind_and_subject_key", unique: true
+  end
+
+  create_table "model_profiles", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.string "tier", null: false
+    t.decimal "input_cost", precision: 10, scale: 4, default: "0.0", null: false
+    t.decimal "output_cost", precision: 10, scale: 4, default: "0.0", null: false
+    t.integer "tokens_per_second", default: 60, null: false
+    t.text "notes"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_model_profiles_on_key", unique: true
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -522,9 +561,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
     t.datetime "occurred_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "engine", default: "ai", null: false
+    t.string "nature"
+    t.decimal "cost", precision: 12, scale: 4
+    t.integer "estimated_tokens"
+    t.string "part_id"
+    t.string "trial_of"
     t.index ["flow_run_id"], name: "index_skill_runs_on_flow_run_id"
     t.index ["skill_name", "occurred_at"], name: "index_skill_runs_on_skill_name_and_occurred_at"
     t.index ["source_id"], name: "index_skill_runs_on_source_id"
+    t.index ["trial_of"], name: "index_skill_runs_on_trial_of"
     t.index ["user_id"], name: "index_skill_runs_on_user_id"
   end
 
@@ -859,6 +905,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000019) do
   add_foreign_key "flows", "users"
   add_foreign_key "formula_commands", "users", column: "created_by_id"
   add_foreign_key "formula_commands", "users", column: "verified_by_id"
+  add_foreign_key "macro_reviews", "users", column: "proposed_by_id"
+  add_foreign_key "macro_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "playbook_runs", "users"
   add_foreign_key "playbook_runs", "users", column: "reviewer_id"

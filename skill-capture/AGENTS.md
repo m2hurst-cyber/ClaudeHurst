@@ -372,5 +372,15 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 ## Changelog: Copy for LLM
 
 - `Capture::LlmMarkdown` (skill, flow, run, capture, formulas, transfer); `.md` formats via `ApplicationController#render_markdown` (`?download=1` for an attachment); `shared/_llm_menu` partial + `llm_copy_controller.js` (copy, view in a `<dialog>`, download, copy link). Skill bundles and the add-in skill/run JSON carry `markdown`; the pane's `llmButtons` / `showMarkdown`.
-- Tests: 157 Rails runs, 40 JavaScript tests.
+
+
+## Changelog: macros, model choice and cost estimates
+
+- `ModelProfile` + `Capture::Models` (tiers macro/small/standard/deep, credits per 1M tokens, admin page `/models`).
+- `Capture::TaskProfile`: natures programmatic / linear / lookup / analytic / critical / opaque + complexity → tier → model; rules inferred from the task text, overridable per task.
+- `Capture::MacroScreen` + `MacroReview` + `Capture::MacroSweep`: screens tasks for macro suitability, proposes a script (`addin_js` for Excel, VBA elsewhere), queue at `/macros`; only an approved review lets `addin/macro_runner.js` run it in place of the AI, and the review tallies tokens saved.
+- `Capture::Estimator`: per-step and per-run anticipated tokens/seconds/cost (measured from `SkillRun` where available, priors otherwise), `tally` (spent vs planned vs projected), `trial_plan` (same task priced on every model) and `trial_results` (`SkillRun#trial_of`).
+- Split tasks: `Flow` step `parts` (engine ai|macro|person, assignee, model), `FlowRun#complete_part!`, one `AddinCommand` per part, `POST …/flow_runs/:id/complete_part?step=&part=`.
+- `SkillRun` gains engine, nature, cost, estimated_tokens, part_id, trial_of.
+- Tests: 166 Rails runs, 42 JavaScript tests.
 

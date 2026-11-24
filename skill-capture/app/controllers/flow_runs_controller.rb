@@ -10,7 +10,11 @@ class FlowRunsController < ApplicationController
   end
 
   def complete
-    change("Done.") { @run.complete!(index: params[:step].to_i, user: current_user, note: params[:note]) }
+    change("Done.") { @run.complete!(index: params[:step].to_i, user: current_user, note: params[:note], usage: usage_params) }
+  end
+
+  def complete_part
+    change("Part done.") { @run.complete_part!(index: params[:step].to_i, part_id: params[:part], user: current_user, note: params[:note], usage: usage_params) }
   end
 
   def resume = change("Resumed.") { @run.resume_pause!(index: params[:step].to_i, by: current_user) }
@@ -28,9 +32,11 @@ class FlowRunsController < ApplicationController
 
   private
 
+  def usage_params = params.permit(usage: %i[model input_tokens output_tokens duration_ms trial_of])[:usage]
+
   def change(msg)
     yield
-    msg = @run.status == "completed" ? "Done: every task is complete." : "#{msg} Now: task #{@run.current_index + 1}, #{@run.current&.dig('title')}." if action_name.in?(%w[complete resume skip])
+    msg = @run.status == "completed" ? "Done: every task is complete." : "#{msg} Now: task #{@run.current_index + 1}, #{@run.current&.dig('title')}." if action_name.in?(%w[complete complete_part resume skip])
     redirect_to flow_run_path(@run), notice: msg
   rescue FlowRun::Error => e
     redirect_to flow_run_path(@run), alert: e.message

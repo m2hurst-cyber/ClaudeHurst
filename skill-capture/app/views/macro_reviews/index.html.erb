@@ -1,0 +1,39 @@
+<% content_for :title, "Macro review" %>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Macro review</h1>
+    <p class="text-sm text-slate-500">Every task is screened: could a deterministic script do this instead of an AI call? Approved macros run in place of the AI and cost no tokens. A person approves each one, because a wrong macro is quietly wrong on every run.</p>
+  </div>
+  <div class="flex items-center gap-3 text-sm">
+    <span class="text-slate-600">Saved so far <strong><%= number_with_delimiter(@saved[:tokens]) %></strong> tokens over <strong><%= @saved[:runs] %></strong> runs</span>
+    <% if @can_review %><%= button_to "Screen everything", screen_all_macro_reviews_path, class: "px-3 py-1.5 rounded bg-slate-900 text-white" %><% end %>
+  </div>
+</div>
+
+<% rows = ->(list, empty) { capture do %>
+  <% if list.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4"><%= empty %></p><% else %>
+    <ul class="space-y-2">
+      <% list.each do |r| %>
+        <li class="bg-white border rounded p-3 text-sm">
+          <div class="flex flex-wrap justify-between gap-2">
+            <%= link_to r.title, macro_review_path(r), class: "font-medium text-sky-700 hover:underline" %>
+            <span class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded text-xs <%= { 'macro' => 'bg-emerald-100 text-emerald-900', 'partial' => 'bg-amber-100 text-amber-900', 'ai' => 'bg-slate-100 text-slate-700' }[r.verdict] %>"><%= r.verdict_label %></span>
+              <span class="text-xs text-slate-500">score <%= r.score %></span>
+            </span>
+          </div>
+          <div class="text-xs text-slate-500"><%= r.subject_kind == "skill" ? "Skill" : "Flow task" %> · <code><%= r.subject_key %></code><%= " · saved #{number_with_delimiter(r.tokens_saved)} tokens over #{r.runs_saved} runs" if r.runs_saved.positive? %></div>
+          <p class="text-slate-600 mt-1"><%= r.reason %></p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end } %>
+
+<div class="grid lg:grid-cols-2 gap-5">
+  <section><h2 class="font-semibold mb-2">Waiting for review (<%= @open.size %>)</h2><%= rows.(@open, "Nothing waiting. Screen everything to look again.") %></section>
+  <div class="space-y-5">
+    <section><h2 class="font-semibold mb-2">Approved: running as macros (<%= @approved.size %>)</h2><%= rows.(@approved, "None approved yet.") %></section>
+    <% if @rejected.any? %><section><h2 class="font-semibold mb-2">Kept with the AI</h2><%= rows.(@rejected, "") %></section><% end %>
+  </div>
+</div>

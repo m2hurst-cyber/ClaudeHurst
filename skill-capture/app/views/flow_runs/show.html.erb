@@ -7,6 +7,8 @@
 <% pos = r.steps.each_with_index.map { |s, i| [label + i * w + (w - nw) / 2, [lanes.index(s["app"]) || 0, 0].max * h + (h - nh) / 2] } %>
 <% owner = r.owner?(current_user) %>
 <% cur = r.current %>
+<% t = r.tally %>
+<% est_steps = t.dig("estimate", "steps") || [] %>
 <div data-controller="run-refresh" data-run-refresh-url-value="<%= flow_run_path(r, format: :json) %>" data-run-refresh-stamp-value="<%= r.updated_at.to_f %>">
 <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
   <div>
@@ -64,6 +66,22 @@
   </svg>
 </div>
 
+<section class="mb-4 bg-white border rounded p-3 text-sm" aria-label="Cost and time">
+  <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+    <h2 class="font-semibold">Anticipated vs actual</h2>
+    <span class="text-xs text-slate-500"><%= t.dig("estimate", "ai_steps") %> AI · <%= t.dig("estimate", "macro_steps") %> macro · models: <%= (t.dig("estimate", "models") || {}).map { |m, n| "#{Capture::Models.label(m)}×#{n}" }.join(", ") %></span>
+  </div>
+  <div class="grid sm:grid-cols-4 gap-3">
+    <% spent = t["spent"]; est = t["estimate"]; proj = t["projected"] %>
+    <% pct = est["tokens"].to_i.positive? ? [(spent["tokens"].to_f / est["tokens"] * 100).round, 100].min : 0 %>
+    <div><div class="text-xs text-slate-500">Spent so far</div><div class="text-lg font-semibold"><%= number_with_delimiter(spent["tokens"]) %> <span class="text-xs font-normal text-slate-500">tokens</span></div><div class="text-xs"><%= number_to_currency(spent["cost"], unit: "", precision: 3) %> credits · <%= (spent["seconds"] / 60).round(1) %> min</div></div>
+    <div><div class="text-xs text-slate-500">Anticipated, whole run</div><div class="text-lg font-semibold"><%= number_with_delimiter(est["tokens"]) %></div><div class="text-xs"><%= number_to_currency(est["cost"], unit: "", precision: 3) %> credits · ~<%= (est["seconds"].to_f / 60).round %> min</div></div>
+    <div><div class="text-xs text-slate-500">Still to come</div><div class="text-lg font-semibold"><%= number_with_delimiter(t.dig("remaining", "tokens")) %></div><div class="text-xs"><%= number_to_currency(t.dig("remaining", "cost"), unit: "", precision: 3) %> credits</div></div>
+    <div><div class="text-xs text-slate-500">Projected total</div><div class="text-lg font-semibold <%= proj["cost"] > est["cost"] * 1.15 ? "text-red-700" : "text-emerald-700" %>"><%= number_with_delimiter(proj["tokens"]) %></div><div class="text-xs"><%= number_to_currency(proj["cost"], unit: "", precision: 3) %> credits<%= " · #{((proj['cost'] / est['cost'] - 1) * 100).round}% vs plan" if est["cost"].to_f.positive? %></div></div>
+  </div>
+  <div class="mt-2 h-2 rounded bg-slate-100 overflow-hidden" role="img" aria-label="<%= pct %>% of the anticipated tokens spent"><div class="h-full bg-sky-600" style="width: <%= pct %>%"></div></div>
+</section>
+
 <div class="grid lg:grid-cols-[1fr_22rem] gap-4">
   <ol class="bg-white border rounded divide-y text-sm">
     <% r.steps.each_with_index do |s, i| %>
@@ -73,6 +91,32 @@
           <span class="font-medium"><%= Flow.pause?(s) ? "⏸" : "#{i + 1}." %> <%= s["title"] %><%= " ▶ now" if now %></span>
           <span class="text-xs text-slate-500"><%= Flow.pause?(s) ? Flow.pause_label(s) : "#{s['app']} · #{Flow.assignee_label(s['assignee'], owner: r.user)}" %> · <%= now && r.status == "on_hold" ? "on hold" : s["state"] %></span>
         </div>
+        <% e = est_steps[i] || {} %>
+        <% unless Flow.pause?(s) %>
+          <div class="text-xs text-slate-500"><%= Capture::TaskProfile.label(s["nature"] || e["nature"]) %> · <%= s["complexity"] || e["complexity"] %> ·
+            <%= e["engine"] == "macro" || s["engine"] == "macro" ? "⚙ macro, no tokens" : "#{Capture::Models.label(s['model'] || e['model'])}, about #{number_with_delimiter(e['tokens'])} tokens (#{number_to_currency(e['cost'], unit: '', precision: 3)} cr)" %>
+            <% if (u = s["usage"]) %> → actual <strong><%= number_with_delimiter(u["input_tokens"].to_i + u["output_tokens"].to_i) %></strong> tokens<%= " (#{number_to_currency(u['cost'], unit: '', precision: 3)} cr)" if u["cost"] %><% end %>
+          </div>
+        <% end %>
+        <% if Flow.split?(s) %>
+          <ul class="mt-1 space-y-1">
+            <% Flow.parts(s).each do |p| %>
+              <li class="border rounded px-2 py-1 text-xs <%= p['state'] == 'done' ? 'bg-emerald-50 border-emerald-300' : 'bg-white' %>">
+                <div class="flex flex-wrap justify-between gap-2">
+                  <span><%= Flow.engine_label(p["engine"]) %> <strong><%= p["title"] %></strong> · <%= Flow.assignee_label(p["assignee"], owner: r.user) %><%= " · #{Capture::Models.label(p['model'])}" if p["model"] && p["engine"] == "ai" %></span>
+                  <span><%= p["state"] == "done" ? "✓ #{p['by']}" : (i == r.current_index && r.running? ? "running" : "waiting") %></span>
+                </div>
+                <% if p["note"] %><div class="text-slate-600"><%= p["note"] %></div><% end %>
+                <% if i == r.current_index && r.running? && p["state"] != "done" && r.assigned?(p["assignee"], user: current_user) %>
+                  <%= form_with url: complete_part_flow_run_path(r, step: i, part: p["id"]), method: :post, class: "flex gap-1 mt-1" do %>
+                    <input name="note" placeholder="What you did" class="flex-1 border rounded px-1 py-0.5">
+                    <button class="px-2 py-0.5 rounded bg-emerald-700 text-white">My part is done</button>
+                  <% end %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
         <% if s["skill_name"] && (sk = Skill.current(s["skill_name"])) %><div class="text-xs">📘 <%= link_to sk.title, skill_path(sk), class: "text-sky-700 hover:underline" %></div><% end %>
         <% if s["instructions"] %><p class="text-slate-600 text-xs mt-0.5"><%= s["instructions"] %></p><% end %>
         <% if s["state"] == "done" %>
@@ -102,7 +146,10 @@
     <% end %>
   </ol>
   <aside class="bg-white border rounded p-4 text-sm self-start">
-    <% if r.running? && r.doer?(user: current_user) %>
+    <% if r.running? && Flow.split?(cur.to_h) && r.doer?(user: current_user) %>
+      <h2 class="font-semibold mb-1">Your part of task <%= r.current_index + 1 %></h2>
+      <p class="text-slate-600 mb-2">This task is split: <%= Flow.parts(cur).map { |p| "#{Flow.engine_label(p['engine'])} #{p['title']}" }.join(" · ") %>. Finish yours in the list; the task hands off when every part is done.</p>
+    <% elsif r.running? && r.doer?(user: current_user) %>
       <h2 class="font-semibold mb-1">Your turn: task <%= r.current_index + 1 %></h2>
       <p class="text-slate-600 mb-2"><%= cur["title"] %><%= " (in #{cur['app']})" unless cur["app"] == "Agent" %><%= ". Standing in for the agent." if cur["assignee"].to_s.start_with?("agent:") %></p>
       <%= form_with url: complete_flow_run_path(r, step: r.current_index), method: :post do %>
