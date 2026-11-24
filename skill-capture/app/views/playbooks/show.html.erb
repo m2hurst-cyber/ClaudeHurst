@@ -15,7 +15,35 @@
   </div>
 </div>
 
-<% if pb.installed? %>
+<% if pb.pack? %>
+  <% cmds = FormulaCommand.where(provider: pb.provider) %>
+  <div class="bg-white border rounded p-4 mb-4 text-sm flex flex-wrap items-center gap-3">
+    <span><strong><%= cmds.count %></strong> <%= FormulaCommand.provider_name(pb.provider) %> commands · <%= cmds.where(status: "verified").count %> verified</span>
+    <%= link_to "Open the formula library →", formulas_path(provider: pb.provider), class: "text-sky-700 hover:underline" %>
+    <%= link_to "See it on the map →", skill_map_path(field: "investment-analysis", hide: 1), class: "text-sky-700 hover:underline" if pb.installed? %>
+  </div>
+  <div class="grid md:grid-cols-2 gap-4">
+    <% pb.routes.each do |rk, r| %>
+      <div class="bg-white border rounded p-4 text-sm">
+        <h2 class="font-semibold mb-3"><%= r["title"] %></h2>
+        <ol>
+          <% Array(r["steps"]).each_with_index do |st, i| %>
+            <% skill = Skill.current(st["name"]); bp = st["worksheet"] || {} %>
+            <li class="relative pl-10 pb-4">
+              <% unless i == r["steps"].size - 1 %><span class="absolute left-[15px] top-8 bottom-0 w-1.5 rounded bg-sky-600" aria-hidden="true"></span><% end %>
+              <span class="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border-4 border-sky-600 grid place-items-center text-xs font-bold"><%= { "table" => "▦", "grid" => "▤", "sensitivity" => "±", "chart" => "📈" }[bp["kind"] || "table"] %></span>
+              <% if skill %><%= link_to st["title"], skill_path(skill), class: "font-semibold text-sky-700 hover:underline" %><% else %><span class="font-semibold"><%= st["title"] %></span><% end %>
+              <% case @status[st["name"]] when :changed %><span class="text-xs text-amber-700">update available</span><% when :missing %><span class="text-xs text-slate-400">not installed</span><% end %>
+              <div class="text-xs text-slate-500 mt-0.5"><%= Capture::Worksheets.outline(bp).first %></div>
+            </li>
+          <% end %>
+        </ol>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<% if pb.installed? && pb.runnable? %>
   <div class="bg-white border rounded p-4 mb-4 text-sm">
     <h2 class="font-semibold mb-2">Start a return</h2>
     <%= form_with url: playbook_runs_path, method: :post, class: "flex flex-wrap gap-2 items-end" do %>
@@ -30,6 +58,7 @@
   </div>
 <% end %>
 
+<% unless pb.pack? %>
 <div class="grid lg:grid-cols-[1fr_22rem] gap-4">
   <div class="bg-white border rounded p-4">
     <h2 class="font-semibold mb-3">The route</h2>
@@ -80,3 +109,4 @@
     <%= link_to "See it on the map →", skill_map_path(field: pb.data.dig("fields", 0, "path"), hide: 1), class: "text-sky-700 hover:underline text-xs" if pb.installed? %>
   </div>
 </div>
+<% end %>

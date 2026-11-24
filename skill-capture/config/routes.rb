@@ -98,6 +98,9 @@ Rails.application.routes.draw do
     resources :prompts, only: :index do
       member { post :respond }
     end
+    resources :formulas, only: %i[index create update] do
+      collection { post :import }
+    end
     resources :playbooks, only: %i[index show], constraints: { id: /[a-z0-9-]+/ } do
       member { post :install }
     end

@@ -15,6 +15,7 @@ module ApplicationHelper
   # "finance" → "Finance", "hr" → "HR", "sales-ops" → "Sales Ops"
   def area_name(name)
     return "No area" if name.blank? || name == Capture::SkillMap::UNASSIGNED
+    return { "bql" => "BQL", "factset" => "FactSet" }[name] if %w[bql factset].include?(name)
     name.length <= 3 ? name.upcase : name.tr("-_", "  ").titleize
   end
 

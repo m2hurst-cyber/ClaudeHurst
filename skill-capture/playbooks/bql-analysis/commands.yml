@@ -1,0 +1,413 @@
+# Bloomberg BQL command library: each formula with its syntax ({param} placeholders), defaults and category.
+# Starter catalog: every command installs as unverified until someone with BQL access checks it (console: Formulas).
+# Add the rest by editing this file or importing a CSV in the console.
+provider: bql
+commands:
+  revenue:
+    name: Revenue
+    category: Income statement
+    syntax: =BQL({security},"sales_rev_turn(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Revenue for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  gross_profit:
+    name: Gross profit
+    category: Income statement
+    syntax: =BQL({security},"gross_profit(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Gross profit for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  ebitda:
+    name: EBITDA
+    category: Income statement
+    syntax: =BQL({security},"ebitda(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'EBITDA for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_income:
+    name: Operating income (EBIT)
+    category: Income statement
+    syntax: =BQL({security},"is_oper_inc(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Operating income (EBIT) for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_income:
+    name: Net income
+    category: Income statement
+    syntax: =BQL({security},"net_income(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Net income for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  eps_diluted:
+    name: Diluted EPS
+    category: Income statement
+    syntax: =BQL({security},"is_diluted_eps(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Diluted EPS for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  interest_expense:
+    name: Interest expense
+    category: Income statement
+    syntax: =BQL({security},"is_int_expense(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Interest expense for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  rnd:
+    name: R&D expense
+    category: Income statement
+    syntax: =BQL({security},"is_rd_expend(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'R&D expense for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  sga:
+    name: SG&A expense
+    category: Income statement
+    syntax: =BQL({security},"is_sga_expense(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'SG&A expense for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_assets:
+    name: Total assets
+    category: Balance sheet
+    syntax: =BQL({security},"bs_tot_asset(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Total assets for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_liabilities:
+    name: Total liabilities
+    category: Balance sheet
+    syntax: =BQL({security},"bs_tot_liab2(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Total liabilities for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_equity:
+    name: Total equity
+    category: Balance sheet
+    syntax: =BQL({security},"total_equity(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Total equity for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_debt:
+    name: Total debt
+    category: Balance sheet
+    syntax: =BQL({security},"short_and_long_term_debt(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Total debt for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  cash:
+    name: Cash and equivalents
+    category: Balance sheet
+    syntax: =BQL({security},"bs_cash_near_cash_item(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Cash and equivalents for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_debt:
+    name: Net debt
+    category: Balance sheet
+    syntax: =BQL({security},"net_debt(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Net debt for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_assets:
+    name: Current assets
+    category: Balance sheet
+    syntax: =BQL({security},"bs_cur_asset_report(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Current assets for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_liabilities:
+    name: Current liabilities
+    category: Balance sheet
+    syntax: =BQL({security},"bs_cur_liab(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Current liabilities for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  inventory:
+    name: Inventory
+    category: Balance sheet
+    syntax: =BQL({security},"bs_inventories(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Inventory for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  receivables:
+    name: Receivables
+    category: Balance sheet
+    syntax: =BQL({security},"bs_acct_note_rcv(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Receivables for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_cash_flow:
+    name: Cash from operations
+    category: Cash flow
+    syntax: =BQL({security},"cf_cash_from_oper(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Cash from operations for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  capex:
+    name: Capital expenditure
+    category: Cash flow
+    syntax: =BQL({security},"capital_expend(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Capital expenditure for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  free_cash_flow:
+    name: Free cash flow
+    category: Cash flow
+    syntax: =BQL({security},"cf_free_cash_flow(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Free cash flow for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  dividends_per_share:
+    name: Dividends per share
+    category: Cash flow
+    syntax: =BQL({security},"eqy_dps(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Dividends per share for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  pe_ratio:
+    name: P/E
+    category: Ratios
+    syntax: =BQL({security},"pe_ratio(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'P/E for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  price_to_book:
+    name: Price / book
+    category: Ratios
+    syntax: =BQL({security},"px_to_book_ratio(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Price / book for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  price_to_sales:
+    name: Price / sales
+    category: Ratios
+    syntax: =BQL({security},"px_to_sales_ratio(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Price / sales for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  ev_ebitda:
+    name: EV / EBITDA
+    category: Ratios
+    syntax: =BQL({security},"ev_to_ebitda(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'EV / EBITDA for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  roe:
+    name: Return on equity
+    category: Ratios
+    syntax: =BQL({security},"return_com_eqy(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Return on equity for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  roa:
+    name: Return on assets
+    category: Ratios
+    syntax: =BQL({security},"return_on_asset(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Return on assets for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  gross_margin:
+    name: Gross margin
+    category: Ratios
+    syntax: =BQL({security},"gross_margin(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Gross margin for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_margin:
+    name: Operating margin
+    category: Ratios
+    syntax: =BQL({security},"oper_margin(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Operating margin for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_margin:
+    name: Net margin
+    category: Ratios
+    syntax: =BQL({security},"prof_margin(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Net margin for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  debt_to_equity:
+    name: Debt / equity
+    category: Ratios
+    syntax: =BQL({security},"tot_debt_to_tot_eqy(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Debt / equity for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_ratio:
+    name: Current ratio
+    category: Ratios
+    syntax: =BQL({security},"cur_ratio(fpt={fpt}, fpo={fpo})")
+    defaults:
+      fpt: A
+      fpo: 0
+    description: 'Current ratio for the fiscal period (fpt: A annual, Q quarterly; fpo: 0 latest, -1 prior, ...).'
+  price:
+    name: Last price
+    category: Market
+    syntax: =BQL({security},"px_last")
+    description: Last price, latest.
+  market_cap:
+    name: Market capitalization
+    category: Market
+    syntax: =BQL({security},"cur_mkt_cap")
+    description: Market capitalization, latest.
+  enterprise_value:
+    name: Enterprise value
+    category: Market
+    syntax: =BQL({security},"curr_entp_val")
+    description: Enterprise value, latest.
+  shares_out:
+    name: Shares outstanding
+    category: Market
+    syntax: =BQL({security},"eqy_sh_out")
+    description: Shares outstanding, latest.
+  volume:
+    name: Volume
+    category: Market
+    syntax: =BQL({security},"px_volume")
+    description: Volume, latest.
+  dividend_yield:
+    name: Dividend yield (12m)
+    category: Market
+    syntax: =BQL({security},"eqy_dvd_yld_12m")
+    description: Dividend yield (12m), latest.
+  beta:
+    name: Beta
+    category: Market
+    syntax: =BQL({security},"eqy_beta")
+    description: Beta, latest.
+  high_52w:
+    name: 52-week high
+    category: Market
+    syntax: =BQL({security},"high_52week")
+    description: 52-week high, latest.
+  low_52w:
+    name: 52-week low
+    category: Market
+    syntax: =BQL({security},"low_52week")
+    description: 52-week low, latest.
+  revenue_est:
+    name: Revenue, consensus
+    category: Estimates
+    syntax: =BQL({security},"sales_rev_turn(fpt={fpt}, fpo={fpo}, ae=E)")
+    defaults:
+      fpt: A
+      fpo: 1
+    description: Revenue, consensus for a forward fiscal period (fpo 1 = next).
+  ebitda_est:
+    name: EBITDA, consensus
+    category: Estimates
+    syntax: =BQL({security},"ebitda(fpt={fpt}, fpo={fpo}, ae=E)")
+    defaults:
+      fpt: A
+      fpo: 1
+    description: EBITDA, consensus for a forward fiscal period (fpo 1 = next).
+  eps_est:
+    name: EPS, consensus
+    category: Estimates
+    syntax: =BQL({security},"is_eps(fpt={fpt}, fpo={fpo}, ae=E)")
+    defaults:
+      fpt: A
+      fpo: 1
+    description: EPS, consensus for a forward fiscal period (fpo 1 = next).
+  fcf_est:
+    name: Free cash flow, consensus
+    category: Estimates
+    syntax: =BQL({security},"cf_free_cash_flow(fpt={fpt}, fpo={fpo}, ae=E)")
+    defaults:
+      fpt: A
+      fpo: 1
+    description: Free cash flow, consensus for a forward fiscal period (fpo 1 = next).
+  net_income_est:
+    name: Net income, consensus
+    category: Estimates
+    syntax: =BQL({security},"net_income(fpt={fpt}, fpo={fpo}, ae=E)")
+    defaults:
+      fpt: A
+      fpo: 1
+    description: Net income, consensus for a forward fiscal period (fpo 1 = next).
+  esg_score:
+    name: ESG score
+    category: ESG
+    syntax: =BQL({security},"esg_disclosure_score")
+    description: Bloomberg esg score (disclosure-based).
+  environmental_score:
+    name: Environmental score
+    category: ESG
+    syntax: =BQL({security},"environ_disclosure_score")
+    description: Bloomberg environmental score (disclosure-based).
+  social_score:
+    name: Social score
+    category: ESG
+    syntax: =BQL({security},"social_disclosure_score")
+    description: Bloomberg social score (disclosure-based).
+  governance_score:
+    name: Governance score
+    category: ESG
+    syntax: =BQL({security},"govnce_disclosure_score")
+    description: Bloomberg governance score (disclosure-based).
+  macro_value:
+    name: Macro series, latest
+    category: Macro
+    syntax: =BQL({security},"px_last")
+    description: Latest value of an economic index ticker (for example GDP CQOQ Index).
+  macro_value_ago:
+    name: Macro series, value a period ago
+    category: Macro
+    syntax: =BQL({security},"px_last(dates={ago})")
+    defaults:
+      ago: -1Y
+    description: Value of the series at a past date (dates=-1Y).
+  index_members:
+    name: Index members
+    category: Universe
+    syntax: =BQL.Query("get(name) for(members('{index}'))")
+    defaults:
+      index: SPX Index
+    description: Lists an index's members (spills down).
+  price_history:
+    name: Price history
+    category: Market
+    syntax: =BQL({security},"px_last(dates=range({start},0D))")
+    defaults:
+      start: -1Y
+    description: Daily closing prices over a range (spills down).
+  total_return_1y:
+    name: Total return, 1 year
+    category: Market
+    syntax: =BQL({security},"total_return(calc_interval=1Y)")
+    description: One-year total return.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000014) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000015) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -119,6 +119,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000014) do
     t.index ["created_by_id"], name: "index_fields_on_created_by_id"
     t.index ["parent_id"], name: "index_fields_on_parent_id"
     t.index ["path"], name: "index_fields_on_path", unique: true
+  end
+
+  create_table "formula_commands", force: :cascade do |t|
+    t.string "provider", null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.string "category", default: "Other", null: false
+    t.text "syntax", null: false
+    t.jsonb "defaults", default: {}, null: false
+    t.text "description"
+    t.string "status", default: "unverified", null: false
+    t.string "origin", default: "pack", null: false
+    t.text "verification_note"
+    t.bigint "verified_by_id"
+    t.datetime "verified_at"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_formula_commands_on_created_by_id"
+    t.index ["provider", "category"], name: "index_formula_commands_on_provider_and_category"
+    t.index ["provider", "key"], name: "index_formula_commands_on_provider_and_key", unique: true
+    t.index ["verified_by_id"], name: "index_formula_commands_on_verified_by_id"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -722,6 +744,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000014) do
   add_foreign_key "credit_entries", "users"
   add_foreign_key "fields", "fields", column: "parent_id"
   add_foreign_key "fields", "users", column: "created_by_id"
+  add_foreign_key "formula_commands", "users", column: "created_by_id"
+  add_foreign_key "formula_commands", "users", column: "verified_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "playbook_runs", "users"
   add_foreign_key "playbook_runs", "users", column: "reviewer_id"

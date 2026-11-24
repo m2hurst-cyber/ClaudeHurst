@@ -29,6 +29,7 @@
   <div class="space-y-4 text-sm">
     <% std = Capture::SkillStandard.check_skill(s) %>
     <% unless std.clean? %><%= render "skills/standard", report: std, compact: true %><% end %>
+    <%= render "worksheet_panel", s: s %>
     <%= render "classification_panel", s: s %>
     <%= render "resources_panel", s: s %>
     <%= render "stage_panel", s: s %>

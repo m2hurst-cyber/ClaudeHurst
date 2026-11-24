@@ -5,6 +5,7 @@ import { wireHost, setAutoLoad, insertText, openInBrowser, connectDialog } from 
 import { renderMarkdown, toPlainSteps } from "addin/markdown";
 import { memory } from "addin/memory";
 import { registerRibbon, showPane } from "addin/ribbon";
+import { plan as planSheet, apply as applySheet, colLetter } from "addin/worksheet_builder";
 
 const root = document.getElementById("app");
 const view = document.getElementById("view");
@@ -12,7 +13,7 @@ const api = createApi();
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const CAPTURE_KEY = "skillcapture.capturing";
 const DRAFT_KEY = "skillcapture.recordingDraft"; // autosaved recording (redundancy if the pane closes)
-const areaName = (n) => n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+const areaName = (n) => n === "factset" ? "FactSet" : n.length <= 3 ? n.toUpperCase() : n.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 
 const state = { host: null, me: null, tab: "library", capture: null, wired: null, flash: null, flashKind: "ok", prompts: [], recovered: null,
                 hostOnly: settings.get("skillcapture.hostOnly") !== "0" }; // default: show skills for the app you're in
@@ -280,7 +281,8 @@ async function renderSkill(name) {
       <p class="mb-2">${esc(s.description)}</p>
       ${s.traffic ? trafficHtml(s) : ""}
       <div class="flex flex-wrap gap-1 mb-3">
-        <button data-action="remember" class="${btnPrimary}">Add to memory</button>
+        ${s.worksheet ? `<button data-action="build-sheet" data-name="${esc(s.name)}" class="${btnPrimary}">▦ Build worksheet</button>` : ""}
+        <button data-action="remember" class="${s.worksheet ? btn : btnPrimary}">Add to memory</button>
         ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
         <button data-action="open-url" data-url="${esc(s.url)}" class="${btn}">Open in browser</button>
       </div>
@@ -292,6 +294,73 @@ async function renderSkill(name) {
       ${s.next_up?.length ? `<div class="border-t mt-3 pt-2"><div class="text-xs text-slate-500 mb-1">When you're done, people usually continue with</div>
         ${s.next_up.map((n) => `<button data-skill="${esc(n.name)}" class="block text-left text-sky-700 hover:underline">→ ${esc(n.title)}${n.traffic ? ` <span class="text-xs text-slate-500">(${n.traffic} trips)</span>` : ""}</button>`).join("")}</div>` : ""}`;
   } catch (e) { panel().innerHTML = `<p class="text-red-700">${esc(e.message)}</p>`; }
+}
+
+// ---------- building a skill's worksheet in Excel ----------
+const BUILT_KEY = (name) => `skillcapture.built.${name}`;
+const builtInputs = (name) => { try { return JSON.parse(settings.get(BUILT_KEY(name)) || "{}"); } catch { return {}; } };
+
+async function renderBuild(name, from) {
+  panel().innerHTML = '<p class="text-slate-500">Loading the worksheet…</p>';
+  const b = from === "memory" ? memory.get(name) : await api.bundle(name);
+  if (!b?.worksheet) { panel().innerHTML = '<p class="text-red-700">This skill has no worksheet.</p>'; return; }
+  state.build = { bundle: b, from, inputs: { ...Object.fromEntries((b.worksheet.inputs || []).map((i) => [i.key, i.default ?? ""])), ...builtInputs(name) } };
+  renderBuildPanel();
+}
+
+function sourcesFor(b) {
+  // Source sheets are planned with the inputs they were last built with, so ranges line up.
+  return Object.fromEntries(Object.entries(b.worksheet_sources || {}).map(([n, bp]) => [n, { ...bp, __inputs: builtInputs(n) }]));
+}
+
+function currentPlan() {
+  const { bundle: b, inputs } = state.build;
+  const sources = sourcesFor(b);
+  const p = planSheet(b.worksheet, { inputs, commands: b.commands || {}, sources });
+  return p;
+}
+
+function previewGrid(p) {
+  if (!p.cells.length) return "";
+  const at = (a) => { const m = /^([A-Z]+)(\d+)$/.exec(a); let c = 0; for (const ch of m[1]) c = c * 26 + ch.charCodeAt(0) - 64; return [Number(m[2]), c - 1]; };
+  const grid = {};
+  let maxR = 0, maxC = 0;
+  for (const c of p.cells) { const [r, col] = at(c.address); grid[`${r}:${col}`] = c; maxR = Math.max(maxR, r); maxC = Math.max(maxC, col); }
+  maxR = Math.min(maxR, 24); maxC = Math.min(maxC, 6);
+  const rows = [];
+  for (let r = 1; r <= maxR; r++) {
+    rows.push(`<tr><td class="text-slate-400 pr-1 text-right">${r}</td>${Array.from({ length: maxC + 1 }, (_, c) => {
+      const cell = grid[`${r}:${c}`];
+      const txt = cell ? (cell.formula ?? cell.value) : "";
+      return `<td class="border px-1 max-w-[9rem] truncate ${cell?.formula ? "font-mono text-[10px] text-sky-800" : ""} ${cell?.bold ? "font-semibold" : ""} ${cell?.input ? "bg-amber-50" : ""}" title="${esc(txt)}">${esc(txt)}</td>`;
+    }).join("")}</tr>`);
+  }
+  return `<div class="overflow-x-auto border rounded mt-2"><table class="text-[11px] border-collapse"><thead><tr><th></th>${Array.from({ length: maxC + 1 }, (_, c) => `<th class="text-slate-400 font-normal">${colLetter(c)}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+}
+
+function renderBuildPanel() {
+  const { bundle: b, inputs } = state.build;
+  const bp = b.worksheet;
+  const p = currentPlan();
+  const unverified = p.unverified.map((k) => b.commands?.[k]?.name || k);
+  const excel = state.host === "Excel";
+  panel().innerHTML = `
+    <button data-action="${state.build.from === "memory" ? "back-memory" : "back-library"}" class="text-sky-700 mb-2">← ${state.build.from === "memory" ? "Memory" : "Library"}</button>
+    <h2 class="text-base font-semibold">${esc(b.title)}</h2>
+    <div class="text-xs text-slate-500 mb-2">${esc(areaName(b.provider || ""))} · ${esc(bp.kind || "table")} · ${bp.kind === "chart" ? `chart on “${esc(p.sheet || bp.source)}”` : `sheet “${esc(bp.sheet)}”`}</div>
+    <form data-form="build" class="space-y-1.5">
+      ${(bp.inputs || []).map((i) => `<label class="block text-xs">${esc(i.label || i.key)}
+        ${i.type === "list" ? `<textarea name="${esc(i.key)}" rows="4" class="${input} font-mono text-xs">${esc(inputs[i.key])}</textarea>`
+                            : `<input name="${esc(i.key)}" value="${esc(inputs[i.key])}" class="${input} text-xs">`}</label>`).join("")}
+      ${(bp.inputs || []).length ? `<button class="${btn} text-xs">Update preview</button>` : ""}
+    </form>
+    ${p.warnings.length ? `<div class="mt-2 rounded border border-red-200 bg-red-50 text-red-800 text-xs p-2">${p.warnings.slice(0, 6).map(esc).join("<br>")}</div>` : ""}
+    ${unverified.length ? `<div class="mt-2 rounded border border-amber-200 bg-amber-50 text-amber-900 text-xs p-2">◌ ${unverified.length} formula${unverified.length === 1 ? "" : "s"} not verified yet: ${esc(unverified.slice(0, 6).join(", "))}${unverified.length > 6 ? "…" : ""}. Check the results against ${esc(areaName(b.provider || ""))} before relying on them.</div>` : ""}
+    ${bp.kind === "chart" ? `<div class="text-xs mt-2">${p.charts.map((c) => `${esc(c.type)} chart “${esc(c.title || "")}” at ${esc(c.at)}: ${c.series.map((s) => esc(s.nameText)).join(", ")}`).join("<br>")}</div>` : previewGrid(p)}
+    <div class="flex gap-1 mt-3">
+      <button data-action="apply-sheet" class="${btnPrimary} flex-1" ${excel && !p.warnings.some((w) => /Build “/.test(w)) ? "" : "disabled"}>${bp.kind === "chart" ? "Add the chart" : `Build “${esc(bp.sheet)}”`}</button>
+    </div>
+    <p class="text-xs text-slate-500 mt-1">${excel ? (bp.kind === "chart" ? "Adds the chart beside the source table." : "Creates the sheet, or rebuilds it if it already exists.") : "Open this in Excel to build it."}</p>`;
 }
 
 function renderMemory() {
@@ -321,6 +390,7 @@ function renderMemoryItem(name) {
     <h2 class="text-base font-semibold">${esc(m.title)}</h2>
     <div class="text-xs text-slate-500 mb-2">In memory since ${new Date(m.loaded_at).toLocaleString()}${m.from ? ` · sent by ${esc(m.from)}` : ""}</div>
     <div class="flex gap-1 mb-2">
+      ${m.worksheet ? `<button data-action="build-sheet" data-name="${esc(m.name)}" data-from="memory" class="${btnPrimary}">▦ Build worksheet</button>` : ""}
       ${state.host ? `<button data-action="insert-skill" class="${btn}">Insert steps here</button>` : ""}
       <button data-action="copy-context" data-name="${esc(m.name)}" class="${btn}">Copy for AI</button>
     </div>
@@ -490,6 +560,14 @@ document.addEventListener("click", async (ev) => {
     }
     else if (a === "resume-recording") { state.capture.restoreRecording(state.recovered.steps); state.recovered = null; renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recovered") { state.recovered = null; settings.set(DRAFT_KEY, null); renderRecord(); }
+    else if (a === "build-sheet") { await renderBuild(t.dataset.name, t.dataset.from); }
+    else if (a === "apply-sheet") {
+      const p = currentPlan();
+      const out = await applySheet(p, window.Excel);
+      settings.set(BUILT_KEY(state.build.bundle.name), JSON.stringify(state.build.inputs));
+      flash(p.kind === "chart" ? `Added the chart to “${out.sheet}”.` : `Built “${out.sheet}”: ${out.cells} cells. Formulas calculate in your ${areaName(state.build.bundle.provider || "")} session.`);
+      render(); renderBuildPanel();
+    }
     else if (a === "start-recording") { state.capture.startRecording(); renderRecord(); updateCaptureBadge(); }
     else if (a === "discard-recording") { state.capture.stopRecording(); settings.set(DRAFT_KEY, null); renderRecord(); }
     else if (a === "remove-step") { state.capture.removeStep(Number(t.dataset.index)); }
@@ -531,6 +609,7 @@ document.addEventListener("submit", async (ev) => {
   const data = Object.fromEntries(new FormData(f));
   try {
     if (f.dataset.form === "search") return renderLibrary(data.q, state.area);
+    if (f.dataset.form === "build") { Object.assign(state.build.inputs, data); return renderBuildPanel(); }
     if (f.dataset.form === "note") {
       if (data.note.trim()) state.capture.addNote(manualStep(state.host, data.note));
       f.reset(); f.note.focus();

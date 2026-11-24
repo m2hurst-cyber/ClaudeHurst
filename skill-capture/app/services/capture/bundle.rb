@@ -19,7 +19,19 @@ module Capture
         stage: skill.stage, area: skill.domain, fields: c ? c.ordered_fields.map(&:label) : [], apps: c&.apps || [],
         skill_md: skill.to_skill_md, directions: directions,
         resources: ResourceLibrary.for_skill(skill.name, viewer.nil? ? nil : viewer).map { |r| ResourceLibrary.describe(r, download_url: url_for.(r)) }
-      }
+      }.merge(worksheet(skill))
+    end
+
+    # A worksheet skill carries its blueprint, the blueprints it reads from, and the provider's commands it uses,
+    # so the add-in can build the sheet offline from memory.
+    def worksheet(skill)
+      bp = skill.source["worksheet"]
+      return {} unless bp.is_a?(Hash)
+      chain = Worksheets.source_chain(bp, ->(n) { Skill.current(n)&.source&.dig("worksheet") })
+      sources = chain.to_h { |n| [n, Skill.current(n)&.source&.dig("worksheet")] }.compact
+      keys = ([bp] + sources.values).flat_map { |b| Worksheets.command_keys(b) }.uniq
+      commands = FormulaCommand.where(provider: skill.domain, key: keys).to_h { |c| [c.key, c.to_builder] }
+      { worksheet: bp, worksheet_sources: sources, commands: commands, provider: skill.domain }
     end
 
     # Ordered bundles for a list of skill names, skipping any the viewer can't see.

@@ -1,0 +1,411 @@
+# FactSet command library: each formula with its syntax ({param} placeholders), defaults and category.
+# Starter catalog: every command installs as unverified until someone with FactSet access checks it (console: Formulas).
+# Add the rest by editing this file or importing a CSV in the console.
+provider: factset
+commands:
+  revenue:
+    name: Revenue
+    category: Income statement
+    syntax: =FDS({security},"FF_SALES({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Revenue (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  gross_profit:
+    name: Gross profit
+    category: Income statement
+    syntax: =FDS({security},"FF_GROSS_INC({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Gross profit (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  ebitda:
+    name: EBITDA
+    category: Income statement
+    syntax: =FDS({security},"FF_EBITDA_OPER({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'EBITDA (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_income:
+    name: Operating income (EBIT)
+    category: Income statement
+    syntax: =FDS({security},"FF_EBIT_OPER({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Operating income (EBIT) (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_income:
+    name: Net income
+    category: Income statement
+    syntax: =FDS({security},"FF_NET_INC({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Net income (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  eps_diluted:
+    name: Diluted EPS
+    category: Income statement
+    syntax: =FDS({security},"FF_EPS_DIL({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Diluted EPS (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  interest_expense:
+    name: Interest expense
+    category: Income statement
+    syntax: =FDS({security},"FF_INT_EXP_DEBT({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Interest expense (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  rnd:
+    name: R&D expense
+    category: Income statement
+    syntax: =FDS({security},"FF_RD_EXP({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'R&D expense (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  sga:
+    name: SG&A expense
+    category: Income statement
+    syntax: =FDS({security},"FF_SGA({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'SG&A expense (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_assets:
+    name: Total assets
+    category: Balance sheet
+    syntax: =FDS({security},"FF_ASSETS({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Total assets (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_liabilities:
+    name: Total liabilities
+    category: Balance sheet
+    syntax: =FDS({security},"FF_LIABS({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Total liabilities (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_equity:
+    name: Total equity
+    category: Balance sheet
+    syntax: =FDS({security},"FF_COM_EQ({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Total equity (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  total_debt:
+    name: Total debt
+    category: Balance sheet
+    syntax: =FDS({security},"FF_DEBT({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Total debt (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  cash:
+    name: Cash and equivalents
+    category: Balance sheet
+    syntax: =FDS({security},"FF_CASH_ST({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Cash and equivalents (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_debt:
+    name: Net debt
+    category: Balance sheet
+    syntax: =FDS({security},"FF_NET_DEBT({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Net debt (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_assets:
+    name: Current assets
+    category: Balance sheet
+    syntax: =FDS({security},"FF_ASSETS_CURR({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Current assets (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_liabilities:
+    name: Current liabilities
+    category: Balance sheet
+    syntax: =FDS({security},"FF_LIABS_CURR({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Current liabilities (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  inventory:
+    name: Inventory
+    category: Balance sheet
+    syntax: =FDS({security},"FF_INVEN({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Inventory (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  receivables:
+    name: Receivables
+    category: Balance sheet
+    syntax: =FDS({security},"FF_RECEIV_NET({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Receivables (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_cash_flow:
+    name: Cash from operations
+    category: Cash flow
+    syntax: =FDS({security},"FF_OPER_CF({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Cash from operations (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  capex:
+    name: Capital expenditure
+    category: Cash flow
+    syntax: =FDS({security},"FF_CAPEX({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Capital expenditure (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  free_cash_flow:
+    name: Free cash flow
+    category: Cash flow
+    syntax: =FDS({security},"FF_FREE_CF({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Free cash flow (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  dividends_per_share:
+    name: Dividends per share
+    category: Cash flow
+    syntax: =FDS({security},"FF_DPS({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Dividends per share (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  pe_ratio:
+    name: P/E
+    category: Ratios
+    syntax: =FDS({security},"FF_PE({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'P/E (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  price_to_book:
+    name: Price / book
+    category: Ratios
+    syntax: =FDS({security},"FF_PBK({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Price / book (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  price_to_sales:
+    name: Price / sales
+    category: Ratios
+    syntax: =FDS({security},"FF_PSALES({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Price / sales (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  ev_ebitda:
+    name: EV / EBITDA
+    category: Ratios
+    syntax: =FDS({security},"FF_ENTRPR_VAL_EBITDA_OPER({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'EV / EBITDA (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  roe:
+    name: Return on equity
+    category: Ratios
+    syntax: =FDS({security},"FF_ROE({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Return on equity (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  roa:
+    name: Return on assets
+    category: Ratios
+    syntax: =FDS({security},"FF_ROA({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Return on assets (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  gross_margin:
+    name: Gross margin
+    category: Ratios
+    syntax: =FDS({security},"FF_GROSS_MGN({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Gross margin (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  operating_margin:
+    name: Operating margin
+    category: Ratios
+    syntax: =FDS({security},"FF_OPER_MGN({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Operating margin (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  net_margin:
+    name: Net margin
+    category: Ratios
+    syntax: =FDS({security},"FF_NET_MGN({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Net margin (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  debt_to_equity:
+    name: Debt / equity
+    category: Ratios
+    syntax: =FDS({security},"FF_DEBT_EQ({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Debt / equity (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  current_ratio:
+    name: Current ratio
+    category: Ratios
+    syntax: =FDS({security},"FF_CURR_RATIO({period},{fpo})")
+    defaults:
+      period: ANN
+      fpo: 0
+    description: 'Current ratio (period: ANN annual, QTR quarterly; fpo: 0 latest, -1 prior, ...).'
+  price:
+    name: Last price
+    category: Market
+    syntax: =FDS({security},"P_PRICE(0)")
+    description: Last price, latest.
+  market_cap:
+    name: Market capitalization
+    category: Market
+    syntax: =FDS({security},"FF_MKT_VAL(ANN,0)")
+    description: Market capitalization, latest.
+  enterprise_value:
+    name: Enterprise value
+    category: Market
+    syntax: =FDS({security},"FF_ENTRPR_VAL(ANN,0)")
+    description: Enterprise value, latest.
+  shares_out:
+    name: Shares outstanding
+    category: Market
+    syntax: =FDS({security},"FF_COM_SHS_OUT(ANN,0)")
+    description: Shares outstanding, latest.
+  volume:
+    name: Volume
+    category: Market
+    syntax: =FDS({security},"P_VOLUME(0)")
+    description: Volume, latest.
+  dividend_yield:
+    name: Dividend yield (12m)
+    category: Market
+    syntax: =FDS({security},"FF_DIV_YLD(ANN,0)")
+    description: Dividend yield (12m), latest.
+  beta:
+    name: Beta
+    category: Market
+    syntax: =FDS({security},"P_BETA_PR(0)")
+    description: Beta, latest.
+  high_52w:
+    name: 52-week high
+    category: Market
+    syntax: =FDS({security},"P_PRICE_HIGH_52W(0)")
+    description: 52-week high, latest.
+  low_52w:
+    name: 52-week low
+    category: Market
+    syntax: =FDS({security},"P_PRICE_LOW_52W(0)")
+    description: 52-week low, latest.
+  revenue_est:
+    name: Revenue, consensus
+    category: Estimates
+    syntax: =FDS({security},"FE_ESTIMATE(SALES,MEAN,ANN_ROLL,+{fpo},0)")
+    defaults:
+      fpo: 1
+    description: Revenue, consensus for a forward fiscal year (+1 = next).
+  ebitda_est:
+    name: EBITDA, consensus
+    category: Estimates
+    syntax: =FDS({security},"FE_ESTIMATE(EBITDA,MEAN,ANN_ROLL,+{fpo},0)")
+    defaults:
+      fpo: 1
+    description: EBITDA, consensus for a forward fiscal year (+1 = next).
+  eps_est:
+    name: EPS, consensus
+    category: Estimates
+    syntax: =FDS({security},"FE_ESTIMATE(EPS,MEAN,ANN_ROLL,+{fpo},0)")
+    defaults:
+      fpo: 1
+    description: EPS, consensus for a forward fiscal year (+1 = next).
+  fcf_est:
+    name: Free cash flow, consensus
+    category: Estimates
+    syntax: =FDS({security},"FE_ESTIMATE(FCF,MEAN,ANN_ROLL,+{fpo},0)")
+    defaults:
+      fpo: 1
+    description: Free cash flow, consensus for a forward fiscal year (+1 = next).
+  net_income_est:
+    name: Net income, consensus
+    category: Estimates
+    syntax: =FDS({security},"FE_ESTIMATE(NET,MEAN,ANN_ROLL,+{fpo},0)")
+    defaults:
+      fpo: 1
+    description: Net income, consensus for a forward fiscal year (+1 = next).
+  esg_score:
+    name: ESG score
+    category: ESG
+    syntax: =FDS({security},"{esg_code}")
+    defaults:
+      esg_code: ''
+    description: 'FactSet esg score: set the code for your ESG data subscription.'
+  environmental_score:
+    name: Environmental score
+    category: ESG
+    syntax: =FDS({security},"{esg_code}")
+    defaults:
+      esg_code: ''
+    description: 'FactSet environmental score: set the code for your ESG data subscription.'
+  social_score:
+    name: Social score
+    category: ESG
+    syntax: =FDS({security},"{esg_code}")
+    defaults:
+      esg_code: ''
+    description: 'FactSet social score: set the code for your ESG data subscription.'
+  governance_score:
+    name: Governance score
+    category: ESG
+    syntax: =FDS({security},"{esg_code}")
+    defaults:
+      esg_code: ''
+    description: 'FactSet governance score: set the code for your ESG data subscription.'
+  macro_value:
+    name: Economic series, latest
+    category: Macro
+    syntax: =FDS({security},"{econ_code}")
+    defaults:
+      econ_code: ''
+    description: 'Latest value of an economic series: set your FactSet economics code.'
+  macro_value_ago:
+    name: Economic series, value a period ago
+    category: Macro
+    syntax: =FDS({security},"{econ_code_ago}")
+    defaults:
+      econ_code_ago: ''
+    description: 'Value of the series a period ago: set your FactSet economics code.'
+  price_history:
+    name: Price history
+    category: Market
+    syntax: =FDS({security},"P_PRICE({start},0,D)")
+    defaults:
+      start: -1AY
+    description: Daily prices over a range (spills down).
+  total_return_1y:
+    name: Total return, 1 year
+    category: Market
+    syntax: =FDS({security},"P_TOTAL_RETURNC(-1AY,0)")
+    description: One-year total return.

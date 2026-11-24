@@ -11,7 +11,11 @@
       </div>
       <p class="text-slate-600 mt-1"><%= pb.description %></p>
       <div class="text-xs text-slate-500 mt-2">
-        <%= pluralize(pb.mainline.size, "step") %> · <%= pluralize(Situation.for_playbook(pb.key).count.nonzero? || pb.situation_specs.size, "situation") %> ·
+        <% if pb.pack? %>
+          <%= area_name(pb.provider) %> · <%= pluralize(pb.routes.size, "route") %> · <%= pluralize(pb.skills.size, "worksheet skill") %> · <%= pluralize(pb.commands_spec.size, "command") %> ·
+        <% else %>
+          <%= pluralize(pb.mainline.size, "step") %> · <%= pluralize(Situation.for_playbook(pb.key).count.nonzero? || pb.situation_specs.size, "situation") %> ·
+        <% end %>
         <% if st.values.all?(:current) %><span class="text-emerald-700">✓ Installed</span>
         <% elsif st.values.none?(:missing) %><span class="text-amber-700">Update available</span>
         <% else %><span class="text-slate-500">Not installed</span><% end %>

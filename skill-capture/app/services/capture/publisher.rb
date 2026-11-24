@@ -83,7 +83,8 @@ module Capture
           stage_changed_at: fork ? Time.current : skill.stage_changed_at,
           source: skill.source.merge("revised_from" => "#{skill.name}@#{skill.version}",
                                      "change_note" => attrs[:change_note].presence,
-                                     "workflow" => attrs[:workflow].presence || skill.source["workflow"]).compact
+                                     "workflow" => attrs[:workflow].presence || skill.source["workflow"])
+                                .merge(attrs[:source_extra].to_h.stringify_keys).compact
         )
         skill.update!(status: "superseded") unless fork
       end

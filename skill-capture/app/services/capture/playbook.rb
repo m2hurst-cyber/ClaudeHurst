@@ -14,7 +14,7 @@ module Capture
   # publish at the playbook's stage.
   class Playbook
     class Error < StandardError; end
-    Report = Struct.new(:created, :updated, :unchanged, :resources, :situations, keyword_init: true)
+    Report = Struct.new(:created, :updated, :unchanged, :resources, :situations, :commands, keyword_init: true)
     APPS = { "excel" => "Excel", "word" => "Word", "powerpoint" => "PowerPoint", "outlook" => "Outlook" }.freeze
 
     attr_reader :key, :dir, :data
@@ -37,24 +37,77 @@ module Capture
     def disclaimer = data["disclaimer"]
     def area = data["area"]
     def version = data["version"].to_i
-    def mainline = data.fetch("mainline")
+    def mainline = data["mainline"] || []
     def mainline_names = mainline.map { |m| m["name"] }
+    def pack? = data["kind"] == "pack"
+    def provider = data["provider"]
+    def runnable? = mainline.any? # returns are worked through a mainline; packs are libraries of routes
+    # Named routes; a playbook with a mainline has one.
+    def routes = data["routes"] || { "main" => { "title" => title, "steps" => mainline } }
+    def commands_spec = @commands_spec ||= (f = dir.join("commands.yml")).exist? ? YAML.safe_load(f.read).fetch("commands", {}) : {}
     def situation_specs = Array(data["situations"])
     def to_param = key
 
     # Every skill (mainline and branches) with its file content.
     def skills
-      @skills ||= (mainline.map { |m| m.merge("kind" => "step") } +
+      @skills ||= (routes.values.flat_map { |r| Array(r["steps"]) }.map { |m| m.merge("kind" => "step") } +
                    situation_specs.map { |s| s.merge("name" => s["branch"], "kind" => "branch") }).map do |spec|
         file = dir.join("skills", "#{spec['name']}.md")
-        raise Error, "#{key}: missing skills/#{spec['name']}.md" unless file.exist?
-        front, body = parse(file.read)
+        front, body = if file.exist? then parse(file.read)
+                      elsif spec["worksheet"] then generated_skill(spec)
+                      else raise Error, "#{key}: missing skills/#{spec['name']}.md"
+                      end
         spec.merge("title" => front.dig("metadata", "title") || front["name"], "description" => front["description"].to_s.squish,
                    "body" => body, "front_name" => front["name"], "workflow" => workflow(spec["steps"]))
       end
     end
 
     def skill_spec(name) = skills.find { |s| s["name"] == name }
+
+    # Worksheet skills without a hand-written SKILL.md get one written from their blueprint.
+    def generated_skill(spec)
+      bp = spec["worksheet"]
+      route = routes.find { |_, r| Array(r["steps"]).any? { |s| s["name"] == spec["name"] } }
+      steps_in_route = route ? Array(route[1]["steps"]) : []
+      i = steps_in_route.index { |s| s["name"] == spec["name"] }.to_i
+      before = i.positive? ? steps_in_route[i - 1] : nil
+      prov = FormulaCommand.provider_name(provider)
+      inputs = Array(bp["inputs"]).map { |x| "- #{x['label'] || x['key'].humanize}#{x['default'].present? ? " (default: #{x['default'].to_s.lines.first.strip}#{x['default'].to_s.lines.size > 1 ? ', …' : ''})" : ''}" }
+      inputs << "- The “#{skill_spec_title(bp['source'])}” sheet, built first" if bp["source"]
+      cmds = Worksheets.command_keys(bp).map { |k| "`#{k}`" }
+      body = <<~MD.strip
+        # #{spec['title']}
+
+        ## When to use
+
+        #{spec['description']}#{route ? " Part of the #{route[1]['title']} route#{before ? ", after “#{before['title']}”" : ''}." : ''}
+
+        ## Inputs
+
+        #{inputs.any? ? inputs.join("
+") : "- None beyond the source sheet"}
+
+        ## Steps
+
+        #{Array(spec['steps']).each_with_index.map { |(_, label), n| "#{n + 1}. #{label}." }.join("
+")}
+
+        To build it: in Excel, open the Skill Capture tab, find this skill and choose **Build worksheet**, fill in the inputs and build. The sheet holds live #{prov} formulas, which calculate in your #{prov} session.
+
+        ## Outputs
+
+        #{Worksheets.outline(bp).map { |l| "- #{l}" }.join("
+")}
+
+        ## Checks
+
+        #{(Array(spec['notes']) + ["Commands used: #{cmds.join(', ').presence || 'none'}. Any marked unverified in the command library need checking against #{prov} documentation before the sheet is relied on."]).map { |n| "- #{n}" }.join("
+")}
+      MD
+      [{ "name" => spec["name"], "description" => spec["description"], "metadata" => { "title" => spec["title"] } }, body]
+    end
+
+    def skill_spec_title(name) = name && (routes.values.flat_map { |r| Array(r["steps"]) }.find { |s| s["name"] == name }&.dig("title") || name)
 
     # Document catalog (documents.yml) and leg specifications (legs.yml), when the playbook has them.
     def catalog = @catalog ||= (f = dir.join("documents.yml")).exist? ? YAML.safe_load(f.read).fetch("kinds") : {}
@@ -80,6 +133,15 @@ module Capture
       skills.flat_map { |s| Array(s["fields"]) }.uniq.each { |p| out << "unknown field #{p}" unless declared.include?(p) || Field.exists?(path: p) }
       Array(data.dig("resources", "items")).each { |r| out << "resource #{r['file']} missing" unless dir.join("resources", r["file"]).exist? }
       out += leg_problems if prepares_legs?
+      if pack?
+        known = commands_spec.keys.map(&:to_s) | FormulaCommand.where(provider: provider).pluck(:key)
+        by_name = skills.to_h { |s| [s["name"], s["worksheet"]] }
+        skills.each { |s| Worksheets.problems(s["worksheet"], commands: known, skills: by_name).each { |e| out << "#{s['name']}: #{e}" } if s["worksheet"] }
+        commands_spec.each do |k, c|
+          out << "command #{k}: syntax must start with =" unless c["syntax"].to_s.start_with?("=")
+          out << "command #{k}: unbalanced quotes" if c["syntax"].to_s.count('"').odd?
+        end
+      end
       out
     end
 
@@ -131,6 +193,7 @@ module Capture
 
       report = Report.new(created: [], updated: [], unchanged: [], resources: 0, situations: 0)
       ensure_fields!(user)
+      report.commands = install_commands!(user) if pack?
       resources = install_resources!(user, report)
       skills.each do |s|
         current = Skill.current(s["name"])
@@ -140,7 +203,8 @@ module Capture
         elsif !same?(current, s)
           report.updated << s["name"]
           Publisher.revise!(current, editor: user, attrs: { title: s["title"], description: s["description"], body: s["body"],
-                                                            workflow: s["workflow"], change_note: "Updated from the #{title} playbook (v#{version})" })
+                                                            workflow: s["workflow"], source_extra: { "worksheet" => s["worksheet"] }.compact,
+                                                            change_note: "Updated from the #{title} playbook (v#{version})" })
         else
           report.unchanged << s["name"]
           current
@@ -172,6 +236,7 @@ module Capture
 
     # Each mainline intersection says where the road goes next and which situations branch off.
     def refresh_junctions!(user)
+      return refresh_route_junctions!(user) if pack?
       names = mainline_names
       names.each_with_index do |name, i|
         skill = Skill.current(name) or next
@@ -201,6 +266,38 @@ module Capture
       end
     end
 
+    # A pack's intersections: where each route goes next.
+    def refresh_route_junctions!(user)
+      routes.each_value do |r|
+        names = Array(r["steps"]).map { |x| x["name"] }
+        names.each_with_index do |name, i|
+          skill = Skill.current(name) or next
+          nxt = names[i + 1] && Skill.current(names[i + 1])
+          body = ["# Intersection after #{skill.title}", "",
+                  nxt ? "#{r['title']} route: continue to **#{nxt.title}** (`road:#{nxt.name}`), which reads this sheet." : "End of the #{r['title']} route.",
+                  "", "> #{disclaimer}"].join("\n")
+          next if Waypoint.find_by(key: "junction:#{name}")&.body == body
+          Directions.save!(Directions.find("junction:#{name}"), body: body, note: "#{title} v#{version}", user: user)
+        end
+      end
+    end
+
+    # Installs the pack's command library. A command first installed from the pack is updated from it;
+    # a changed formula goes back to unverified. Commands added in the console or by import are left alone.
+    def install_commands!(user)
+      commands_spec.count do |k, c|
+        cmd = FormulaCommand.find_or_initialize_by(provider: provider, key: k.to_s)
+        next false if cmd.persisted? && cmd.origin != "pack"
+        changed_syntax = cmd.persisted? && (cmd.syntax != c["syntax"] || cmd.defaults != (c["defaults"] || {}))
+        cmd.assign_attributes(name: c["name"], category: c["category"] || "Other", syntax: c["syntax"], defaults: c["defaults"] || {},
+                              description: c["description"], origin: "pack", created_by: cmd.created_by || user)
+        cmd.assign_attributes(status: "unverified", verified_by: nil, verified_at: nil) if changed_syntax
+        next false unless cmd.new_record? || cmd.changed?
+        cmd.save!
+        true
+      end
+    end
+
     private
 
     def parse(text)
@@ -213,7 +310,7 @@ module Capture
 
     def same?(skill, s)
       skill.title == s["title"] && skill.description == s["description"] && skill.body.strip == s["body"] &&
-        Array(skill.source["workflow"]) == s["workflow"]
+        Array(skill.source["workflow"]) == s["workflow"] && skill.source["worksheet"] == s["worksheet"]
     end
 
     def ensure_fields!(user)
@@ -258,7 +355,7 @@ module Capture
                           occurrence_count: 0, distinct_actor_count: 0, contributors: [],
                           review_notes: "Installed from the #{title} playbook (v#{version}).")
       c.save!
-      skill = Publisher.publish!(c, reviewer: user, source_extra: { "playbook" => key })
+      skill = Publisher.publish!(c, reviewer: user, source_extra: { "playbook" => key, "worksheet" => s["worksheet"] }.compact)
       stage = data["stage"].presence
       skill.update!(stage: stage, stage_changed_at: Time.current) if stage && Skill::STAGES.include?(stage) && skill.stage != stage
       skill
@@ -268,13 +365,14 @@ module Capture
       c = SkillClassification.find_or_initialize_by(skill_name: skill.name)
       c.assign_attributes(apps: Array(s["steps"]).map { |app, _| APPS[app] }.compact.uniq, source: "user", confirmed: true, updated_by: user)
       c.save!
-      fields = Field.where(path: Array(s["fields"])).to_a
+      paths = Array(s["fields"])
+      fields = Field.where(path: paths).index_by(&:path).values_at(*paths).compact # in the playbook's order: the first is primary
       c.set_fields!(fields, source: "user") if fields.any?
     end
 
     def link!(user)
       names = mainline_names
-      pairs = names.each_cons(2).to_a
+      pairs = routes.values.flat_map { |r| Array(r["steps"]).map { |x| x["name"] }.each_cons(2).to_a }
       situation_specs.each do |s|
         nxt = names[names.index(s["after"]) + 1]
         pairs << [s["branch"], nxt] if nxt # the branch rejoins the mainline at the next step

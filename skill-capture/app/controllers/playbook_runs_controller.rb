@@ -8,6 +8,7 @@ class PlaybookRunsController < ApplicationController
   def create
     pb = Capture::Playbook.find(params[:playbook_key])
     raise Capture::Playbook::Error, "Install #{pb.title} first" unless pb.installed?
+    raise Capture::Playbook::Error, "#{pb.title} is a library of worksheet skills, not a return" unless pb.runnable?
     run = current_user.playbook_runs.new(playbook_key: pb.key, reference: params[:reference].to_s.squish)
     if run.save
       AuditLog.record("playbook_run.started", user: current_user, subject: run, playbook: pb.key)

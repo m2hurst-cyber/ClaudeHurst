@@ -45,3 +45,5 @@ gem "pundit", "~> 2.3"
 gem "pagy", "~> 8.0"
 gem "solid_queue", "~> 1.0"
 gem "anthropic", "~> 2.12"
+
+gem "csv", "~> 3.3"

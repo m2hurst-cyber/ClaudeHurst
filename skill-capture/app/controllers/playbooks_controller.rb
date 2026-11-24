@@ -16,7 +16,7 @@ class PlaybooksController < ApplicationController
   def install
     report = @playbook.install!(user: current_user)
     redirect_to playbook_path(@playbook.key),
-                notice: "Installed #{@playbook.title}: #{report.created.size} created, #{report.updated.size} updated, #{report.unchanged.size} unchanged, #{report.resources} resource files, #{report.situations} situations."
+                notice: "Installed #{@playbook.title}: #{report.created.size} created, #{report.updated.size} updated, #{report.unchanged.size} unchanged, #{report.resources} resource files, #{report.situations} situations#{report.commands ? ", #{report.commands} formula commands" : ""}."
   rescue Capture::Playbook::Error, Capture::Publisher::Error => e
     redirect_to playbook_path(@playbook.key), alert: e.message
   end

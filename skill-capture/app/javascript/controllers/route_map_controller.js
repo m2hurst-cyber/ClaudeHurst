@@ -13,7 +13,7 @@ const el = (name, attrs = {}, parent) => {
   return e
 }
 const truncate = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
-const areaName = (a) => (!a ? "No area" : a.length <= 3 ? a.toUpperCase() : a.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" "))
+const areaName = (a) => (!a ? "No area" : a === "factset" ? "FactSet" : a.length <= 3 ? a.toUpperCase() : a.split(/[-_\s]+/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" "))
 
 // The route map: skills as road segments, journeys as roads between them,
 // branches as side roads, unpublished workflows as unpaved roads.

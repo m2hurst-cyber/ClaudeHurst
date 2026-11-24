@@ -40,7 +40,7 @@ module Api
           c = SkillClassification.includes(:field).find_by(skill_name: s.name)
           s.slice(:name, :version, :title, :description, :domain, :tags, :published_at, :stage)
            .merge(field: c&.field&.path, field_label: c&.field&.label, apps: c&.apps || Capture::Classifier.observed_apps(s),
-                  classified_by: c && (c.confirmed ? "person" : c.source))
+                  classified_by: c && (c.confirmed ? "person" : c.source), worksheet: s.source["worksheet"].is_a?(Hash) ? (s.source["worksheet"]["kind"] || "table") : nil)
         end
 
         def place(key)
