@@ -67,8 +67,46 @@ module ApplicationHelper
   def nice_date(t) = t ? t.to_date.iso8601 : "—"
 
   def nav_link(label, path)
-    active = current_page?(path) || (path != root_path && request.path.start_with?(path))
+    active = nav_active?(path)
     link_to label, path, class: "px-3 py-2 rounded text-sm #{active ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white'}"
+  end
+
+  def nav_active?(path) = current_page?(path) || (path != root_path && request.path.start_with?(path.split("?").first))
+
+  # One bucket in the top bar: a button that opens a short menu. items are
+  # [label, path, note, count, quiet]; a count shows as a badge beside the item, and adds to the
+  # bucket's own badge unless it is quiet (a backlog to work through, not something waiting on you).
+  def nav_menu(label, items = nil, align: :left, items_list: nil)
+    items ||= items_list
+    items = items.compact
+    return "".html_safe if items.empty?
+    total = items.sum { |i| i[4] ? 0 : i[3].to_i }
+    here = items.any? { |i| nav_active?(i[1]) }
+    tag.div(class: "relative", data: { controller: "nav-menu", action: "nav-menu:close->nav-menu#close" }) do
+      safe_join([
+        tag.button(type: "button", aria: { expanded: false, haspopup: "menu" },
+                   data: { nav_menu_target: "button", action: "click->nav-menu#toggle keydown->nav-menu#nav" },
+                   class: "px-3 py-2 rounded text-sm inline-flex items-center gap-1.5 #{here ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800'}") do
+          safe_join([label,
+                     (tag.span(total, class: "bg-amber-400 text-slate-900 rounded-full px-1.5 text-xs font-semibold") if total.positive?),
+                     tag.svg(tag.path(d: "M5 8l5 5 5-5", fill: "none", stroke: "currentColor", "stroke-width": 1.6),
+                             viewBox: "0 0 20 20", class: "w-3.5 h-3.5 opacity-70", aria: { hidden: true })].compact, " ")
+        end,
+        tag.div(hidden: true, role: "menu", data: { nav_menu_target: "panel" },
+                class: "absolute #{align == :right ? 'right-0' : 'left-0'} top-full mt-1 z-40 w-72 max-w-[calc(100vw-2rem)] rounded-lg border bg-white shadow-xl py-1 text-slate-900") do
+          safe_join(items.map do |(text, path, note, count)|
+            link_to(path, role: "menuitem", class: "flex items-start gap-2 px-3 py-2 hover:bg-slate-50 #{'bg-slate-100' if nav_active?(path)}") do
+              safe_join([
+                tag.span(class: "flex-1") do
+                  safe_join([tag.span(text, class: "font-medium block"), (tag.span(note, class: "text-xs text-slate-500 block") if note.present?)].compact)
+                end,
+                (tag.span(count, class: "bg-amber-100 text-amber-900 rounded-full px-1.5 text-xs font-semibold mt-0.5") if count.to_i.positive?)
+              ].compact)
+            end
+          end)
+        end
+      ])
+    end
   end
 
   def btn = "inline-flex items-center px-3 py-1.5 rounded text-sm border bg-white hover:bg-slate-50"

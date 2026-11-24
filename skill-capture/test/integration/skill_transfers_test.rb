@@ -145,7 +145,8 @@ class SkillTransfersTest < ActionDispatch::IntegrationTest
 
     sign_in @dee
     get transfers_path
-    assert_select "a", text: "Transfers (1)"
+    assert_select "nav[aria-label=Sections] button", text: /Review/, count: 1
+    assert_select "nav[aria-label=Sections] a[href=?] span", transfers_path, text: "1", count: 1
     assert_select "button", text: "Pay into escrow"
     post accept_transfer_path(t)
     follow_redirect!

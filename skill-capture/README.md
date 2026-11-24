@@ -80,6 +80,8 @@ Skill Capture is an **Office add-in for Excel, Word and PowerPoint** that turns 
 - **Rest stops.** Every skill gets restorable snapshots (text, steps, directions, resources, fields): before and after every change, when a branch starts, daily, and on demand. Revert to any rest stop (it publishes as the next version, never rewriting history), and branches can always go back to where they started. Each rest stop is checksummed and mirrored to disk; `bin/rails capture:rest_stops:verify` repairs either copy from the other. The add-in also autosaves unfinished recordings.
 - **Output.** Every published skill is a versioned Agent Skills `SKILL.md`. People can download it, and agents can fetch it over the API.
 
+**Getting around the console.** The top bar is five menus, by function: **Library** (skills, map, resources, formula libraries, macro library), **Work** (playbooks, flows, your prompts), **Review** (skills waiting, macros, promotions, transfers), **Market** (bounties, models and prices) and **Admin**. A bucket's badge counts what is waiting on *you*; a backlog to work through, like screened macros, shows its count inside the menu without shouting from the bar.
+
 The add-in is a set of web pages plus a manifest, all hosted by this Rails app. The same app is the **web console** for admins: people, add-in deployment, the full review workflow and the audit log. The design is in [docs/design.md](docs/design.md).
 
 ## Requirements

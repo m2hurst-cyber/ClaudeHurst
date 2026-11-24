@@ -397,5 +397,11 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - `Capture::Playbook#wording` (`labels:` in playbook.yml: run/runs/expert/owner/reference) so the run page reads "job" and not "return"; the tax playbook keeps its defaults.
 - `worksheet_builder.js`: a command parameter can now hold a reference token (`{row:squares}`, `{input:wage}`), so one library command feeds another instead of being rewritten as a bare formula.
 - Demo: job J-2041 (16 documents, 11 of 17 legs verified, an over-billing caught), flow "Commercial re-roof: RFP to final billing" (split task: macro fills the forms, agent writes the narrative; pause for the award), brief in `docs/roofing-solar-demo.md`.
-- Tests: 174 Rails runs, 42 JavaScript tests.
+
+
+## Changelog: navigation buckets
+
+- The top bar's 21 links became five menus by function (`nav_menu` helper + `nav_menu_controller.js`): Library, Work, Review, Market, Admin. Each item carries a one-line note; counts roll up to the bucket unless marked `:quiet` (screened macros), so the badge means "waiting on you".
+- Menus: click or Enter to open, Escape or an outside click to close, opening one closes the others, arrow keys walk the items; the Admin menu aligns right so it doesn't overflow.
+- Tests: 177 Rails runs, 42 JavaScript tests.
 

@@ -15,35 +15,43 @@
       <header class="bg-slate-900">
         <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center gap-1">
           <%= link_to "Skill Capture", root_path, class: "font-semibold text-white mr-3" %>
-          <%= nav_link "Library", skills_path %>
-          <%= nav_link "Map", skill_map_path %>
-          <%= nav_link "Resources", resources_path %>
-          <%= nav_link "Playbooks", playbooks_path %>
-          <%= nav_link "Flows", flows_path %>
           <% mr = MacroReview.open.count %>
-          <%= nav_link (mr.positive? ? "Macros (#{mr})" : "Macros"), macro_reviews_path %>
-          <%= nav_link "Formulas", formulas_path %>
-          <%= nav_link "Review", skill_candidates_path %>
-          <%= nav_link "Promotions", promotions_path %>
-          <%= nav_link "Bounties", bounties_path %>
-          <% np_t = current_user.received_transfers.pending.count %>
-          <%= nav_link (np_t.positive? ? "Transfers (#{np_t})" : "Transfers"), transfers_path %>
-          <% if current_user.admin? %>
-            <%= nav_link "Fields", admin_fields_path %>
-            <%= nav_link "Gates", admin_gates_path %>
-            <%= nav_link "Protocols", admin_protocols_path %>
-            <%= nav_link "Pricing", admin_pricing_path %>
-            <%= nav_link "Models", model_profiles_path %>
-            <%= nav_link "Add-in", admin_deploy_path %>
-            <%= nav_link "Integrations", admin_sources_path %>
-            <%= nav_link "Actions", admin_action_definitions_path %>
-            <%= nav_link "People", admin_users_path %>
-            <%= nav_link "Audit", admin_audit_logs_path %>
-          <% end %>
-          <div class="ml-auto flex items-center gap-3 text-sm">
-            <% if (np = current_user.skill_prompts.live.count).positive? %>
-              <%= link_to prompts_path, class: "text-amber-300 hover:text-white", title: "Save, extend or branch your repeated work" do %>⤴ <%= pluralize(np, "prompt") %><% end %>
+          <% nt = current_user.received_transfers.pending.count %>
+          <% nr = current_user.reviewer? || current_user.admin? ? SkillCandidate.open.count : 0 %>
+          <% npr = Promotion.open.count %>
+          <nav class="flex flex-wrap items-center gap-0.5" aria-label="Sections">
+            <%= nav_menu "Library", [
+                  ["Skills", skills_path, "Every captured procedure, by level and area"],
+                  ["Map", skill_map_path, "How the skills connect: roads, junctions, handoffs"],
+                  ["Resources", resources_path, "Templates, contracts and workbooks skills call for"],
+                  ["Formulas", formulas_path, "The provider and job costing command libraries"],
+                  ["Macro library", library_macro_reviews_path, "Approved macros anyone can reuse"]] %>
+            <%= nav_menu "Work", [
+                  ["Playbooks", playbooks_path, "Curated workflows: start a job or a return"],
+                  ["Flows", flows_path, "Process maps: sequence tasks across apps and agents"],
+                  ["Prompts", prompts_path, "Save, extend or branch your repeated work", current_user.skill_prompts.live.count]] %>
+            <%= nav_menu "Review", [
+                  (["Skills waiting", skill_candidates_path, "Drafts waiting for an area reviewer", nr] if nr.positive? || current_user.reviewer? || current_user.admin?),
+                  ["Macros", macro_reviews_path, "Tasks a script could do instead of the AI", mr, :quiet],
+                  ["Promotions", promotions_path, "Skills moving from sandbox to firm to market", npr],
+                  ["Transfers", transfers_path, "Skills sent to you, and what you sent", nt]] %>
+            <%= nav_menu "Market", [
+                  ["Bounties", bounties_path, "Congestion pricing and what a fix pays"],
+                  ["Models", model_profiles_path, "Tiers, prices and what each kind of task runs on"]] %>
+            <% if current_user.admin? %>
+              <%= nav_menu "Admin", align: :right, items_list: [
+                    ["People", admin_users_path, "Roles, areas and departments"],
+                    ["Fields", admin_fields_path, "The field tree skills are classified into"],
+                    ["Gates", admin_gates_path, "What a skill must pass to be promoted"],
+                    ["Protocols", admin_protocols_path, "When to prompt someone to save, extend or branch"],
+                    ["Pricing", admin_pricing_path, "The congestion schedule"],
+                    ["Add-in", admin_deploy_path, "Manifest and deployment"],
+                    ["Integrations", admin_sources_path, "Agents and collectors with API tokens"],
+                    ["Actions", admin_action_definitions_path, "The vocabulary of recorded steps"],
+                    ["Audit", admin_audit_logs_path, "Everything anyone changed"]] %>
             <% end %>
+          </nav>
+          <div class="ml-auto flex items-center gap-3 text-sm">
             <%= link_to notifications_path, class: "text-slate-300 hover:text-white" do %>
               Inbox<% if unread_notifications_count.positive? %> <span class="ml-1 bg-red-500 text-white rounded-full px-1.5 text-xs"><%= unread_notifications_count %></span><% end %>
             <% end %>
