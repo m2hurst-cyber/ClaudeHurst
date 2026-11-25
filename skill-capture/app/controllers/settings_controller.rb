@@ -6,6 +6,8 @@ class SettingsController < ApplicationController
     @personal = GranularityOverride.find_by(scope: "user", scope_key: current_user.id.to_s)
     @inherited = Capture::Granularity.level_for(domain: area)
     @tour = Capture::Onboarding.for(current_user)
+    @backup = current_user.git_backup
+    @backup_count = GitBackup.allowed? ? (@backup || current_user.build_git_backup).skills.count : 0
   end
 
   def update

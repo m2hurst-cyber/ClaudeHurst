@@ -5,7 +5,7 @@
 
   <%= form_with url: settings_path, method: :patch, class: "mt-5 space-y-4" do %>
     <fieldset class="panel-soft p-4">
-      <legend class="px-1 font-semibold">How finely your work is cut</legend>
+      <h2 class="font-semibold mb-1">How finely your work is cut</h2>
       <p class="text-sm text-slate-600 mb-3">This decides how big a thing has to be before you are asked about it.
         Coarser means fewer prompts, each about a larger piece of work.
         <%= link_to "What each setting means", help_guide_path("granularity"), class: "underline" %>.</p>
@@ -40,6 +40,54 @@
       <%= link_to "Open the walkthrough", tour_path, class: btn %>
       <% if @tour.dismissed? %><%= button_to "Show the reminder again", restart_tour_path, class: btn %><% end %>
     </p>
+  </div>
+
+  <%# A copy of your own work, in your own repository. Bounded by firm policy, not by what
+      you can see — otherwise this button is a tidy way to move the library somewhere private. %>
+  <div class="panel-soft p-4 mt-4 text-sm">
+    <h2 class="font-semibold mb-1">Back up to your own Git</h2>
+    <% if !GitBackup.allowed? %>
+      <p class="text-slate-600">Personal backups are turned off for this firm.</p>
+    <% elsif @backup.nil? %>
+      <p class="text-slate-600 mb-1">Keep your own copy of
+        <strong><%= pluralize(@backup_count, "skill") %></strong>
+        — <%= GitBackup.own_work_only? ? "the ones you wrote or contributed to" : "every skill you can see" %> —
+        as Agent Skills <code>SKILL.md</code> files in a repository you own. One commit per backup.</p>
+      <p class="text-slate-500 mb-3">You will need a GitHub token with <strong>Contents: read and write</strong> on
+        that one repository. A fine-grained token scoped to it is the right kind. We store it encrypted and never show it again.</p>
+
+      <%= form_with model: GitBackup.new, url: git_backup_path, class: "space-y-3" do |f| %>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div><%= f.label :repo, "Repository" %><%= f.text_field :repo, placeholder: "your-name/skills", class: input_css %></div>
+          <div><%= f.label :branch, "Branch" %><%= f.text_field :branch, value: "main", class: input_css %></div>
+          <div><%= f.label :path_prefix, "Folder" %><%= f.text_field :path_prefix, value: "skills", class: input_css %></div>
+          <div><%= f.label :token, "Token" %><%= f.password_field :token, placeholder: "github_pat_…", autocomplete: "off", class: input_css %></div>
+        </div>
+        <%= f.submit "Connect and back up", class: btn_primary %>
+      <% end %>
+    <% else %>
+      <p class="text-slate-600">
+        <%= link_to @backup.repo, @backup.url, class: "font-medium text-signal-700 hover:underline", target: "_blank", rel: "noopener" %>
+        <span class="text-slate-500">· <%= @backup.branch %> · <%= @backup.path_prefix.presence || "repository root" %> · token ending <%= @backup.token_hint %></span>
+      </p>
+      <p class="text-slate-500 mt-0.5">
+        <% if @backup.ever_pushed? %>
+          Last backed up <%= nice_time(@backup.last_pushed_at) %> — <%= pluralize(@backup.last_skill_count.to_i, "skill") %><%
+            %><%= ", #{link_to 'commit', @backup.commit_url, class: 'underline', target: '_blank', rel: 'noopener'}".html_safe if @backup.commit_url %>.
+        <% else %>
+          Not backed up yet.
+        <% end %>
+        <%= pluralize(@backup_count, "skill") %> would go in the next one.
+      </p>
+      <% if @backup.last_error.present? %>
+        <p class="rounded-lg bg-red-50 text-red-900 px-3 py-2 mt-2"><%= @backup.last_error %></p>
+      <% end %>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <%= button_to "Back up now", push_git_backup_path, class: btn_primary %>
+        <%= button_to "Disconnect", git_backup_path, method: :delete, class: btn,
+              data: { turbo_confirm: "Disconnect #{@backup.repo}? Nothing already pushed is removed." } %>
+      </div>
+    <% end %>
   </div>
 
   <div class="panel-soft p-4 mt-4 text-sm">

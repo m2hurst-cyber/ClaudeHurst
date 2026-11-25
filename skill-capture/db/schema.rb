@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_25_150000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -168,6 +168,24 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_150000) do
     t.index ["provider", "category"], name: "index_formula_commands_on_provider_and_category"
     t.index ["provider", "key"], name: "index_formula_commands_on_provider_and_key", unique: true
     t.index ["verified_by_id"], name: "index_formula_commands_on_verified_by_id"
+  end
+
+  create_table "git_backups", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "host", default: "github.com", null: false
+    t.string "repo", null: false
+    t.string "branch", default: "main", null: false
+    t.string "path_prefix", default: "skills", null: false
+    t.text "token", null: false
+    t.string "token_hint"
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_pushed_at"
+    t.string "last_commit_sha"
+    t.integer "last_skill_count"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_git_backups_on_user_id", unique: true
   end
 
   create_table "granularity_overrides", force: :cascade do |t|
@@ -956,6 +974,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_150000) do
   add_foreign_key "flows", "users"
   add_foreign_key "formula_commands", "users", column: "created_by_id"
   add_foreign_key "formula_commands", "users", column: "verified_by_id"
+  add_foreign_key "git_backups", "users"
   add_foreign_key "macro_reviews", "users", column: "proposed_by_id"
   add_foreign_key "macro_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "notifications", "users"

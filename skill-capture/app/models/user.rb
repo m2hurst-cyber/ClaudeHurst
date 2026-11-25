@@ -15,6 +15,7 @@ class User < ApplicationRecord
   has_many :skill_prompts, dependent: :delete_all
   has_many :playbook_runs, dependent: :delete_all
 
+  has_one :git_backup, dependent: :destroy
   validates :name, presence: true
   validates :role, inclusion: { in: ROLES }
 

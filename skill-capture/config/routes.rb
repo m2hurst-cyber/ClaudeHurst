@@ -99,6 +99,9 @@ Rails.application.routes.draw do
     # The walkthrough and the help centre.
     get "settings", to: "settings#show", as: :settings
     patch "settings", to: "settings#update"
+    resource :git_backup, only: %i[create update destroy] do
+      post :push, on: :member
+    end
     get "start", to: "tour#show", as: :tour
     post "start/dismiss", to: "tour#dismiss", as: :dismiss_tour
     post "start/restart", to: "tour#restart", as: :restart_tour
