@@ -1,5 +1,5 @@
 <% catalog = @playbook.catalog; spec = catalog[d.kind]; mine = @run.user_id == current_user.id %>
-<% badge = { "uploaded" => ["Needs its figures", "bg-amber-50 text-amber-800 border-amber-200"], "reading" => ["AI reading…", "bg-sky-50 text-sky-800 border-sky-200"],
+<% badge = { "uploaded" => ["Needs its figures", "bg-amber-50 text-amber-800 border-amber-200"], "reading" => ["AI reading…", "bg-sky-50 text-signal-800 border-sky-200"],
              "read" => ["Check and confirm", "bg-amber-50 text-amber-800 border-amber-200"], "confirmed" => ["✓ Confirmed", "bg-emerald-50 text-emerald-800 border-emerald-200"],
              "failed" => ["Couldn't read", "bg-red-50 text-red-800 border-red-200"] }[d.status] %>
 <li id="doc-<%= d.id %>" class="border rounded p-2">
@@ -15,7 +15,7 @@
   <% elsif d.notes.present? %><div class="text-xs text-slate-600 mt-1"><%= d.notes %></div><% end %>
   <% unless d.status == "reading" %>
     <details class="mt-1" <%= "open" if mine && %w[read uploaded failed].include?(d.status) && d == @documents.find { |x| %w[read uploaded failed].include?(x.status) } %>>
-      <summary class="cursor-pointer text-xs text-sky-700"><%= d.status == "confirmed" ? "Figures" : "Check the figures against the document" %></summary>
+      <summary class="cursor-pointer text-xs text-signal-700"><%= d.status == "confirmed" ? "Figures" : "Check the figures against the document" %></summary>
       <%= form_with url: playbook_run_document_path(@run, d), method: :patch, class: "mt-2 space-y-1.5 text-xs" do %>
         <div class="grid grid-cols-2 gap-1.5">
           <label class="col-span-2">Kind
@@ -48,9 +48,9 @@
     </details>
   <% end %>
   <div class="flex gap-3 mt-1 text-xs">
-    <%= link_to "View", playbook_run_document_path(@run, d), target: "_blank", rel: "noopener", class: "text-sky-700 hover:underline" %>
+    <%= link_to "View", playbook_run_document_path(@run, d), target: "_blank", rel: "noopener", class: "text-signal-700 hover:underline" %>
     <% if mine %>
-      <% if Capture::DocumentReader.enabled? && d.status != "reading" %><%= button_to "Read again", read_playbook_run_document_path(@run, d), class: "text-sky-700 hover:underline", form: { class: "inline" } %><% end %>
+      <% if Capture::DocumentReader.enabled? && d.status != "reading" %><%= button_to "Read again", read_playbook_run_document_path(@run, d), class: "text-signal-700 hover:underline", form: { class: "inline" } %><% end %>
       <%= button_to "Delete", playbook_run_document_path(@run, d), method: :delete, class: "text-slate-400 hover:text-red-700", form: { class: "inline" }, data: { turbo_confirm: "Delete this document?" } %>
     <% end %>
   </div>

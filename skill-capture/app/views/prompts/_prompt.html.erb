@@ -7,7 +7,7 @@
       <div class="font-semibold"><%= p.headline %></div>
       <div class="text-xs text-slate-500 mt-0.5">
         <%= Protocol::LABELS[p.kind] %> protocol · seen <%= p.occurrences %>× in your recent work<%= " · last #{time_ago_in_words(p.last_seen_at)} ago" if p.last_seen_at %>
-        <% if s %> · based on <%= link_to "#{s.title} v#{s.version}", skill_path(s), class: "text-sky-700 hover:underline" %><% end %>
+        <% if s %> · based on <%= link_to "#{s.title} v#{s.version}", skill_path(s), class: "text-signal-700 hover:underline" %><% end %>
       </div>
       <% if p.ai["rationale"].present? %>
         <div class="mt-2 text-xs bg-slate-50 border rounded px-2 py-1">
@@ -58,7 +58,7 @@
       <% else %>
         <div class="mt-2 text-xs text-slate-500">
           <%= p.status.humanize %><%= " (#{p.response})" if p.response && p.status == 'accepted' %> <%= nice_time(p.responded_at) %>
-          <% if p.candidate %> · <%= link_to "Review record", skill_candidate_path(p.candidate), class: "text-sky-700 hover:underline" %><% end %>
+          <% if p.candidate %> · <%= link_to "Review record", skill_candidate_path(p.candidate), class: "text-signal-700 hover:underline" %><% end %>
         </div>
       <% end %>
     </div>

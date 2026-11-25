@@ -78,7 +78,7 @@
             <% if c.verification_note.present? %><span class="text-slate-500"> · note: <%= c.verification_note %></span><% end %>
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1 text-xs">
-            <% if used.any? %><span class="text-slate-500">Used by <%= safe_join(used.map { |s| link_to(s.title.sub(/ \((BQL|FactSet)\)\z/, ""), skill_path(s), class: "text-sky-700 hover:underline") }, ", ") %></span><% else %><span class="text-slate-400">Not used by a skill yet</span><% end %>
+            <% if used.any? %><span class="text-slate-500">Used by <%= safe_join(used.map { |s| link_to(s.title.sub(/ \((BQL|FactSet)\)\z/, ""), skill_path(s), class: "text-signal-700 hover:underline") }, ", ") %></span><% else %><span class="text-slate-400">Not used by a skill yet</span><% end %>
             <% if @can_manage %>
               <span class="ml-auto flex gap-1">
                 <% if c.status != "verified" %>

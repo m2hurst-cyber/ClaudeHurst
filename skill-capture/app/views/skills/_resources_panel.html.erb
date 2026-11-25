@@ -3,7 +3,7 @@
 <div class="panel-soft p-4" id="resources">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">Resources</h2>
-    <%= link_to "Library", resources_path, class: "text-xs text-sky-700 hover:underline" %>
+    <%= link_to "Library", resources_path, class: "text-xs text-signal-700 hover:underline" %>
   </div>
   <% if items.any? %>
     <ul class="mt-2 space-y-2">
@@ -11,7 +11,7 @@
         <li class="flex items-center gap-2">
           <%= file_badge(r) %>
           <span class="flex-1 min-w-0">
-            <%= link_to r.name, resource_path(r), class: "text-sky-700 hover:underline" %>
+            <%= link_to r.name, resource_path(r), class: "text-signal-700 hover:underline" %>
             <span class="block text-xs text-slate-500 font-mono truncate" title="<%= r.key %>"><%= r.key %></span>
           </span>
           <%= link_to "⬇", download_resource_path(r), class: "text-slate-600 hover:text-slate-900", title: "Download", "aria-label": "Download #{r.name}" %>

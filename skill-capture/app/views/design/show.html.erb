@@ -63,6 +63,22 @@
       </div>
       <div class="flex mb-7"><% %w[50 100 200 300 400 500 600 700 800].each do |s| %><span class="flex-1 text-center text-[10px] text-paper-400"><%= s %></span><% end %></div>
 
+      <p class="text-[13px] font-medium text-paper-500 mb-3">Surfaces — three materials, each meaning something</p>
+      <div class="grid sm:grid-cols-3 gap-3 mb-7">
+        <div class="rounded-xl p-4 bg-paper-900 text-paper-100">
+          <p class="text-sm font-semibold">Ink</p>
+          <p class="text-[11px] opacity-70 mt-0.5">Navigation. Where you are in the product.</p>
+        </div>
+        <div class="rounded-xl p-4" style="background: var(--color-tool-100)">
+          <p class="text-sm font-semibold" style="color: var(--color-tool-700)">Greige</p>
+          <p class="text-[11px] mt-0.5" style="color: var(--color-tool-700); opacity: .75">Controls. Choosing what to see. Flat — it sits in the page.</p>
+        </div>
+        <div class="rounded-xl p-4 shadow-rest" style="background: var(--color-sage-100)">
+          <p class="text-sm font-semibold" style="color: var(--color-sage-700)">Sage</p>
+          <p class="text-[11px] mt-0.5" style="color: var(--color-sage-700); opacity: .8">Content. What you found. Raised — it floats on the page.</p>
+        </div>
+      </div>
+
       <p class="text-[13px] font-medium text-paper-500 mb-3">Meaning</p>
       <div class="grid sm:grid-cols-5 gap-2">
         <% [["verified", "Verified", "signed off"], ["waiting", "Waiting", "someone's turn"], ["blocked", "Blocked", "refused"],
@@ -183,6 +199,18 @@
           <span class="w-[15px] h-[15px] rounded-[4px] text-white text-[8px] grid place-items-center font-bold" style="background: <%= hex %>"><%= a %></span><%= name %>
         </span>
       <% end %>
+    </div>
+
+    <%= sect.("office", "The Office marks", "Our renditions in the Office visual language, floating on white tiles. Not Microsoft's own files.") %>
+    <div class="lg-surface p-7">
+      <div class="flex flex-wrap items-center gap-3">
+        <% SkillClassification::APPS.each { |a| %><%= office_tile(a, size: 44) %><% } %>
+        <span class="w-px h-8 bg-paper-200 mx-2"></span>
+        <% SkillClassification::APPS.first(3).each { |a| %><%= app_chip(a) %><% } %>
+      </div>
+      <p class="lg-sub mt-4 max-w-2xl">Microsoft distributes the genuine marks under its trademark and brand guidelines and
+        does not publish them to any package registry. Drop licensed files into
+        <code class="font-mono text-[12px]">app/assets/images/office/</code> and they are served in place of these, with no other change.</p>
     </div>
 
     <%= sect.("list", "Lists", "The inset grouped list: one surface, hairlines between rows, the whole row is the target.") %>

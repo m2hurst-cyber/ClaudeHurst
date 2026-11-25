@@ -17,7 +17,7 @@
       <%= link_to label, skill_map_fields_path(app: @apps, stage: (on ? @stages - [st] : @stages + [st])), class: "px-2 py-1 rounded border text-xs #{on ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { pressed: on } %>
     <% end %>
   </div>
-  <% if @apps.any? || @stages.any? %><%= link_to "Clear", skill_map_fields_path, class: "text-xs text-sky-700 hover:underline" %><% end %>
+  <% if @apps.any? || @stages.any? %><%= link_to "Clear", skill_map_fields_path, class: "text-xs text-signal-700 hover:underline" %><% end %>
   <span class="ml-auto text-xs text-slate-500"><%= pluralize(@skills.size, "skill") %></span>
 </div>
 
@@ -29,7 +29,7 @@
   <% if unclassified.any? %>
     <details class="panel-soft" open>
       <summary class="cursor-pointer px-3 py-2 font-semibold text-base flex"><span class="flex-1">Not classified yet</span><span class="text-xs text-slate-500"><%= pluralize(unclassified.size, "skill") %></span></summary>
-      <div class="px-3 pb-2 space-y-2"><% unclassified.each do |s| %><div><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></div><% end %></div>
+      <div class="px-3 pb-2 space-y-2"><% unclassified.each do |s| %><div><%= link_to s.title, skill_path(s), class: "text-signal-700 hover:underline" %> <%= stage_badge(s.stage) %></div><% end %></div>
     </details>
   <% end %>
   <% if @skills.empty? %><p class="panel-soft p-6 text-center text-sm text-slate-500">No skills match these filters.</p><% end %>

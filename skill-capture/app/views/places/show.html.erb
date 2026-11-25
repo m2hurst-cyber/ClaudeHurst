@@ -22,10 +22,10 @@
   <aside class="space-y-4 text-sm">
     <div class="panel-soft p-4 space-y-1">
       <h2 class="font-semibold mb-1">On the map</h2>
-      <div><%= p.kind == "handoff" ? "From" : "Skill" %>: <%= link_to p.skill.title, skill_path(p.skill), class: "text-sky-700 hover:underline" %></div>
-      <% if p.to_skill %><div>To: <%= link_to p.to_skill.title, skill_path(p.to_skill), class: "text-sky-700 hover:underline" %></div><% end %>
-      <% unless p.kind == "road" %><div><%= link_to "Road: #{p.skill.title}", place_path("road:#{p.skill.name}"), class: "text-sky-700 hover:underline" %></div><% end %>
-      <% unless p.kind == "junction" %><div><%= link_to "Intersection after #{(p.to_skill || p.skill).title}", place_path("junction:#{(p.to_skill || p.skill).name}"), class: "text-sky-700 hover:underline" %></div><% end %>
+      <div><%= p.kind == "handoff" ? "From" : "Skill" %>: <%= link_to p.skill.title, skill_path(p.skill), class: "text-signal-700 hover:underline" %></div>
+      <% if p.to_skill %><div>To: <%= link_to p.to_skill.title, skill_path(p.to_skill), class: "text-signal-700 hover:underline" %></div><% end %>
+      <% unless p.kind == "road" %><div><%= link_to "Road: #{p.skill.title}", place_path("road:#{p.skill.name}"), class: "text-signal-700 hover:underline" %></div><% end %>
+      <% unless p.kind == "junction" %><div><%= link_to "Intersection after #{(p.to_skill || p.skill).title}", place_path("junction:#{(p.to_skill || p.skill).name}"), class: "text-signal-700 hover:underline" %></div><% end %>
     </div>
     <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">History</h2>

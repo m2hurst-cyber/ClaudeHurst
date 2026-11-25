@@ -5,13 +5,13 @@
   <summary class="cursor-pointer flex items-center gap-2 px-3 py-2 <%= depth.zero? ? 'font-semibold text-base' : 'font-medium' %>">
     <span class="flex-1"><%= field.name %></span>
     <span class="text-xs text-slate-500 tabular-nums"><%= pluralize(@counts[field.id], "skill") %></span>
-    <%= link_to "Routes", skill_map_path(field: field.path, app: @apps, stage: @stages), class: "text-xs text-sky-700 hover:underline font-normal", title: "Show #{field.name} on the routes map" %>
+    <%= link_to "Routes", skill_map_path(field: field.path, app: @apps, stage: @stages), class: "text-xs text-signal-700 hover:underline font-normal", title: "Show #{field.name} on the routes map" %>
   </summary>
   <div class="pl-3 pr-3 pb-2 space-y-2">
     <% here.each do |s| %>
       <% c = @classes[s.name]; m = @metrics[s.name] %>
       <article class="flex flex-wrap items-center gap-x-3 gap-y-1 border rounded px-3 py-2 bg-slate-50/50">
-        <%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline font-medium" %>
+        <%= link_to s.title, skill_path(s), class: "text-signal-700 hover:underline font-medium" %>
         <%= stage_badge(s.stage) %>
         <span class="flex flex-wrap gap-1"><% c&.apps&.each { |a| %><%= app_chip(a) %><% } %></span>
         <% if m&.tier %><%= tier_badge(m.tier) %><% end %>

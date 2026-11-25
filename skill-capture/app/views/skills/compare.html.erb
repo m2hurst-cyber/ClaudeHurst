@@ -11,7 +11,7 @@
     <section class="panel-soft p-4 text-sm flex flex-col gap-2 <%= 'ring-2 ring-slate-900' if r[:preferred] %>">
       <% if r[:preferred] %><div class="text-xs font-semibold text-slate-900">★ Preferred by colleagues</div><% end %>
       <div>
-        <%= link_to s.title, skill_path(s), class: "font-semibold text-base text-sky-700 hover:underline" %>
+        <%= link_to s.title, skill_path(s), class: "font-semibold text-base text-signal-700 hover:underline" %>
         <div class="mt-1 flex flex-wrap items-center gap-2"><%= stage_badge(s.stage) %><span class="text-xs text-slate-500">v<%= s.version %><%= " · improved ×#{r[:improvements]}" if r[:improvements].positive? %></span></div>
       </div>
       <dl class="grid grid-cols-[7.5rem_1fr] gap-y-1">

@@ -16,15 +16,15 @@
 </div>
 
 <% if @macros.empty? && @mine.empty? %>
-  <p class="text-sm text-slate-500 panel-soft p-6 text-center">No shared macros yet. Approve one on <%= link_to "Macro review", macro_reviews_path, class: "text-sky-700 hover:underline" %>, then share it with the firm.</p>
+  <p class="text-sm text-slate-500 panel-soft p-6 text-center">No shared macros yet. Approve one on <%= link_to "Macro review", macro_reviews_path, class: "text-signal-700 hover:underline" %>, then share it with the firm.</p>
 <% end %>
 
 <div class="grid md:grid-cols-2 gap-3">
   <% (@macros + @mine).uniq.each do |r| %>
     <article class="panel-soft p-4 text-sm flex flex-col gap-2">
       <div class="flex justify-between gap-2">
-        <%= link_to r.title, macro_review_path(r), class: "font-semibold text-sky-700 hover:underline" %>
-        <span class="text-xs px-1.5 py-0.5 rounded <%= { 'market' => 'bg-sky-100 text-sky-900', 'firm' => 'bg-slate-100 text-slate-700', 'private' => 'bg-amber-100 text-amber-900' }[r.visibility] %>"><%= { "market" => "🌐 Market", "firm" => "🏢 Firm", "private" => "🔒 Mine" }[r.visibility] %></span>
+        <%= link_to r.title, macro_review_path(r), class: "font-semibold text-signal-700 hover:underline" %>
+        <span class="text-xs px-1.5 py-0.5 rounded <%= { 'market' => 'bg-sky-100 text-signal-800', 'firm' => 'bg-slate-100 text-slate-700', 'private' => 'bg-amber-100 text-amber-900' }[r.visibility] %>"><%= { "market" => "🌐 Market", "firm" => "🏢 Firm", "private" => "🔒 Mine" }[r.visibility] %></span>
       </div>
       <div class="text-xs text-slate-500"><%= r.language_label %><%= " · #{r.app}" if r.app %> · <%= r.written_by_ai? ? "written by the AI" : "written by a person" %><%= " · saved #{number_with_delimiter(r.tokens_saved)} tokens over #{r.runs_saved} runs" if r.runs_saved.positive? %></div>
       <p class="text-slate-600"><%= r.reason %></p>
@@ -37,7 +37,7 @@
           </select>
           <button class="px-2 py-1 rounded border text-xs">Take it</button>
         <% end %>
-        <%= link_to "Export", export_macro_review_path(r), class: "text-xs text-sky-700 hover:underline" %>
+        <%= link_to "Export", export_macro_review_path(r), class: "text-xs text-signal-700 hover:underline" %>
       </div>
     </article>
   <% end %>

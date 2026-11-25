@@ -14,7 +14,7 @@
     <div class="flex-1 min-w-64">
       <div class="text-xs text-slate-500"><%= link_to "Flows", flows_path, class: "hover:underline" %> ›</div>
       <input data-flow-map-target="name" data-action="input->flow-map#rename" value="<%= @flow.name %>" aria-label="Flow name" class="text-2xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-slate-500 outline-none w-full">
-      <p class="text-sm text-slate-500">Lanes are where the work happens; tasks run left to right. A dashed arrow is a <span class="text-sky-700">handoff</span> to another app, person or agent.</p>
+      <p class="text-sm text-slate-500">Lanes are where the work happens; tasks run left to right. A dashed arrow is a <span class="text-signal-700">handoff</span> to another app, person or agent.</p>
     </div>
     <div class="flex items-center gap-2 text-sm">
       <span data-flow-map-target="estimate" class="text-xs text-slate-600"></span>
@@ -26,7 +26,7 @@
   </div>
   <div data-flow-map-target="live" hidden class="mb-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm flex flex-wrap items-center gap-2">
     <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span><strong data-live-text></strong>
-    <% if @live %><%= link_to "Open the run", flow_run_path(@live), class: "text-sky-700 hover:underline ml-auto" %><% end %>
+    <% if @live %><%= link_to "Open the run", flow_run_path(@live), class: "text-signal-700 hover:underline ml-auto" %><% end %>
   </div>
   <div class="grid lg:grid-cols-[15rem_1fr_17rem] gap-3">
     <aside class="panel-soft p-3 text-sm self-start">
@@ -58,7 +58,7 @@
   </div>
   <% if @runs.any? %>
     <section class="mt-4 text-sm"><h2 class="font-semibold mb-1">Runs</h2>
-      <% @runs.each do |r| %><div><%= link_to "#{time_ago_in_words(r.created_at)} ago", flow_run_path(r), class: "text-sky-700 hover:underline" %> · <%= r.status == "running" ? "task #{r.current_index + 1} of #{r.steps.size}" : r.status %></div><% end %>
+      <% @runs.each do |r| %><div><%= link_to "#{time_ago_in_words(r.created_at)} ago", flow_run_path(r), class: "text-signal-700 hover:underline" %> · <%= r.status == "running" ? "task #{r.current_index + 1} of #{r.steps.size}" : r.status %></div><% end %>
     </section>
   <% end %>
 </div>

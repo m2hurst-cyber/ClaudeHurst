@@ -60,7 +60,7 @@
             <% end %>
           </div>
         <% end %>
-        <%= link_to "Export as a file", export_macro_review_path(r), class: "block mt-2 text-sky-700 hover:underline" %>
+        <%= link_to "Export as a file", export_macro_review_path(r), class: "block mt-2 text-signal-700 hover:underline" %>
         <%= form_with url: copy_macro_review_path(r), method: :post, class: "mt-2 flex gap-1" do %>
           <select name="target" class="flex-1 border rounded px-1.5 py-1 text-xs" aria-label="Use this macro on">
             <option value="">Use it on another task…</option>
@@ -68,7 +68,7 @@
           </select>
           <button class="px-2 py-1 rounded border text-xs">Take it</button>
         <% end %>
-        <% if @copies.any? %><p class="text-xs text-slate-500 mt-2">Also used on: <%= safe_join(@copies.map { |c| link_to(c.title, macro_review_path(c), class: "text-sky-700 hover:underline") }, ", ") %></p><% end %>
+        <% if @copies.any? %><p class="text-xs text-slate-500 mt-2">Also used on: <%= safe_join(@copies.map { |c| link_to(c.title, macro_review_path(c), class: "text-signal-700 hover:underline") }, ", ") %></p><% end %>
       </div>
     <% end %>
     <% if r.review_notes.present? %><div class="panel-soft p-3"><h2 class="font-semibold mb-1">Review notes</h2><p class="text-slate-600"><%= r.review_notes %></p></div><% end %>

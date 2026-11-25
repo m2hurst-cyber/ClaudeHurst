@@ -22,7 +22,7 @@
           <tbody>
             <% list.each do |t| %>
               <tr class="border-t">
-                <td class="px-3 py-2"><%= link_to t.label, transfer_path(t), class: "text-sky-700 hover:underline font-medium" %><% if t.items.size > 1 %><div class="text-xs text-slate-500"><%= t.items.map { |i| i["title"] }.first(3).join(", ") %><%= "…" if t.items.size > 3 %></div><% end %></td>
+                <td class="px-3 py-2"><%= link_to t.label, transfer_path(t), class: "text-signal-700 hover:underline font-medium" %><% if t.items.size > 1 %><div class="text-xs text-slate-500"><%= t.items.map { |i| i["title"] }.first(3).join(", ") %><%= "…" if t.items.size > 3 %></div><% end %></td>
                 <td class="px-3 py-2"><%= t.public_send(who).name %></td>
                 <td class="px-3 py-2"><%= t.free? ? "Free" : credits(t.price) %></td>
                 <td class="px-3 py-2"><%= render "transfers/status", t: t %></td>

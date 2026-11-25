@@ -21,7 +21,7 @@
     </dl>
     <% if Capture::ResourceLibrary.can_manage?(current_user, r) %>
       <details class="border-t pt-2">
-        <summary class="cursor-pointer text-sky-700">Replace or edit</summary>
+        <summary class="cursor-pointer text-signal-700">Replace or edit</summary>
         <%= form_with model: r, url: resource_path(r), multipart: true, method: :patch, class: "grid sm:grid-cols-2 gap-2 mt-2" do |f| %>
           <div><%= f.label :name %><%= f.text_field :name, class: input_css %></div>
           <% if r.kind == "file" %><div><%= f.label :file, "New version" %><%= f.file_field :file, class: "block w-full text-sm" %></div><% else %><div><%= f.label :url %><%= f.url_field :url, class: input_css %></div><% end %>
@@ -35,7 +35,7 @@
   <aside class="panel-soft p-4">
     <h2 class="font-semibold mb-1">Used by</h2>
     <% if @skills.any? %>
-      <ul class="space-y-1"><% @skills.each do |s| %><li><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></li><% end %></ul>
+      <ul class="space-y-1"><% @skills.each do |s| %><li><%= link_to s.title, skill_path(s), class: "text-signal-700 hover:underline" %> <%= stage_badge(s.stage) %></li><% end %></ul>
     <% else %><p class="text-slate-500">No skills yet. Attach it from a skill's page.</p><% end %>
   </aside>
 </div>

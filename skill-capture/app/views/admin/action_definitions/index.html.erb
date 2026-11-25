@@ -8,7 +8,7 @@
       <% @definitions.each do |d| %>
         <tr>
           <td class="px-3 py-2 font-mono text-xs break-all"><%= d.key %></td>
-          <td class="px-3 py-2"><%= link_to d.label, edit_admin_action_definition_path(d), class: "text-sky-700 hover:underline" %></td>
+          <td class="px-3 py-2"><%= link_to d.label, edit_admin_action_definition_path(d), class: "text-signal-700 hover:underline" %></td>
           <td class="px-3 py-2"><%= d.domain || "—" %></td>
         </tr>
       <% end %>

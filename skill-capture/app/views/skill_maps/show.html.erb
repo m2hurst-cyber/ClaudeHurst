@@ -93,7 +93,7 @@
       </select>
       <button type="button" data-route-map-target="bridgeChip" data-action="route-map#toggleBridges" aria-pressed="false" class="px-2 py-1 rounded border text-xs bg-white">⇄ Bridges</button>
       <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" data-route-map-target="hideOthers" data-action="route-map#applyFilters"> Hide non-matching</label>
-      <button type="button" class="text-xs text-sky-700 hover:underline" data-action="route-map#clearFilters">Clear</button>
+      <button type="button" class="text-xs text-signal-700 hover:underline" data-action="route-map#clearFilters">Clear</button>
       <span class="ml-auto text-xs text-slate-500" data-route-map-target="filterCount" aria-live="polite"></span>
     </div>
   </section>
@@ -149,7 +149,7 @@
         <% nexts = @map[:edges].select { |e| e[:from] == n[:id] && e[:kind] == "next" } %>
         <% branches = @map[:edges].select { |e| e[:from] == n[:id] && e[:kind] == "branch" } %>
         <li>
-          <%= link_to n[:title], n[:url], class: "text-sky-700 hover:underline" %>
+          <%= link_to n[:title], n[:url], class: "text-signal-700 hover:underline" %>
           <span class="text-slate-500">· <%= area_name(n[:area]) %><%= " · unpaved (in review)" if n[:kind] == "unpaved" %><%= " · improved ×#{n[:improvements]}" if n[:improvements].to_i.positive? %><%= " · #{@schedule.tier(n[:tier])&.dig('label')} traffic, #{credits(n[:price])} per trip" if n[:tier] %><%= " · bounty #{credits(n.dig(:bounty, :pool))}" if n[:bounty] %></span>
           <% if nexts.any? %><div class="text-slate-600">Next: <%= nexts.map { |e| "#{nodes_by_id[e[:to]][:title]} (#{e[:traffic]} trips#{', linked by a reviewer' if e[:manual]})" }.join("; ") %></div><% end %>
           <% if branches.any? %><div class="text-slate-600">Branches: <%= branches.map { |e| nodes_by_id[e[:to]][:title] }.join("; ") %></div><% end %>

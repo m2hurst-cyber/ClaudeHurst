@@ -15,7 +15,7 @@
           title: { "mine" => "Skills you published, contributed to or asked for", "received" => "Skills coworkers sent you directly", "department" => "Skills by people in your department#{current_user.department.present? ? " (#{current_user.department})" : ' (or your areas)'}", "firm" => "Shared with the whole firm", "industry" => "Promoted to the market, shared with the firm's industry", "global" => "Promoted to the market for everyone" }[lvl] %>
   <% end %>
 </nav>
-<%= link_to "⇢ Send skills to a coworker", new_transfer_path, class: "text-sm text-sky-700 hover:underline" %>
+<%= link_to "⇢ Send skills to a coworker", new_transfer_path, class: "text-sm text-signal-700 hover:underline" %>
 </div>
 <%= form_with url: skills_path, method: :get, class: "flex flex-wrap gap-2 items-end text-sm" do |f| %>
   <%= hidden_field_tag :level, params[:level] if params[:level].present? %>
@@ -33,25 +33,22 @@
   <%= f.submit "Filter", class: "px-3.5 py-1.5 rounded-full bg-slate-900 text-white text-sm hover:bg-slate-700 transition-colors cursor-pointer" %>
 <% end %>
 
-<%# The app marks speak for themselves. No borders, no captions: the one you are in is
-    the one with a ring around it. %>
-<div class="flex flex-wrap items-center gap-2" aria-label="Filter by app">
-  <% ring = ->(on) { "rounded-full p-1 transition-shadow duration-200 #{on ? 'shadow-[0_0_0_2px_var(--color-slate-900)]' : 'hover:shadow-[0_0_0_2px_var(--color-tool-200)]'}" } %>
-
-  <%= link_to skills_path(request.query_parameters.except("app", "page")), class: ring.(params[:app].blank?),
+<%# The app marks, floating the way Microsoft shows them: a white tile, lifted. The one
+    you are filtered to is ringed; the rest rise a little when you reach for them. %>
+<div class="flex flex-wrap items-center gap-2.5" aria-label="Filter by app">
+  <%= link_to skills_path(request.query_parameters.except("app", "page")),
         title: "Every app", "aria-label": "Show skills for every app",
+        class: "grid place-items-center w-[34px] h-[34px] rounded-[10px] bg-tool-200 text-tool-700 transition-transform duration-200 " \
+               "#{params[:app].blank? ? 'ring-2 ring-slate-900' : 'hover:-translate-y-0.5'}",
         aria: { current: params[:app].blank? ? "true" : nil } do %>
-    <span class="grid place-items-center w-7 h-7 rounded-full bg-tool-200 text-tool-700" aria-hidden="true">
-      <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="12" cy="4" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/></svg>
-    </span>
+    <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="4" cy="4" r="1.6"/><circle cx="12" cy="4" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/></svg>
   <% end %>
 
   <% SkillClassification::APPS.each do |a| %>
     <% on = params[:app] == a %>
     <%= link_to skills_path(request.query_parameters.except("page").merge("app" => (on ? nil : a)).compact),
-          class: ring.(on), title: a, "aria-label": "#{on ? "Stop filtering by" : "Only"} #{a}", aria: { pressed: on } do %>
-      <span class="grid place-items-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
-            style="background: <%= ApplicationHelper::APP_STYLE[a][1] %>" aria-hidden="true"><%= ApplicationHelper::APP_STYLE[a][0] %></span>
+          title: a, "aria-label": "#{on ? "Stop filtering by" : "Only"} #{a}", aria: { pressed: on } do %>
+      <%= office_tile(a, size: 34, active: on) %>
     <% end %>
   <% end %>
 </div>
@@ -63,7 +60,7 @@
   <% @skills.each do |s| %>
     <article class="panel-soft p-4 flex flex-col gap-2">
       <div class="flex justify-between gap-2">
-        <%= link_to s.title, skill_path(s), class: "font-semibold text-sky-700 hover:underline" %>
+        <%= link_to s.title, skill_path(s), class: "font-semibold text-signal-700 hover:underline" %>
         <span class="flex gap-1 shrink-0"><%= stage_badge(s.stage) %><% unless s.status == "published" %><%= status_badge(s.status) %><% end %></span>
       </div>
       <div class="font-mono text-xs text-slate-500 break-all"><%= s.name %> · v<%= s.version %><%= " · #{area_name(s.domain)}" if s.domain %></div>

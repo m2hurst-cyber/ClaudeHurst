@@ -39,9 +39,8 @@ module ApplicationHelper
 
   # An app chip: a small letter tile (product-colored) + the app's name. The name carries the meaning.
   def app_chip(app)
-    letter, color = APP_STYLE.fetch(app, ["?", "#52514e"])
-    tag.span(class: "inline-flex items-center gap-1 text-xs text-slate-800 border rounded px-1.5 py-0.5 bg-white") do
-      safe_join([tag.span(letter, class: "inline-grid place-items-center w-4 h-4 rounded-sm text-[9px] font-bold text-white", style: "background: #{color}", "aria-hidden": true), app])
+    tag.span(class: "inline-flex items-center gap-1.5 text-xs text-slate-800 rounded-full pl-1 pr-2.5 py-1 bg-white shadow-[0_1px_2px_rgb(31_54_42/0.06),0_4px_10px_-6px_rgb(31_54_42/0.25)]") do
+      safe_join([office_icon(app, size: 16), app])
     end
   end
 

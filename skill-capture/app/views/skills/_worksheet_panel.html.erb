@@ -7,7 +7,7 @@
       <span class="text-xs text-slate-500"><%= (bp["kind"] || "table").capitalize %> · <%= area_name(s.domain) %></span>
     </div>
     <ul class="mt-1 text-xs text-slate-600 list-disc ml-4"><% Capture::Worksheets.outline(bp).each do |l| %><li><%= l %></li><% end %></ul>
-    <% if bp["source"] && (src = Skill.current(bp["source"])) %><div class="text-xs mt-1">Reads <%= link_to src.title, skill_path(src), class: "text-sky-700 hover:underline" %></div><% end %>
+    <% if bp["source"] && (src = Skill.current(bp["source"])) %><div class="text-xs mt-1">Reads <%= link_to src.title, skill_path(src), class: "text-signal-700 hover:underline" %></div><% end %>
     <% if keys.any? %>
       <div class="text-xs text-slate-500 mt-2 mb-1">Formulas (<%= keys.count { |k| cmds[k]&.status == "verified" } %> of <%= keys.size %> verified)</div>
       <ul class="space-y-0.5 text-xs">
@@ -15,7 +15,7 @@
           <% c = cmds[k] %>
           <li class="flex items-baseline gap-1">
             <span class="<%= c&.status == 'verified' ? 'text-emerald-700' : 'text-amber-700' %>"><%= c&.status == "verified" ? "✓" : "◌" %></span>
-            <%= link_to (c&.name || k), formulas_path(provider: s.domain, q: k, anchor: c && "cmd-#{c.id}"), class: "text-sky-700 hover:underline" %>
+            <%= link_to (c&.name || k), formulas_path(provider: s.domain, q: k, anchor: c && "cmd-#{c.id}"), class: "text-signal-700 hover:underline" %>
             <code class="text-slate-400 truncate" title="<%= c&.syntax %>"><%= c&.sample %></code>
           </li>
         <% end %>

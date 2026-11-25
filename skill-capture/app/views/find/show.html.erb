@@ -35,7 +35,7 @@
     <div class="panel-soft p-6 text-center text-sm text-slate-600">
       <p class="mb-2">Nothing matched “<%= r[:query] %>”.</p>
       <p>If the company does this but nobody has written it down, that's what capture is for:
-        <%= link_to "record it once in Office", prompts_path, class: "text-sky-700 hover:underline" %> and it becomes a skill for everyone.</p>
+        <%= link_to "record it once in Office", prompts_path, class: "text-signal-700 hover:underline" %> and it becomes a skill for everyone.</p>
     </div>
   <% end %>
 
@@ -48,7 +48,7 @@
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="flex-1 min-w-64">
           <div class="text-xs uppercase tracking-wide text-slate-500 mb-0.5"><%= { "skills" => "Skill", "playbooks" => "Playbook", "jobs" => "In flight", "flows" => "Flow", "resources" => "Template", "formulas" => "Formula", "macros" => "Macro", "help" => "Help" }[b.group] %></div>
-          <%= link_to b.title, b.url, class: "text-lg font-semibold text-sky-700 hover:underline" %>
+          <%= link_to b.title, b.url, class: "text-lg font-semibold text-signal-700 hover:underline" %>
           <p class="text-sm text-slate-700 mt-0.5"><%= b.subtitle %></p>
           <div class="text-xs text-slate-500 mt-1"><%= b.badge %></div>
         </div>
@@ -73,10 +73,10 @@
               <%= link_to n[:title], find_path(q: r[:query], centre: n[:name]), class: "px-2.5 py-1 rounded-full bg-slate-900/5 hover:bg-slate-900/10 transition-colors", title: "#{n[:traffic]} trips" %>
             <% end %>
             <% if @map[:before].empty? && @map[:after].empty? %><span class="text-slate-500 text-xs">Not yet connected to other skills.</span><% end %>
-            <%= link_to "Open the whole map →", skill_map_path(q: @map[:centre][:name]), class: "text-xs text-sky-700 hover:underline ml-auto" %>
+            <%= link_to "Open the whole map →", skill_map_path(q: @map[:centre][:name]), class: "text-xs text-signal-700 hover:underline ml-auto" %>
           </div>
           <% if @map[:junction].present? %>
-            <details class="mt-2 text-xs"><summary class="cursor-pointer text-sky-700">Which way next</summary>
+            <details class="mt-2 text-xs"><summary class="cursor-pointer text-signal-700">Which way next</summary>
               <div class="mt-1"><%= skill_markdown(@map[:junction]) %></div></details>
           <% end %>
         </div>
@@ -93,7 +93,7 @@
         <% hits.each do |x| %>
           <li class="p-3 flex flex-wrap items-start justify-between gap-3">
             <div class="flex-1 min-w-64">
-              <%= link_to x.title, x.url, class: "font-medium text-sky-700 hover:underline" %>
+              <%= link_to x.title, x.url, class: "font-medium text-signal-700 hover:underline" %>
               <p class="text-sm text-slate-600"><%= x.subtitle %></p>
               <div class="text-xs text-slate-500 mt-0.5"><%= x.badge %></div>
             </div>
@@ -119,14 +119,14 @@
           </div>
         <% end } %>
 
-        <%= panel.("Your turn in a flow", @desk[:tasks].map { |t| safe_join([link_to(t[:title], t[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " · #{t[:flow]}#{t[:app] != 'Agent' ? " · in #{t[:app]}" : ''}#{t[:split] ? ' · your part of a split task' : ''}", class: "text-xs text-slate-500")]) }, "No tasks are waiting for you.") %>
+        <%= panel.("Your turn in a flow", @desk[:tasks].map { |t| safe_join([link_to(t[:title], t[:url], class: "text-signal-700 hover:underline"), content_tag(:span, " · #{t[:flow]}#{t[:app] != 'Agent' ? " · in #{t[:app]}" : ''}#{t[:split] ? ' · your part of a split task' : ''}", class: "text-xs text-slate-500")]) }, "No tasks are waiting for you.") %>
 
-        <%= panel.("Jobs in flight", @desk[:jobs].map { |j| safe_join([link_to("#{j[:called].capitalize} #{j[:reference]}", j[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " · #{j[:verified]} of #{j[:of]} verified", class: "text-xs text-slate-500"), (content_tag(:span, "Next: #{j[:next]}#{j[:blocking].any? ? " · waiting on #{j[:blocking].to_sentence.downcase}" : ''}", class: "block text-xs text-slate-600") if j[:next])].compact) }, "No open jobs.") %>
+        <%= panel.("Jobs in flight", @desk[:jobs].map { |j| safe_join([link_to("#{j[:called].capitalize} #{j[:reference]}", j[:url], class: "text-signal-700 hover:underline"), content_tag(:span, " · #{j[:verified]} of #{j[:of]} verified", class: "text-xs text-slate-500"), (content_tag(:span, "Next: #{j[:next]}#{j[:blocking].any? ? " · waiting on #{j[:blocking].to_sentence.downcase}" : ''}", class: "block text-xs text-slate-600") if j[:next])].compact) }, "No open jobs.") %>
 
-        <% if @desk[:reviews] %><%= panel.("Waiting for your review", @desk[:reviews].map { |x| link_to(x[:title], x[:url], class: "text-sky-700 hover:underline") }, "Nothing to review.") %><% end %>
-        <%= panel.("Sent to you", @desk[:transfers].map { |t| safe_join([link_to(t[:label], t[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " from #{t[:from]}", class: "text-xs text-slate-500")]) }, "Nothing sent to you.") %>
-        <%= panel.("Your repeated work", @desk[:prompts].map { |p| link_to(p[:title], p[:url], class: "text-sky-700 hover:underline") }, "Nothing to save, extend or branch yet.") %>
-        <%= panel.("Your skills", @desk[:mine].map { |s| link_to(s[:title], s[:url], class: "text-sky-700 hover:underline") }, "Nothing published by you yet.") %>
+        <% if @desk[:reviews] %><%= panel.("Waiting for your review", @desk[:reviews].map { |x| link_to(x[:title], x[:url], class: "text-signal-700 hover:underline") }, "Nothing to review.") %><% end %>
+        <%= panel.("Sent to you", @desk[:transfers].map { |t| safe_join([link_to(t[:label], t[:url], class: "text-signal-700 hover:underline"), content_tag(:span, " from #{t[:from]}", class: "text-xs text-slate-500")]) }, "Nothing sent to you.") %>
+        <%= panel.("Your repeated work", @desk[:prompts].map { |p| link_to(p[:title], p[:url], class: "text-signal-700 hover:underline") }, "Nothing to save, extend or branch yet.") %>
+        <%= panel.("Your skills", @desk[:mine].map { |s| link_to(s[:title], s[:url], class: "text-signal-700 hover:underline") }, "Nothing published by you yet.") %>
       </div>
     </section>
   <% end %>

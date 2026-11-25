@@ -29,10 +29,10 @@
       <% end %>
     </ul>
     <% if open_promo %>
-      <p class="mt-3">Promotion to <%= Skill::STAGE_LABELS[open_promo.to_stage] %> requested by <%= open_promo.requested_by&.name %>. <%= link_to "See request", promotions_path(anchor: "promotion-#{open_promo.id}"), class: "text-sky-700 hover:underline" %></p>
+      <p class="mt-3">Promotion to <%= Skill::STAGE_LABELS[open_promo.to_stage] %> requested by <%= open_promo.requested_by&.name %>. <%= link_to "See request", promotions_path(anchor: "promotion-#{open_promo.id}"), class: "text-signal-700 hover:underline" %></p>
     <% elsif Capture::Promotions.can_request?(current_user, s) %>
       <details class="mt-3" <%= "open" if Capture::Gates.passed?(checks) %>>
-        <summary class="cursor-pointer text-sky-700">Request promotion to <%= Skill::STAGE_LABELS[to] %></summary>
+        <summary class="cursor-pointer text-signal-700">Request promotion to <%= Skill::STAGE_LABELS[to] %></summary>
         <%= form_with url: skill_promotions_path(s), method: :post, class: "space-y-2 mt-2" do |f| %>
           <%= text_area_tag :pitch, nil, rows: 2, placeholder: "Why should #{to == 'firm' ? 'the whole firm' : 'the market'} use this?", class: input_css %>
           <% rivals = s.family.reject { |x| x.name == s.name }.select { |x| x.visible_to?(current_user) && Skill::STAGES.index(x.stage) >= Skill::STAGES.index(to) } %>

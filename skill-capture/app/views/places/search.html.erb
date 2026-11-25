@@ -8,7 +8,7 @@
   <% @hits.each do |h| %>
     <%= link_to place_path(h.key), class: "flex items-baseline gap-3 p-3 hover:bg-slate-50" do %>
       <span class="w-24 shrink-0 text-xs text-slate-500"><%= Waypoint::KIND_LABELS[h.kind] %></span>
-      <span class="flex-1"><span class="text-sky-700"><%= h.title %></span> <span class="text-xs text-slate-500"><%= h.subtitle %></span></span>
+      <span class="flex-1"><span class="text-signal-700"><%= h.title %></span> <span class="text-xs text-slate-500"><%= h.subtitle %></span></span>
       <span class="text-xs <%= h.written ? 'text-slate-700' : 'text-slate-400' %>"><%= h.written ? "Written" : "Generated" %></span>
     <% end %>
   <% end %>

@@ -117,7 +117,7 @@
             <% end %>
           </ul>
         <% end %>
-        <% if s["skill_name"] && (sk = Skill.current(s["skill_name"])) %><div class="text-xs">📘 <%= link_to sk.title, skill_path(sk), class: "text-sky-700 hover:underline" %></div><% end %>
+        <% if s["skill_name"] && (sk = Skill.current(s["skill_name"])) %><div class="text-xs">📘 <%= link_to sk.title, skill_path(sk), class: "text-signal-700 hover:underline" %></div><% end %>
         <% if s["instructions"] %><p class="text-slate-600 text-xs mt-0.5"><%= s["instructions"] %></p><% end %>
         <% if s["state"] == "done" %>
           <p class="text-xs text-emerald-800 mt-1">✓ <%= s["by"] %><%= " · #{Time.zone.parse(s['finished_at']).to_fs(:short)}" if s["finished_at"] %><%= ": #{s['note']}" if s["note"] %></p>

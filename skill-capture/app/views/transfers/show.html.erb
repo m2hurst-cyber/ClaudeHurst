@@ -16,7 +16,7 @@
         <% s = @skills[i["name"]] %>
         <li class="p-4">
           <div class="flex justify-between gap-2">
-            <% if s && s.visible_to?(current_user) %><%= link_to i["title"], skill_path(s), class: "font-medium text-sky-700 hover:underline" %><% else %><span class="font-medium"><%= i["title"] %></span><% end %>
+            <% if s && s.visible_to?(current_user) %><%= link_to i["title"], skill_path(s), class: "font-medium text-signal-700 hover:underline" %><% else %><span class="font-medium"><%= i["title"] %></span><% end %>
             <%= stage_badge(i["stage"]) if i["stage"] %>
           </div>
           <div class="font-mono text-xs text-slate-500"><%= i["name"] %> · v<%= i["version"] %><%= " (now v#{s.version})" if s && s.version != i["version"] %></div>
@@ -35,11 +35,11 @@
       <%= button_to "Withdraw", cancel_transfer_path(t), class: "w-full px-3 py-2 rounded border" %>
     <% elsif t.settled? %>
       <p><%= t.recipient.name %> has these in their library under <strong>Sent to me</strong>, at the stage they're at. They see later versions too.</p>
-      <%= link_to "Open my received skills", skills_path(level: "received"), class: "block text-sky-700 hover:underline" if current_user.id == t.recipient_id %>
+      <%= link_to "Open my received skills", skills_path(level: "received"), class: "block text-signal-700 hover:underline" if current_user.id == t.recipient_id %>
     <% end %>
     <% if t.settled? && current_user.id == t.recipient_id %>
       <div class="border-t pt-2"><div class="text-xs text-slate-500 mb-1">Delivered exactly as fingerprinted</div>
-        <% t.items.each do |i| %><%= link_to "#{i['name']} v#{i['version']} SKILL.md", delivered_transfer_path(t, name: i["name"]), class: "block font-mono text-xs text-sky-700 hover:underline" %><% end %></div>
+        <% t.items.each do |i| %><%= link_to "#{i['name']} v#{i['version']} SKILL.md", delivered_transfer_path(t, name: i["name"]), class: "block font-mono text-xs text-signal-700 hover:underline" %><% end %></div>
     <% end %>
     <p class="text-xs text-slate-500"><%= t.allow_forward ? "May be passed on, for free." : "Not to be passed on." %></p>
   </aside>
@@ -60,7 +60,7 @@
           <%= i["sha256"].to_s.first(12) %>…
         </span>
         <% if (sk = Skill.current(i["name"])) %>
-          <%= link_to "Provenance", provenance_skill_path(sk), class: "text-xs text-sky-700 hover:underline" %>
+          <%= link_to "Provenance", provenance_skill_path(sk), class: "text-xs text-signal-700 hover:underline" %>
         <% end %>
       </div>
     <% end %>

@@ -19,8 +19,8 @@
   <% cmds = FormulaCommand.where(provider: pb.provider) %>
   <div class="panel-soft p-4 mb-4 text-sm flex flex-wrap items-center gap-3">
     <span><strong><%= cmds.count %></strong> <%= FormulaCommand.provider_name(pb.provider) %> commands · <%= cmds.where(status: "verified").count %> verified</span>
-    <%= link_to "Open the formula library →", formulas_path(provider: pb.provider), class: "text-sky-700 hover:underline" %>
-    <%= link_to "See it on the map →", skill_map_path(field: "investment-analysis", hide: 1), class: "text-sky-700 hover:underline" if pb.installed? %>
+    <%= link_to "Open the formula library →", formulas_path(provider: pb.provider), class: "text-signal-700 hover:underline" %>
+    <%= link_to "See it on the map →", skill_map_path(field: "investment-analysis", hide: 1), class: "text-signal-700 hover:underline" if pb.installed? %>
   </div>
   <div class="grid md:grid-cols-2 gap-4">
     <% pb.routes.each do |rk, r| %>
@@ -32,7 +32,7 @@
             <li class="relative pl-10 pb-4">
               <% unless i == r["steps"].size - 1 %><span class="absolute left-[15px] top-8 bottom-0 w-1.5 rounded bg-sky-600" aria-hidden="true"></span><% end %>
               <span class="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border-4 border-sky-600 grid place-items-center text-xs font-bold"><%= { "table" => "▦", "grid" => "▤", "sensitivity" => "±", "chart" => "📈" }[bp["kind"] || "table"] %></span>
-              <% if skill %><%= link_to st["title"], skill_path(skill), class: "font-semibold text-sky-700 hover:underline" %><% else %><span class="font-semibold"><%= st["title"] %></span><% end %>
+              <% if skill %><%= link_to st["title"], skill_path(skill), class: "font-semibold text-signal-700 hover:underline" %><% else %><span class="font-semibold"><%= st["title"] %></span><% end %>
               <% case @status[st["name"]] when :changed %><span class="text-xs text-amber-700">update available</span><% when :missing %><span class="text-xs text-slate-400">not installed</span><% end %>
               <div class="text-xs text-slate-500 mt-0.5"><%= Capture::Worksheets.outline(bp).first %></div>
             </li>
@@ -53,7 +53,7 @@
       <button class="<%= btn_primary %>">Start</button>
     <% end %>
     <% if @runs.any? %>
-      <div class="text-xs text-slate-500 mt-3">Your returns: <%= safe_join(@runs.map { |r| link_to(r.reference, playbook_run_path(r), class: "text-sky-700 hover:underline") }, ", ") %></div>
+      <div class="text-xs text-slate-500 mt-3">Your returns: <%= safe_join(@runs.map { |r| link_to(r.reference, playbook_run_path(r), class: "text-signal-700 hover:underline") }, ", ") %></div>
     <% end %>
   </div>
 <% end %>
@@ -69,7 +69,7 @@
           <% unless i == pb.mainline_names.size - 1 %><span class="absolute left-[15px] top-8 bottom-0 w-1.5 rounded bg-sky-600" aria-hidden="true"></span><% end %>
           <span class="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border-4 border-sky-600 grid place-items-center text-sm font-bold"><%= i + 1 %></span>
           <div class="flex flex-wrap items-baseline gap-2">
-            <% if skill %><%= link_to spec["title"], skill_path(skill), class: "font-semibold text-sky-700 hover:underline" %><% else %><span class="font-semibold"><%= spec["title"] %></span><% end %>
+            <% if skill %><%= link_to spec["title"], skill_path(skill), class: "font-semibold text-signal-700 hover:underline" %><% else %><span class="font-semibold"><%= spec["title"] %></span><% end %>
             <% case @status[name] when :changed %><span class="text-xs text-amber-700">update available</span><% when :missing %><span class="text-xs text-slate-400">not installed</span><% end %>
           </div>
           <p class="text-xs text-slate-500 mt-0.5"><%= spec["description"].split(" Use when").first %></p>
@@ -78,7 +78,7 @@
               <% sits.each do |s| %>
                 <li class="ml-2 pl-3 border-l-2 border-dashed border-slate-400 text-xs">
                   <span class="text-slate-500">⑂ If</span> <%= s.question.sub(/\A(Did|Will|Does|Is) the client /) { "the client " }.sub(/\?\z/, "") %>:
-                  <% if (b = s.branch) %><%= link_to b.title, skill_path(b), class: "text-sky-700 hover:underline" %><% else %><span class="text-amber-700">branch in review</span><% end %>
+                  <% if (b = s.branch) %><%= link_to b.title, skill_path(b), class: "text-signal-700 hover:underline" %><% else %><span class="text-amber-700">branch in review</span><% end %>
                   <% if s.forms.any? %><span class="text-slate-400">· <%= s.forms.join(", ") %></span><% end %>
                   <% if s.status == "proposed" %><span class="text-amber-700">· proposed by <%= s.proposed_by&.name %></span><% end %>
                 </li>
@@ -102,11 +102,11 @@
       <ul class="space-y-1">
         <% Array(pb.data.dig("resources", "items")).each do |item| %>
           <% r = ResourceFolder.find_by(path: pb.data.dig("resources", "folder").split("/").map(&:parameterize).join("/"))&.resources&.find_by(slug: item["name"].parameterize) %>
-          <li><%= r ? link_to(item["name"], resource_path(r), class: "text-sky-700 hover:underline") : item["name"] %> <span class="text-xs text-slate-400"><%= item["file"].split(".").last.upcase %></span></li>
+          <li><%= r ? link_to(item["name"], resource_path(r), class: "text-signal-700 hover:underline") : item["name"] %> <span class="text-xs text-slate-400"><%= item["file"].split(".").last.upcase %></span></li>
         <% end %>
       </ul>
     </div>
-    <%= link_to "See it on the map →", skill_map_path(field: pb.data.dig("fields", 0, "path"), hide: 1), class: "text-sky-700 hover:underline text-xs" if pb.installed? %>
+    <%= link_to "See it on the map →", skill_map_path(field: pb.data.dig("fields", 0, "path"), hide: 1), class: "text-signal-700 hover:underline text-xs" if pb.installed? %>
   </div>
 </div>
 <% end %>

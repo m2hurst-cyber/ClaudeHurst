@@ -17,7 +17,7 @@
       <% list.each do |r| %>
         <li class="panel-soft p-3 text-sm">
           <div class="flex flex-wrap justify-between gap-2">
-            <%= link_to r.title, macro_review_path(r), class: "font-medium text-sky-700 hover:underline" %>
+            <%= link_to r.title, macro_review_path(r), class: "font-medium text-signal-700 hover:underline" %>
             <span class="flex items-center gap-2">
               <span class="px-1.5 py-0.5 rounded text-xs <%= { 'macro' => 'bg-emerald-100 text-emerald-900', 'partial' => 'bg-amber-100 text-amber-900', 'ai' => 'bg-slate-100 text-slate-700' }[r.verdict] %>"><%= r.verdict_label %></span>
               <span class="text-xs text-slate-500">score <%= r.score %></span>

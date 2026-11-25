@@ -6,7 +6,7 @@
 <div class="panel-soft divide-y divide-sage-200">
   <% @notifications.each do |n| %>
     <div class="p-3 text-sm <%= 'bg-sky-50' unless n.read_at %>">
-      <div class="font-medium"><%= n.url.present? ? link_to(n.title, n.url, class: "text-sky-700 hover:underline") : n.title %></div>
+      <div class="font-medium"><%= n.url.present? ? link_to(n.title, n.url, class: "text-signal-700 hover:underline") : n.title %></div>
       <% if n.body.present? %><div class="text-slate-600"><%= n.body %></div><% end %>
       <div class="text-xs text-slate-500"><%= nice_time(n.created_at) %></div>
     </div>

@@ -39,7 +39,7 @@
     <% e = Capture::Estimator.for_step({ "title" => s.title, "instructions" => s.description, "skill_name" => s.name }) %>
     <p class="text-slate-600 mt-2">Until then it's anticipated as <strong><%= Capture::TaskProfile.label(e["nature"]) %></strong>, <%= e["complexity"] %> complexity: about <%= number_with_delimiter(e["tokens"]) %> tokens on <%= Capture::Models.label(e["model"]) %> (<%= number_to_currency(e["cost"], unit: "", precision: 3) %> credits).</p>
     <% if (mr = MacroReview.for_subject("skill", s.name)) %>
-      <p class="mt-2"><%= link_to "Macro review: #{mr.verdict_label.downcase} (#{mr.status})", macro_review_path(mr), class: "text-sky-700 hover:underline" %></p>
+      <p class="mt-2"><%= link_to "Macro review: #{mr.verdict_label.downcase} (#{mr.status})", macro_review_path(mr), class: "text-signal-700 hover:underline" %></p>
     <% end %>
   <% end %>
 </div>

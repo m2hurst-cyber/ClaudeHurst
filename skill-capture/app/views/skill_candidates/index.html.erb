@@ -40,7 +40,7 @@
       <% @candidates.each do |c| %>
         <tr>
           <td class="px-3 py-2 min-w-64">
-            <%= link_to c.display_title, skill_candidate_path(c), class: "text-sky-700 hover:underline font-medium" %>
+            <%= link_to c.display_title, skill_candidate_path(c), class: "text-signal-700 hover:underline font-medium" %>
             <div class="text-xs text-slate-500"><%= c.origin == "manual" ? "Requested by #{c.requested_by&.name}" : "#{c.steps.size} steps" %></div>
           </td>
           <td class="px-3 py-2"><%= c.domain || "—" %></td>

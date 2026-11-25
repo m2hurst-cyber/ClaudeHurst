@@ -12,7 +12,7 @@
       <% stops.each do |r| %>
         <li class="flex items-baseline gap-2">
           <span class="flex-1 min-w-0">
-            <%= link_to rest_stop_path(r), class: "text-sky-700 hover:underline" do %><%= r.label.presence || r.reason_label %><% end %>
+            <%= link_to rest_stop_path(r), class: "text-signal-700 hover:underline" do %><%= r.label.presence || r.reason_label %><% end %>
             <span class="text-xs text-slate-500">v<%= r.skill_version %> · <%= time_ago_in_words(r.created_at) %> ago<%= " · #{r.created_by.name}" if r.created_by %><%= " · 📌" if r.pinned %></span>
           </span>
         </li>

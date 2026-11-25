@@ -12,10 +12,10 @@
       <tbody>
         <% @captures.each do |c| %>
           <tr class="border-t">
-            <td class="px-3 py-2"><%= link_to c.interpretation["title"].presence || c.sheet_name, worksheet_capture_path(c), class: "text-sky-700 hover:underline font-medium" %><div class="text-xs text-slate-500"><%= c.sheet_name %> · <%= c.interpretation["kind"] || "formulas only" %></div></td>
+            <td class="px-3 py-2"><%= link_to c.interpretation["title"].presence || c.sheet_name, worksheet_capture_path(c), class: "text-signal-700 hover:underline font-medium" %><div class="text-xs text-slate-500"><%= c.sheet_name %> · <%= c.interpretation["kind"] || "formulas only" %></div></td>
             <td class="px-3 py-2"><%= FormulaCommand.provider_name(c.provider) %></td>
             <td class="px-3 py-2"><%= c.inventory.size %></td>
-            <td class="px-3 py-2"><% if c.candidate %><%= link_to c.candidate.draft_name, skill_candidate_path(c.candidate), class: "font-mono text-xs text-sky-700 hover:underline" %> <%= status_badge(c.candidate.status) %><% end %></td>
+            <td class="px-3 py-2"><% if c.candidate %><%= link_to c.candidate.draft_name, skill_candidate_path(c.candidate), class: "font-mono text-xs text-signal-700 hover:underline" %> <%= status_badge(c.candidate.status) %><% end %></td>
             <td class="px-3 py-2"><%= c.user.name %></td>
             <td class="px-3 py-2 text-xs text-slate-500"><%= time_ago_in_words(c.created_at) %> ago</td>
           </tr>

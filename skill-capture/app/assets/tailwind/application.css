@@ -19,6 +19,22 @@
    Additive — tokens and components. No existing view changes until it opts in.
    ────────────────────────────────────────────────────────────────────────── */
 @theme static {
+  /* The console was built on Tailwind's slate: a cool, blue grey that fights the warm
+     surfaces it now sits on. Rather than sweep ninety views, the ramp itself is
+     redefined — warm near-black ink, the same family as sage and the control tray. Every
+     text-slate-600 already written becomes right without being touched. */
+  --color-slate-50:  #f6f6f4;
+  --color-slate-100: #eeeeea;
+  --color-slate-200: #e2e1dc;
+  --color-slate-300: #cbc9c2;
+  --color-slate-400: #a4a199;
+  --color-slate-500: #817e75;
+  --color-slate-600: #63605a;
+  --color-slate-700: #474540;
+  --color-slate-800: #2c2b27;
+  --color-slate-900: #1b1a17;
+  --color-slate-950: #100f0d;
+
   --font-sans:    "Inter Display", "Inter", "Segoe UI Variable Text", system-ui, sans-serif;
   --font-display: "Charter", "Bitstream Charter", "Iowan Old Style", "Palatino Linotype",
                   Palatino, Georgia, serif;

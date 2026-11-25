@@ -3,11 +3,11 @@
   <h1 class="text-2xl font-bold">Integrations</h1>
   <%= link_to "Add integration", new_admin_source_path, class: btn_primary %>
 </div>
-<p class="text-sm text-slate-500 mb-4">The Office add-in reports under its built-in sources (one per Office app) as each signed-in person. Add an integration only for server-side tools that send events to <code>POST /api/v1/events</code> with their own token. To install the add-in, see <%= link_to "Deploy the add-in", admin_deploy_path, class: "text-sky-700 hover:underline" %>.</p>
+<p class="text-sm text-slate-500 mb-4">The Office add-in reports under its built-in sources (one per Office app) as each signed-in person. Add an integration only for server-side tools that send events to <code>POST /api/v1/events</code> with their own token. To install the add-in, see <%= link_to "Deploy the add-in", admin_deploy_path, class: "text-signal-700 hover:underline" %>.</p>
 <section class="panel-soft p-4 mb-4 text-sm" id="mcp">
   <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
     <h2 class="font-semibold">Connect an agent over MCP</h2>
-    <%= link_to "What the tools do", mcp_path, class: "text-sky-700 hover:underline text-xs" %>
+    <%= link_to "What the tools do", mcp_path, class: "text-signal-700 hover:underline text-xs" %>
   </div>
   <p class="text-slate-600 mb-2">Any agent that speaks MCP can search the library, follow the map, pick up the work addressed to it, run a job and report what it cost. It authenticates with an integration token from the table below (an agent), or a person's add-in token (acting as that person).</p>
   <pre class="bg-slate-50 border rounded p-2 overflow-x-auto font-mono text-xs">{

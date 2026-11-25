@@ -48,7 +48,7 @@
               class: st["prepared_at"] ? "#{btn} text-xs" : "#{btn_primary} text-xs" %>
       <% end %>
       <% if st["prepared_at"] %><span class="text-xs text-slate-500"><%= st["prepared_by"] == "ai" ? "✨ Prepared by AI" : "Prepared by rules" %> <%= time_ago_in_words(Time.zone.parse(st["prepared_at"])) %> ago</span><% end %>
-      <details class="text-xs ml-auto"><summary class="cursor-pointer text-sky-700"><%= (defined?(labels) && labels ? labels["expert"] : "CPA") %> instructions</summary>
+      <details class="text-xs ml-auto"><summary class="cursor-pointer text-signal-700"><%= (defined?(labels) && labels ? labels["expert"] : "CPA") %> instructions</summary>
         <div class="border rounded p-3 mt-1 bg-slate-50 text-sm"><%= skill_markdown(skill.body) %></div></details>
     </div>
 
@@ -66,7 +66,7 @@
               <% made.each do |k| %>
                 <% f = k.fields; sent = delivered[k.id.to_s] %>
                 <tr class="border-t align-top">
-                  <td class="py-1"><%= link_to f["partner_ref"], playbook_run_document_path(@run, k), target: "_blank", class: "text-sky-700 hover:underline" %></td>
+                  <td class="py-1"><%= link_to f["partner_ref"], playbook_run_document_path(@run, k), target: "_blank", class: "text-signal-700 hover:underline" %></td>
                   <% %w[ordinary_income rental_income interest dividends distributions].each do |key| %><td class="text-right tabular-nums"><%= number_with_delimiter(format("%.2f", f[key].to_f)) %></td><% end %>
                   <td class="pl-2 text-right whitespace-nowrap">
                     <% if sent %><span class="text-emerald-700">→ return <%= sent["reference"] %></span>
@@ -107,7 +107,7 @@
           <li class="flex items-start gap-2">
             <span class="<%= { 'blocking' => 'text-red-700', 'warning' => 'text-amber-700' }.fetch(iss['severity'], 'text-slate-500') %> font-semibold uppercase text-[10px] mt-0.5 w-14 shrink-0"><%= iss["severity"] %></span>
             <span class="flex-1 <%= 'line-through text-slate-400' if acked %>"><%= iss["text"] %></span>
-            <% if iss["severity"] == "blocking" && !acked && mine %><%= button_to "Resolved", acknowledge_playbook_run_path(@run), params: { leg: name, index: i }, class: "text-sky-700 hover:underline", form: { class: "inline" } %><% end %>
+            <% if iss["severity"] == "blocking" && !acked && mine %><%= button_to "Resolved", acknowledge_playbook_run_path(@run), params: { leg: name, index: i }, class: "text-signal-700 hover:underline", form: { class: "inline" } %><% end %>
           </li>
         <% end %>
       </ul>

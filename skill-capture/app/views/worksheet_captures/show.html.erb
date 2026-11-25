@@ -44,7 +44,7 @@
       <h2 class="font-semibold mb-2">Files</h2>
       <ul class="space-y-1">
         <% @capture.files.each_key do |f| %>
-          <li class="flex justify-between gap-2"><%= link_to f, file_worksheet_capture_path(@capture, file: f), class: "font-mono text-xs text-sky-700 hover:underline" %><%= link_to "Download", file_worksheet_capture_path(@capture, file: f, download: 1), class: "text-xs text-slate-500 hover:underline" %></li>
+          <li class="flex justify-between gap-2"><%= link_to f, file_worksheet_capture_path(@capture, file: f), class: "font-mono text-xs text-signal-700 hover:underline" %><%= link_to "Download", file_worksheet_capture_path(@capture, file: f, download: 1), class: "text-xs text-slate-500 hover:underline" %></li>
         <% end %>
       </ul>
     </div>
