@@ -15,7 +15,6 @@ module Capture
   class Prompter
     class Error < StandardError; end
     MAX_OPEN = 5
-    MAX_SAVE_STEPS = 6
 
     def self.call(user, client: nil) = new(user, client: client).call
     def self.respond!(prompt, choice:, user:, title: nil, description: nil) = new(user).respond!(prompt, choice, title, description)
@@ -24,6 +23,9 @@ module Capture
       @user = user
       @client = client # an Anthropic client for the evaluator (tests pass a stub)
       @protocols = %w[save extend branch].to_h { |k| [k, Protocol.for(k)] }
+      # How finely this person's work is cut: their own setting, else their area's, else the firm's.
+      @level = Granularity.level_for(domain: user&.domains&.first, user: user)
+      @gran = Granularity.settings(@level)
     end
 
     # => newly raised prompts
@@ -171,9 +173,9 @@ module Capture
           last_end = {}
           seg.each_index do |i|
             seen = Set.new
-            (i...[seg.size, i + MAX_SAVE_STEPS].min).each do |j|
+            (i...[seg.size, i + @gran[:max_steps]].min).each do |j|
               break unless seen.add?(seg[j])
-              next if j - i + 1 < p["min_steps"]
+              next if j - i + 1 < [p["min_steps"], @gran[:min_steps]].max
               keys = seg[i..j]
               next if last_end[keys] && i <= last_end[keys]
               last_end[keys] = j
@@ -182,12 +184,23 @@ module Capture
           end
         end
       end
-      frequent = tallies.select { |_, n| n >= p["min_repeats"] }
+      # Short sequences repeat by chance, so a fine setting asks for more evidence before it counts.
+      needed = [(p["min_repeats"] * @gran[:evidence]).ceil, 1].max
+      frequent = tallies.select { |_, n| n >= needed }
       known = Skill.published.pluck(:source).map { |s| Array(s["workflow"]) }.to_set
       decided = SkillCandidate.where(status: %w[approved rejected dismissed]).pluck(:signature).to_set
       frequent.reject do |keys, n|
-        known.include?(keys) || decided.include?(sig(keys)) ||
-          frequent.any? { |other, m| other.size > keys.size && m >= n && contains?(other, keys) }
+        known.include?(keys) || decided.include?(sig(keys)) || nested_away?(frequent, keys, n)
+      end
+    end
+
+    # When one repeated sequence sits inside another, only one of them should become a prompt.
+    # Which one is exactly what the granularity setting decides.
+    def nested_away?(frequent, keys, n)
+      case @gran[:prefer]
+      when :shortest then frequent.any? { |other, m| other.size < keys.size && m >= n && contains?(keys, other) }
+      when :longest  then frequent.any? { |other, m| other.size > keys.size && m >= (n * 0.6).ceil && contains?(other, keys) }
+      else frequent.any? { |other, m| other.size > keys.size && m >= n && contains?(other, keys) }
       end
     end
 

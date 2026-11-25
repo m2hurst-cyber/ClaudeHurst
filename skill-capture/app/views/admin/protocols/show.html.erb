@@ -15,7 +15,49 @@
   <% if @protocols.any? { |p| p.errors.any? } %>
     <div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded"><%= @protocols.flat_map { |p| p.errors.full_messages.map { |m| "#{p.label}: #{m}" } }.to_sentence %></div>
   <% end %>
-  <% @protocols.each do |p| %>
+  <%# Granularity gets its own control: it is a slider, not a box of numbers. %>
+  <% g = @protocols.find { |x| x.key == "granularity" } %>
+  <% level = g["level"].to_i %>
+  <fieldset class="bg-white border rounded p-4" data-controller="granularity"
+            data-granularity-preview-url-value="<%= preview_admin_protocols_path %>">
+    <legend class="px-1 font-semibold">📏 Granularity</legend>
+    <p class="text-slate-500 mb-3">How finely work is cut into skills. This moves five things at once: how long a
+      skill may be, whether the small reusable unit or the whole story wins when one sits inside the other, how much
+      repetition counts as evidence, how varied a pattern's surroundings must be, and what the AI is told to prefer.</p>
+
+    <input type="range" min="1" max="5" step="1" value="<%= level %>" class="w-full accent-teal-700"
+           name="protocols[granularity][level]" id="protocols_granularity_level"
+           data-granularity-target="slider" data-action="input->granularity#change">
+    <div class="flex justify-between text-xs text-slate-500 mt-1 mb-3">
+      <% Capture::Granularity::LEVELS.each do |n, s| %>
+        <span class="text-center w-1/5 <%= "font-semibold text-slate-900" if n == level %>" data-granularity-target="tick" data-level="<%= n %>"><%= s[:label] %></span>
+      <% end %>
+    </div>
+
+    <div class="rounded bg-slate-50 border p-3 mb-3">
+      <p class="font-medium" data-granularity-target="blurb"><%= Capture::Granularity::LEVELS[level][:blurb] %></p>
+      <p class="text-slate-500 mt-1" data-granularity-target="detail"></p>
+      <p class="text-slate-500 mt-2" data-granularity-target="cost">Checking what this would have found…</p>
+    </div>
+
+    <% if @areas.any? %>
+      <p class="font-medium mb-1">By area</p>
+      <p class="text-slate-500 mb-2">Areas that want a different size. Tax may want whole returns where research wants reusable blocks.</p>
+      <div class="grid sm:grid-cols-3 gap-2">
+        <% @areas.each do |area| %>
+          <% current = @overrides.find { |o| o.scope_key == area }&.level %>
+          <label class="flex items-center gap-2">
+            <span class="w-28 truncate" title="<%= area %>"><%= area.humanize %></span>
+            <%= select_tag "granularity_by_area[#{area}]",
+                  options_for_select([["Firm default", ""]] + Capture::Granularity::LEVELS.map { |n, s| [s[:label], n] }, current),
+                  class: input_css %>
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+  </fieldset>
+
+  <% @protocols.reject { |x| x.key == "granularity" }.each do |p| %>
     <fieldset class="bg-white border rounded p-4">
       <legend class="px-1 font-semibold"><%= { "save" => "💾", "extend" => "➕", "branch" => "⑂", "rest_stop" => "🅿", "evaluation" => "✨" }[p.key] %> <%= p.label %></legend>
       <p class="text-slate-500 mb-2"><%= desc[p.key] %></p>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_25_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -168,6 +168,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_120000) do
     t.index ["provider", "category"], name: "index_formula_commands_on_provider_and_category"
     t.index ["provider", "key"], name: "index_formula_commands_on_provider_and_key", unique: true
     t.index ["verified_by_id"], name: "index_formula_commands_on_verified_by_id"
+  end
+
+  create_table "granularity_overrides", force: :cascade do |t|
+    t.string "scope", null: false
+    t.string "scope_key", null: false
+    t.integer "level", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["scope", "scope_key"], name: "index_granularity_overrides_on_scope_and_scope_key", unique: true
   end
 
   create_table "macro_reviews", force: :cascade do |t|

@@ -12,12 +12,15 @@ class Protocol < ApplicationRecord
     "branch" => { "min_repeats" => 2, "max_extra_steps" => 3, "lookback_days" => 14, "snooze_days" => 3 },
     "rest_stop" => { "daily" => true, "keep_auto" => 30 },
     # How often the triggers run per person, and how sure the AI must be before anyone is prompted.
-    "evaluation" => { "interval_minutes" => 10, "min_confidence" => 60 }
+    "evaluation" => { "interval_minutes" => 10, "min_confidence" => 60 },
+    # How finely work is cut into skills: 1 atomic building blocks … 5 whole end-to-end runs.
+    "granularity" => { "level" => 3 }
   }.freeze
-  LABELS = { "save" => "Save", "extend" => "Extend", "branch" => "Branch", "rest_stop" => "Rest stops", "evaluation" => "AI evaluation" }.freeze
+  LABELS = { "save" => "Save", "extend" => "Extend", "branch" => "Branch", "rest_stop" => "Rest stops",
+             "evaluation" => "AI evaluation", "granularity" => "Granularity" }.freeze
   LIMITS = { "min_repeats" => 1..50, "min_steps" => 2..20, "lookback_days" => 1..90, "snooze_days" => 1..90,
              "max_added_steps" => 1..10, "max_extra_steps" => 1..10, "keep_auto" => 1..1000,
-             "interval_minutes" => 1..1440, "min_confidence" => 0..100 }.freeze
+             "interval_minutes" => 1..1440, "min_confidence" => 0..100, "level" => 1..5 }.freeze
 
   validates :key, inclusion: { in: DEFAULTS.keys }, uniqueness: true
   validate :settings_in_range

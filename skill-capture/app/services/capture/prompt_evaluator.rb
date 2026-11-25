@@ -14,7 +14,7 @@ module Capture
   class PromptEvaluator
     Result = Struct.new(:worthwhile, :kind, :confidence, :title, :description, :rationale, :by, keyword_init: true)
 
-    SYSTEM_PROMPT = <<~PROMPT.freeze
+    SYSTEM_TEMPLATE = <<~PROMPT.freeze
       You review patterns found in one person's work in Microsoft Office before they are asked
       whether to turn it into a "skill" (a reusable procedure a colleague or an AI agent follows).
 
@@ -27,6 +27,10 @@ module Capture
         (a different method, tool or shortcut), not a mistake or a partial run.
       You may change the kind (an "extend" whose steps are really a separate task is a "save"; a branch
       everyone should adopt could be an "extend").
+
+      HOUSE GRANULARITY — %<granularity>s. %<guidance>s
+      Judge "worthwhile" against that: a pattern at the wrong size for this firm is not worth
+      raising, however often it recurs.
 
       Write title and description in Anthropic's Agent Skills format: the title names the outcome in a
       few words; the description is third person, at most 1024 characters, no XML tags, and says what the
@@ -78,9 +82,20 @@ module Capture
       }.compact
     end
 
+    # The house granularity is part of the instruction, so the model applies the same taste
+    # the detector does rather than its own idea of how big a skill should be.
+    def level
+      @level ||= Granularity.level_for(domain: @p.skill&.domain || @p.user&.domains&.first, user: @p.user)
+    end
+
+    def system_prompt
+      g = Granularity.settings(level)
+      format(SYSTEM_TEMPLATE, granularity: "#{g[:label].downcase} (#{g[:summary].downcase})", guidance: g[:guidance])
+    end
+
     def claude
       msg = (@client || Anthropic::Client.new).beta.messages.create(
-        model: Config.llm_model, max_tokens: 4_000, system_: SYSTEM_PROMPT,
+        model: Config.llm_model, max_tokens: 4_000, system_: system_prompt,
         output_config: { effort: :low, format: { type: :json_schema, schema: SCHEMA } },
         fallbacks: :default, betas: ["server-side-fallback-2026-07-01"],
         messages: [{ role: "user", content: payload.to_json }]

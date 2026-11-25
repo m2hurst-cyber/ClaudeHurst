@@ -4,24 +4,35 @@ module Capture
   #   1. Split each actor's events into work sessions (new session key or idle gap).
   #   2. Collapse consecutive duplicate steps.
   #   3. Enumerate contiguous sequences of min..max steps that never repeat a step,
-  #      counting occurrences without overlap.
-  #   4. Keep sequences seen >= min_occurrences times by >= min_actors people.
-  #   5. Keep only maximal sequences (drop A>B when A>B>C occurs as often).
+  #      counting occurrences without overlap, and recording the surroundings each was seen in.
+  #   4. Judge each pattern at its own area's granularity (Capture::Granularity): length,
+  #      how much evidence it needs, and how varied its surroundings must be.
+  #   5. Resolve nesting the way that level asks for — the smallest reusable unit at the fine
+  #      end, the longest whole story at the coarse end — and stitch windows back together
+  #      only where long skills are wanted.
   class WorkflowDetector
-    Pattern = Struct.new(:steps, :occurrences, :actors, :domains, :first_seen_at, :last_seen_at, :examples, keyword_init: true) do
+    Pattern = Struct.new(:steps, :occurrences, :actors, :domains, :first_seen_at, :last_seen_at, :examples,
+                         :contexts, keyword_init: true) do
       def signature = SkillCandidate.signature_for(steps)
+      # The distinct surroundings this sequence was seen in: [what came before, what came after].
+      # A building block turns up in many; a fragment of one larger task turns up in one.
+      def context_count = (contexts || Set.new).size
     end
     Result = Struct.new(:patterns, :created, :updated, keyword_init: true)
 
     def self.call(**opts) = new(**opts).call
 
+    # level: judge every pattern at this granularity instead of its area's (used by the
+    # slider's preview, so a setting can be costed before it is chosen).
     def initialize(since: Config.lookback.ago, min_occurrences: Config.min_occurrences, min_actors: Config.min_actors,
-                   min_steps: Config.min_steps, max_steps: Config.max_steps, session_gap: Config.session_gap)
+                   min_steps: nil, max_steps: nil, session_gap: Config.session_gap, level: nil)
       @since = since
-      @min_occurrences = min_occurrences
+      @base_occurrences = min_occurrences
       @min_actors = min_actors
-      @min_steps = min_steps
-      @max_steps = max_steps
+      @level = level && Granularity.clamp(level)
+      window = @level ? Granularity.settings(@level) : Granularity.envelope
+      @min_steps = min_steps || window[:min_steps]
+      @max_steps = max_steps || window[:max_steps]
       @session_gap = session_gap
     end
 
@@ -40,10 +51,12 @@ module Capture
     def detect
       tallies = {}
       sessions.each do |session|
-        each_sequence(collapse(session)) do |seq|
+        each_sequence(collapse(session)) do |seq, before, after|
           keys = seq.map(&:action_key)
-          t = (tallies[keys] ||= Pattern.new(steps: keys, occurrences: 0, actors: {}, domains: Hash.new(0), examples: []))
+          t = (tallies[keys] ||= Pattern.new(steps: keys, occurrences: 0, actors: {}, domains: Hash.new(0),
+                                             examples: [], contexts: Set.new))
           t.occurrences += 1
+          t.contexts << [before, after]
           t.actors[seq.first.actor_key] ||= seq.first.actor_name
           seq.each { |e| t.domains[e.domain] += 1 if e.domain }
           t.first_seen_at = [t.first_seen_at, seq.first.occurred_at].compact.min
@@ -53,8 +66,42 @@ module Capture
           end
         end
       end
-      frequent = tallies.values.select { |t| t.occurrences >= @min_occurrences && t.actors.size >= @min_actors }
-      stitch(maximal(frequent))
+      select_patterns(tallies.values)
+    end
+
+    # Each pattern is judged at the granularity of its own area (or, in a preview, at the one
+    # level being costed). Patterns are then grouped by that level, because resolving nesting
+    # only makes sense among patterns being judged by the same taste.
+    def select_patterns(patterns)
+      by_level = patterns.group_by { |p| @level || Granularity.level_for(domain: domain_for(p)) }
+      by_level.flat_map do |level, group|
+        g = Granularity.settings(level)
+        needed = Granularity.min_occurrences(level, base: @base_occurrences)
+        kept = group.select do |p|
+          p.steps.size.between?(g[:min_steps], g[:max_steps]) &&
+            p.occurrences >= needed && p.actors.size >= @min_actors &&
+            p.context_count >= g[:min_contexts]
+        end
+        kept = resolve_nesting(kept, g[:prefer])
+        g[:stitch] ? stitch(kept) : kept.sort_by { |p| [-p.occurrences, -p.steps.size] }
+      end.sort_by { |p| [-p.occurrences, -p.steps.size] }
+    end
+
+    def contains?(outer, inner) = outer.size > inner.size && outer.each_cons(inner.size).include?(inner)
+
+    # Two patterns where one sits inside the other are usually one finding. Which one survives
+    # is the whole question the slider answers.
+    def resolve_nesting(patterns, prefer)
+      case prefer
+      when :shortest
+        # The small recurring unit wins: drop anything that merely contains a unit seen as often.
+        patterns.reject { |p| patterns.any? { |q| contains?(p.steps, q.steps) && q.occurrences >= p.occurrences } }
+      when :longest
+        # The whole story wins, even at some loss of frequency.
+        patterns.reject { |p| patterns.any? { |q| contains?(q.steps, p.steps) && q.occurrences >= (p.occurrences * 0.6).ceil } }
+      else
+        maximal(patterns)
+      end.sort_by { |p| [-p.occurrences, -p.steps.size] }
     end
 
     private
@@ -77,7 +124,7 @@ module Capture
           keys = steps[i..j].map(&:action_key)
           next if last_end[keys] && i <= last_end[keys]
           last_end[keys] = j
-          yield steps[i..j]
+          yield steps[i..j], (i.zero? ? :start : steps[i - 1].action_key), (steps[j + 1]&.action_key || :end)
         end
       end
     end
@@ -109,6 +156,7 @@ module Capture
         end
         break unless found
         joined = Pattern.new(steps: a.steps + b.steps.drop(k), occurrences: a.occurrences,
+                             contexts: (a.contexts || Set.new) | (b.contexts || Set.new),
                              actors: a.actors.merge(b.actors) { |_, x, y| x || y },
                              domains: a.domains.merge(b.domains) { |_, x, y| [x, y].max },
                              first_seen_at: [a.first_seen_at, b.first_seen_at].min,
