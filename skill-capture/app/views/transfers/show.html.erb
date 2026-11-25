@@ -9,7 +9,7 @@
   <%= render "shared/llm_menu", url: transfer_path(t, format: :md), filename: "transfer-#{t.id}" %>
 </div>
 <div class="grid lg:grid-cols-[1fr_18rem] gap-4">
-  <section class="bg-white border rounded text-sm">
+  <section class="panel-soft text-sm">
     <% if t.message.present? %><blockquote class="border-b p-4 text-slate-700 italic">“<%= t.message %>”</blockquote><% end %>
     <ul class="divide-y">
       <% t.items.each do |i| %>
@@ -25,7 +25,7 @@
       <% end %>
     </ul>
   </section>
-  <aside class="bg-white border rounded p-4 text-sm space-y-2 self-start">
+  <aside class="panel-soft p-4 text-sm space-y-2 self-start">
     <% if t.pending? && current_user.id == t.recipient_id %>
       <% unless t.free? %><p>Costs <strong><%= credits(t.price) %></strong>. You have <strong><%= credits(current_user.credits) %></strong>.</p><% end %>
       <%= button_to (t.free? ? "Accept into my library" : "Pay into escrow & accept"), accept_transfer_path(t), class: "w-full px-3 py-2 rounded bg-emerald-700 text-white", disabled: !t.free? && current_user.credits < t.price %>
@@ -45,13 +45,13 @@
   </aside>
 </div>
 
-<section class="mt-4 bg-white border rounded p-4 text-sm" aria-label="Escrow contract">
+<section class="mt-4 panel-soft p-4 text-sm" aria-label="Escrow contract">
   <div class="flex flex-wrap justify-between gap-2 mb-3">
     <h2 class="font-semibold">Escrow contract</h2>
     <span class="text-xs font-mono text-slate-500" title="sha256 of the parties, skills, fingerprints, price and expiry">terms <%= t.terms_hash.to_s.first(16) %>…</span>
   </div>
   <%# Pinned at the moment of the offer: this is the identity the transfer refuses to deviate from. %>
-  <div class="mt-3 bg-white border rounded divide-y text-sm">
+  <div class="mt-3 panel-soft divide-y divide-sage-200 text-sm">
     <% t.items.each do |i| %>
       <div class="p-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span class="font-medium"><%= i["title"] %></span>

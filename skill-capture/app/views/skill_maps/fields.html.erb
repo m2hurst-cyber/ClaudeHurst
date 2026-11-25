@@ -1,7 +1,7 @@
 <% content_for :title, "Skills by field" %>
 <%= render "tabs", subtitle: "The field hierarchy: what kind of work each skill is, from broad fields down to specialties. Filter by app and stage; open any branch on the routes map." %>
 
-<div class="bg-white border rounded p-3 mb-3 text-sm flex flex-wrap items-center gap-x-3 gap-y-2">
+<div class="panel-soft p-3 mb-3 text-sm flex flex-wrap items-center gap-x-3 gap-y-2">
   <span class="font-semibold">Filter</span>
   <div class="flex flex-wrap gap-1" role="group" aria-label="Apps">
     <% SkillClassification::APPS.each do |a| %>
@@ -27,10 +27,10 @@
   <% end %>
   <% unclassified = Array(@by_field[nil]) %>
   <% if unclassified.any? %>
-    <details class="bg-white border rounded" open>
+    <details class="panel-soft" open>
       <summary class="cursor-pointer px-3 py-2 font-semibold text-base flex"><span class="flex-1">Not classified yet</span><span class="text-xs text-slate-500"><%= pluralize(unclassified.size, "skill") %></span></summary>
       <div class="px-3 pb-2 space-y-2"><% unclassified.each do |s| %><div><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></div><% end %></div>
     </details>
   <% end %>
-  <% if @skills.empty? %><p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No skills match these filters.</p><% end %>
+  <% if @skills.empty? %><p class="panel-soft p-6 text-center text-sm text-slate-500">No skills match these filters.</p><% end %>
 </div>

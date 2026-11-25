@@ -22,7 +22,7 @@
     <% end %>
     <ul class="space-y-2">
       <% @hits.each do |hit| %>
-        <li class="bg-white border rounded p-3">
+        <li class="panel-soft p-3">
           <span class="text-xs uppercase tracking-wide text-slate-400"><%= hit.kind %></span>
           <p class="font-medium">
             <%= hit.slug ? link_to(hit.title, help_guide_path(hit.slug), class: "hover:underline") : hit.title %>
@@ -49,7 +49,7 @@
       <p class="text-xs uppercase tracking-wide text-slate-400 mt-4 mb-1"><%= Capture::Help::SECTIONS.fetch(section, section.humanize) %></p>
       <ul class="grid sm:grid-cols-2 gap-2">
         <% guides.each do |g| %>
-          <li class="bg-white border rounded p-3 hover:border-slate-400">
+          <li class="panel-soft p-3 hover:border-slate-400">
             <%= link_to g.title, help_guide_path(g.slug), class: "font-medium hover:underline" %>
             <p class="text-sm text-slate-600 mt-0.5"><%= g.summary %></p>
           </li>
@@ -60,7 +60,7 @@
     <h2 class="font-semibold mt-8 mb-2">Frequently asked</h2>
     <% @topics.each do |topic, questions| %>
       <p class="text-xs uppercase tracking-wide text-slate-400 mt-4 mb-1"><%= topic %></p>
-      <div class="bg-white border rounded divide-y">
+      <div class="panel-soft divide-y divide-sage-200">
         <% questions.each do |q| %>
           <details class="p-3 group">
             <summary class="cursor-pointer font-medium list-none flex gap-2">
@@ -84,7 +84,7 @@
           ["Granularity directions", agent_directions_path, "What this firm means by a skill, as the agents are told it"],
           ["Models and pricing", model_profiles_path, "What each kind of task runs on, and what it costs"],
           ["Connected Office apps", connected_apps_path, "Which apps are sending work to the system"]].each do |label, path, blurb| %>
-        <li class="bg-white border rounded p-3">
+        <li class="panel-soft p-3">
           <%= link_to label, path, class: "font-medium hover:underline" %>
           <p class="text-sm text-slate-600 mt-0.5"><%= blurb %></p>
         </li>

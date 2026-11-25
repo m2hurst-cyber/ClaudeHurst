@@ -18,10 +18,10 @@
 <div class="grid md:grid-cols-2 gap-4">
   <section>
     <h2 class="font-semibold mb-2">Your flows</h2>
-    <% if @flows.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4">None yet. Start from the template or a blank map.</p><% end %>
+    <% if @flows.empty? %><p class="text-sm text-slate-500 panel-soft p-4">None yet. Start from the template or a blank map.</p><% end %>
     <ul class="space-y-2">
       <% @flows.each do |f| %>
-        <li class="bg-white border rounded p-3 text-sm">
+        <li class="panel-soft p-3 text-sm">
           <div class="flex justify-between gap-2"><%= link_to f.name, flow_path(f), class: "font-medium text-sky-700 hover:underline" %><span class="text-xs text-slate-500"><%= pluralize(f.steps.size, "task") %></span></div>
           <div class="text-xs text-slate-500 mt-1"><%= f.steps.map { |s| s["app"] }.chunk_while { |a, b| a == b }.map(&:first).join(" → ") %></div>
         </li>
@@ -30,10 +30,10 @@
   </section>
   <section>
     <h2 class="font-semibold mb-2">Runs</h2>
-    <% if @runs.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4">No runs yet.</p><% end %>
+    <% if @runs.empty? %><p class="text-sm text-slate-500 panel-soft p-4">No runs yet.</p><% end %>
     <ul class="space-y-2">
       <% @runs.each do |r| %>
-        <li class="bg-white border rounded p-3 text-sm flex justify-between gap-2">
+        <li class="panel-soft p-3 text-sm flex justify-between gap-2">
           <span><%= link_to r.flow.name, flow_run_path(r), class: "text-sky-700 hover:underline" %> <span class="text-xs text-slate-500"><%= time_ago_in_words(r.created_at) %> ago</span></span>
           <span class="text-xs"><%= r.status == "running" ? "Task #{r.current_index + 1} of #{r.steps.size}" : r.status.capitalize %></span>
         </li>

@@ -3,7 +3,7 @@
   <h1 class="text-2xl font-bold">Models and what they cost</h1>
   <p class="text-sm text-slate-500">Tiers run macro → small → standard → deep. A task's nature and complexity choose the tier; the cheapest model in that tier is the one suggested, unless someone names another. Prices are credits per million tokens: edit them to match your contract.</p>
 </div>
-<div class="bg-white border rounded overflow-x-auto mb-5">
+<div class="panel-soft overflow-x-auto mb-5">
   <table class="w-full text-sm">
     <thead class="bg-slate-50 text-left text-xs text-slate-500"><tr><th class="px-3 py-2">Model</th><th class="px-3 py-2">Tier</th><th class="px-3 py-2">Input /1M</th><th class="px-3 py-2">Output /1M</th><th class="px-3 py-2">Tokens/s</th><th class="px-3 py-2">Used (90 days)</th><th class="px-3 py-2"></th></tr></thead>
     <tbody>
@@ -26,7 +26,7 @@
 </div>
 
 <h2 class="font-semibold mb-2">Which model each kind of task actually ran on</h2>
-<div class="bg-white border rounded p-4 text-sm">
+<div class="panel-soft p-4 text-sm">
   <% if @by_nature.empty? %>
     <p class="text-slate-500">No runs have reported a task nature yet. Flows record it from the task's profile.</p>
   <% else %>

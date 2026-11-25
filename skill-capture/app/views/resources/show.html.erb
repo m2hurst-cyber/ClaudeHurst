@@ -10,7 +10,7 @@
   <%= link_to (r.kind == "link" ? "Open link" : "Download"), download_resource_path(r), class: btn_primary %>
 </div>
 <div class="grid md:grid-cols-3 gap-4 text-sm">
-  <div class="md:col-span-2 bg-white border rounded p-4 space-y-2">
+  <div class="md:col-span-2 panel-soft p-4 space-y-2">
     <% if r.description.present? %><p><%= r.description %></p><% end %>
     <dl class="grid grid-cols-[8rem_1fr] gap-y-1">
       <dt class="text-slate-500">Type</dt><dd><%= r.kind == "link" ? "Link" : "#{r.filename} · #{r.content_type}" %></dd>
@@ -32,7 +32,7 @@
       </details>
     <% end %>
   </div>
-  <aside class="bg-white border rounded p-4">
+  <aside class="panel-soft p-4">
     <h2 class="font-semibold mb-1">Used by</h2>
     <% if @skills.any? %>
       <ul class="space-y-1"><% @skills.each do |s| %><li><%= link_to s.title, skill_path(s), class: "text-sky-700 hover:underline" %> <%= stage_badge(s.stage) %></li><% end %></ul>

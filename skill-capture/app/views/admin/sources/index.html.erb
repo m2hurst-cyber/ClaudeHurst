@@ -4,7 +4,7 @@
   <%= link_to "Add integration", new_admin_source_path, class: btn_primary %>
 </div>
 <p class="text-sm text-slate-500 mb-4">The Office add-in reports under its built-in sources (one per Office app) as each signed-in person. Add an integration only for server-side tools that send events to <code>POST /api/v1/events</code> with their own token. To install the add-in, see <%= link_to "Deploy the add-in", admin_deploy_path, class: "text-sky-700 hover:underline" %>.</p>
-<section class="bg-white border rounded p-4 mb-4 text-sm" id="mcp">
+<section class="panel-soft p-4 mb-4 text-sm" id="mcp">
   <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
     <h2 class="font-semibold">Connect an agent over MCP</h2>
     <%= link_to "What the tools do", mcp_path, class: "text-sky-700 hover:underline text-xs" %>
@@ -23,7 +23,7 @@
     <% Mcp::Registry.tools.each do |t| %><span><code><%= t[:name] %></code> — <%= t[:title].downcase %></span><% end %>
   </div>
 </section>
-<div class="bg-white border rounded overflow-x-auto">
+<div class="panel-soft overflow-x-auto">
   <table class="w-full text-sm">
     <thead class="bg-slate-100"><tr><th class="px-3 py-2 text-left">Name</th><th class="px-3 py-2 text-left">Kind</th><th class="px-3 py-2 text-left">Token</th><th class="px-3 py-2 text-right">Events</th><th class="px-3 py-2 text-left">Last seen</th><th class="px-3 py-2"></th></tr></thead>
     <tbody class="divide-y">

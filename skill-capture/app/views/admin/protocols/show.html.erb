@@ -18,7 +18,7 @@
   <%# Granularity gets its own control: it is a slider, not a box of numbers. %>
   <% g = @protocols.find { |x| x.key == "granularity" } %>
   <% level = g["level"].to_i %>
-  <fieldset class="bg-white border rounded p-4" data-controller="granularity"
+  <fieldset class="panel-soft p-4" data-controller="granularity"
             data-granularity-preview-url-value="<%= preview_admin_protocols_path %>">
     <legend class="px-1 font-semibold">📏 Granularity</legend>
     <p class="text-slate-500 mb-3">How finely work is cut into skills. This moves five things at once: how long a
@@ -59,7 +59,7 @@
   </fieldset>
 
   <% @protocols.reject { |x| x.key == "granularity" }.each do |p| %>
-    <fieldset class="bg-white border rounded p-4">
+    <fieldset class="panel-soft p-4">
       <legend class="px-1 font-semibold"><%= { "save" => "💾", "extend" => "➕", "branch" => "⑂", "rest_stop" => "🅿", "evaluation" => "✨" }[p.key] %> <%= p.label %></legend>
       <p class="text-slate-500 mb-2"><%= desc[p.key] %></p>
       <label class="flex items-center gap-2 mb-2"><%= hidden_field_tag "protocols[#{p.key}][enabled]", "0", id: nil %><%= check_box_tag "protocols[#{p.key}][enabled]", "1", p.enabled %> Enabled</label>

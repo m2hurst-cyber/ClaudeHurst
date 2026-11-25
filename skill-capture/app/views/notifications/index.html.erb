@@ -3,7 +3,7 @@
   <h1 class="text-2xl font-bold">Inbox</h1>
   <%= button_to "Mark all read", read_all_notifications_path, class: btn %>
 </div>
-<div class="bg-white border rounded divide-y">
+<div class="panel-soft divide-y divide-sage-200">
   <% @notifications.each do |n| %>
     <div class="p-3 text-sm <%= 'bg-sky-50' unless n.read_at %>">
       <div class="font-medium"><%= n.url.present? ? link_to(n.title, n.url, class: "text-sky-700 hover:underline") : n.title %></div>

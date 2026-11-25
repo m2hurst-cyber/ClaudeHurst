@@ -10,7 +10,7 @@
     <%= javascript_importmap_tags %>
     <%= yield :head %>
   </head>
-  <body class="bg-slate-50 text-slate-900 min-h-screen">
+  <body class="bg-sage-50 text-slate-900 min-h-screen">
     <% if user_signed_in? %>
       <header class="bg-slate-900">
         <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center gap-1">
@@ -63,7 +63,7 @@
       </header>
       <% tour = Capture::Onboarding.for(current_user) %>
       <% if tour.nudge? && !request.path.start_with?("/start") %>
-        <div class="bg-emerald-50 border-b border-emerald-200">
+        <div class="bg-sage-100 border-b border-sage-200">
           <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
             <span>
               <span class="font-medium">Getting started</span>

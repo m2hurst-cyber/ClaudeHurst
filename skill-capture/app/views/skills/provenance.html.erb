@@ -15,7 +15,7 @@
           title: "Identity, chain and anchors, in a form a counterparty can check" %>
   </div>
 
-  <div class="bg-white border rounded p-4 mt-5">
+  <div class="panel-soft p-4 mt-5">
     <h2 class="font-semibold mb-2">Identity</h2>
     <dl class="grid sm:grid-cols-[9rem_1fr] gap-y-1 text-sm">
       <dt class="text-slate-500">Content hash</dt>
@@ -37,10 +37,10 @@
 
   <h2 class="font-semibold mt-6 mb-2">History <span class="text-sm font-normal text-slate-500">(newest first)</span></h2>
   <% if @entries.empty? %>
-    <p class="text-sm text-slate-500 bg-white border rounded p-4">Nothing in the chain for this skill yet. Entries are
+    <p class="text-sm text-slate-500 panel-soft p-4">Nothing in the chain for this skill yet. Entries are
       written from the moment a skill is published; anything published before the chain existed has none.</p>
   <% else %>
-    <ol class="bg-white border rounded divide-y text-sm">
+    <ol class="panel-soft divide-y divide-sage-200 text-sm">
       <% @entries.each do |e| %>
         <li class="p-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span class="font-medium"><%= { "skill.published" => "Published", "skill.revised" => "Revised",
@@ -63,7 +63,7 @@
     <h2 class="font-semibold mt-6 mb-2">Anchors</h2>
     <p class="text-sm text-slate-600 mb-2">Each day the whole chain is committed to with a single root, written outside
       the database. Once a root is published somewhere we do not control, the history beneath it cannot be changed quietly.</p>
-    <ul class="bg-white border rounded divide-y text-sm">
+    <ul class="panel-soft divide-y divide-sage-200 text-sm">
       <% @anchors.each do |a| %>
         <li class="p-3 flex flex-wrap items-baseline gap-3">
           <span class="font-medium"><%= a.on_date.strftime("%-d %B %Y") %></span>

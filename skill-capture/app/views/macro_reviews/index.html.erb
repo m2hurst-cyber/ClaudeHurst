@@ -12,10 +12,10 @@
 </div>
 
 <% rows = ->(list, empty) { capture do %>
-  <% if list.empty? %><p class="text-sm text-slate-500 bg-white border rounded p-4"><%= empty %></p><% else %>
+  <% if list.empty? %><p class="text-sm text-slate-500 panel-soft p-4"><%= empty %></p><% else %>
     <ul class="space-y-2">
       <% list.each do |r| %>
-        <li class="bg-white border rounded p-3 text-sm">
+        <li class="panel-soft p-3 text-sm">
           <div class="flex flex-wrap justify-between gap-2">
             <%= link_to r.title, macro_review_path(r), class: "font-medium text-sky-700 hover:underline" %>
             <span class="flex items-center gap-2">

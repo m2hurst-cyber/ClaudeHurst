@@ -18,7 +18,7 @@
 <h1 class="text-2xl font-bold mb-1">Demand schedule</h1>
 <p class="text-sm text-slate-500 mb-4">Each skill's price per trip follows its congestion: recent median travel time divided by its free-flow time. The premium above the base price funds that skill's bounty.</p>
 
-<section class="bg-white border rounded p-4 mb-4" data-controller="tip">
+<section class="panel-soft p-4 mb-4" data-controller="tip">
   <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
     <h2 class="font-semibold">Price per trip by congestion</h2>
     <span class="text-xs text-slate-500">Dots are skills at their current congestion</span>
@@ -48,7 +48,7 @@
         </g>
       <% end %>
     </svg>
-    <div data-tip-target="tip" role="tooltip" hidden class="absolute z-10 pointer-events-none bg-white border rounded shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
+    <div data-tip-target="tip" role="tooltip" hidden class="absolute z-10 pointer-events-none panel-soft shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
   </div>
   <details class="mt-2 text-sm">
     <summary class="cursor-pointer text-slate-600">Show priced skills as a table</summary>
@@ -61,7 +61,7 @@
   </details>
 </section>
 
-<%= form_with model: s, url: admin_pricing_path, method: :patch, class: "bg-white border rounded p-4 space-y-4 text-sm max-w-3xl" do |f| %>
+<%= form_with model: s, url: admin_pricing_path, method: :patch, class: "panel-soft p-4 space-y-4 text-sm max-w-3xl" do |f| %>
   <% if s.errors.any? %><div class="bg-red-50 border border-red-200 text-red-800 p-2 rounded"><%= s.errors.full_messages.to_sentence %></div><% end %>
   <div class="grid sm:grid-cols-3 gap-3">
     <div><%= f.label :base_price, "Base price per trip" %><%= f.number_field :base_price, step: "0.01", min: 0, class: input_css %></div>

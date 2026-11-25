@@ -34,7 +34,7 @@
 <div class="grid md:grid-cols-3 gap-4">
   <div class="md:col-span-2 space-y-4">
     <% if c.steps.any? %>
-      <div class="bg-white border rounded p-4">
+      <div class="panel-soft p-4">
         <h2 class="font-semibold mb-2">Observed steps</h2>
         <ol class="list-decimal ml-5 space-y-1 text-sm">
           <% c.step_labels.each do |key, label| %>
@@ -44,7 +44,7 @@
       </div>
     <% end %>
 
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <div class="flex justify-between items-center mb-2">
         <h2 class="font-semibold">Draft</h2>
         <% if c.draft_generator %><span class="text-xs text-slate-500">by <%= c.draft_generator %> · <%= nice_time(c.drafted_at) %></span><% end %>
@@ -66,7 +66,7 @@
 
   <div class="space-y-4 text-sm">
     <% if c.drafted? %><%= render "skills/standard", report: Capture::SkillStandard.check_candidate(c) %><% end %>
-    <div class="bg-white border rounded p-4 space-y-1">
+    <div class="panel-soft p-4 space-y-1">
       <h2 class="font-semibold mb-1">Evidence</h2>
       <div>Seen <strong><%= c.occurrence_count %></strong> times by <strong><%= c.distinct_actor_count %></strong> <%= "person".pluralize(c.distinct_actor_count) %></div>
       <div>First seen: <%= nice_time(c.first_seen_at) %></div>
@@ -86,7 +86,7 @@
     </div>
 
     <% if c.reviewed_at %>
-      <div class="bg-white border rounded p-4">
+      <div class="panel-soft p-4">
         <h2 class="font-semibold mb-1">Review</h2>
         <div><%= c.status.humanize %> by <%= c.reviewer&.name %> on <%= nice_time(c.reviewed_at) %></div>
         <% if c.review_notes.present? %><p class="mt-1 text-slate-600"><%= c.review_notes %></p><% end %>
@@ -94,7 +94,7 @@
     <% end %>
 
     <% if policy(c).reject? %>
-      <div class="bg-white border rounded p-4 space-y-2">
+      <div class="panel-soft p-4 space-y-2">
         <h2 class="font-semibold">Not a skill?</h2>
         <%= form_with url: reject_skill_candidate_path(c), method: :post, class: "space-y-2" do |f| %>
           <%= text_area_tag :review_notes, nil, rows: 2, placeholder: "Why? Helps tune detection.", class: input_css %>

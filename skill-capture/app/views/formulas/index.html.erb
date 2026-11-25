@@ -17,7 +17,7 @@
 </div>
 <div class="grid lg:grid-cols-[14rem_1fr] gap-4">
   <aside class="space-y-4 text-sm">
-    <div class="bg-white border rounded p-3">
+    <div class="panel-soft p-3">
       <div class="font-semibold mb-1"><%= pluralize(@counts.values.sum, "command") %></div>
       <% FormulaCommand::STATUSES.each do |st| %>
         <%= link_to formulas_path(provider: @provider, status: (params[:status] == st ? nil : st)), class: "flex justify-between px-1 rounded #{'bg-slate-100' if params[:status] == st}" do %>
@@ -25,7 +25,7 @@
         <% end %>
       <% end %>
     </div>
-    <div class="bg-white border rounded p-3">
+    <div class="panel-soft p-3">
       <div class="font-semibold mb-1">Categories</div>
       <%= link_to "All", formulas_path(provider: @provider, q: params[:q]), class: "block px-1 rounded #{'bg-slate-100 font-medium' if params[:category].blank?}" %>
       <% @categories.each do |cat, n| %>
@@ -33,7 +33,7 @@
       <% end %>
     </div>
     <% if @can_manage %>
-      <details class="bg-white border rounded p-3">
+      <details class="panel-soft p-3">
         <summary class="font-semibold cursor-pointer">Add a command</summary>
         <%= form_with url: formulas_path(provider: @provider), scope: :formula_command, method: :post, class: "space-y-1.5 mt-2 text-xs" do |f| %>
           <%= f.text_field :key, placeholder: "key (e.g. ebit_margin)", class: input_css, required: true %>
@@ -44,7 +44,7 @@
           <button class="<%= btn_primary %> text-xs">Add</button>
         <% end %>
       </details>
-      <details class="bg-white border rounded p-3">
+      <details class="panel-soft p-3">
         <summary class="font-semibold cursor-pointer">Import a CSV</summary>
         <p class="text-xs text-slate-500 mt-1">Columns: key, name, category, syntax, description, defaults (<code>fpt=A; fpo=0</code>). Existing keys are updated; a changed formula goes back to unverified.</p>
         <%= form_with url: import_formulas_path(provider: @provider), method: :post, multipart: true, class: "mt-2 space-y-1.5 text-xs" do %>
@@ -60,7 +60,7 @@
       <input name="q" value="<%= params[:q] %>" placeholder="Search keys, names or formulas (e.g. ebitda, fpo, ESG)" class="<%= input_css %>" aria-label="Search formulas">
       <button class="<%= btn %>">Search</button>
     <% end %>
-    <div class="bg-white border rounded divide-y text-sm">
+    <div class="panel-soft divide-y divide-sage-200 text-sm">
       <% if @commands.empty? %><p class="p-4 text-slate-500">No commands match.</p><% end %>
       <% @commands.each do |c| %>
         <% used = @usage[c.key] %>

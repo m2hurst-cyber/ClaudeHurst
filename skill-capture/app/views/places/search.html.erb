@@ -4,7 +4,7 @@
   <%= search_field_tag :q, @q, placeholder: "Roads, intersections, handoffs, or words in their directions", class: "border rounded px-2 py-1.5 text-sm w-full sm:w-96", autofocus: true %>
   <%= f.submit "Search", class: btn %>
 <% end %>
-<div class="bg-white border rounded divide-y text-sm">
+<div class="panel-soft divide-y divide-sage-200 text-sm">
   <% @hits.each do |h| %>
     <%= link_to place_path(h.key), class: "flex items-baseline gap-3 p-3 hover:bg-slate-50" do %>
       <span class="w-24 shrink-0 text-xs text-slate-500"><%= Waypoint::KIND_LABELS[h.kind] %></span>

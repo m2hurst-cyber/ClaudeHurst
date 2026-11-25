@@ -1,7 +1,7 @@
 <% stops = RestStop.where(skill_name: s.name).recent.limit(8).to_a %>
 <% total = RestStop.where(skill_name: s.name).count %>
 <% can_revert = Capture::RestStops.can_revert?(current_user, Skill.current(s.name)) %>
-<div class="bg-white border rounded p-4" id="rest-stops">
+<div class="panel-soft p-4" id="rest-stops">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">🅿 Rest stops</h2>
     <span class="text-xs text-slate-500"><%= pluralize(total, "snapshot") %></span>

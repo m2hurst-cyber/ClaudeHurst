@@ -8,7 +8,7 @@
 <div class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));">
   <% @rows.each do |r| %>
     <% s = r[:skill]; m = r[:metric] %>
-    <section class="bg-white border rounded p-4 text-sm flex flex-col gap-2 <%= 'ring-2 ring-slate-900' if r[:preferred] %>">
+    <section class="panel-soft p-4 text-sm flex flex-col gap-2 <%= 'ring-2 ring-slate-900' if r[:preferred] %>">
       <% if r[:preferred] %><div class="text-xs font-semibold text-slate-900">★ Preferred by colleagues</div><% end %>
       <div>
         <%= link_to s.title, skill_path(s), class: "font-semibold text-base text-sky-700 hover:underline" %>

@@ -72,10 +72,19 @@
 
   --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
 
+  /* Sage: the quiet green the interface sits in. The page takes the lightest wash, a
+     panel takes the next step down, so a panel reads as raised without an outline. */
+  --color-sage-50:  #f4f7f5;
+  --color-sage-100: #e8efe9;
+  --color-sage-200: #d8e3da;
+  --color-sage-300: #bdcdc0;
+  --color-sage-700: #46584c;
+
   /* Panels that sit on the page rather than being drawn onto it: no outline, a wash of
-     white over whatever is behind, and a shadow soft enough to read as depth of field. */
-  --shadow-soft:      0 1px 2px rgb(15 23 42 / 0.04), 0 10px 28px -14px rgb(15 23 42 / 0.20);
-  --shadow-soft-lift: 0 2px 6px -2px rgb(15 23 42 / 0.07), 0 18px 40px -16px rgb(15 23 42 / 0.26);
+     colour over whatever is behind, and a shadow soft enough to read as depth of field.
+     The shadow is green-grey, not black — a black shadow over sage reads as dirt. */
+  --shadow-soft:      0 1px 2px rgb(31 54 42 / 0.05), 0 10px 28px -14px rgb(31 54 42 / 0.22);
+  --shadow-soft-lift: 0 2px 6px -2px rgb(31 54 42 / 0.08), 0 18px 40px -16px rgb(31 54 42 / 0.28);
 }
 
 @layer base {
@@ -118,8 +127,10 @@
 
   /* The front door's panels. Kept here rather than in the view so the design conversion
      has one place to change, and so every box on that page agrees with the others. */
-  .panel-soft { @apply bg-white/65 backdrop-blur-sm rounded-2xl shadow-soft transition-shadow duration-300 hover:shadow-soft-lift; }
-  .panel-lead { @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft-lift; }
+  .panel-soft { @apply bg-sage-100/75 backdrop-blur-sm rounded-2xl shadow-soft transition-shadow duration-300 hover:shadow-soft-lift; }
+  .panel-lead { @apply bg-sage-100 backdrop-blur-sm rounded-2xl shadow-soft-lift; }
+  /* A hairline inside a panel is the panel's own colour, one step on — never grey. */
+  .panel-rule { @apply border-sage-200; }
 
   .lg-pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
   .lg-sub  { @apply text-[13px] text-paper-500; }

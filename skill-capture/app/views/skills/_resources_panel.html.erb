@@ -1,6 +1,6 @@
 <% items = Capture::ResourceLibrary.for_skill(s.name, current_user) %>
 <% can = policy(s).classify? %>
-<div class="bg-white border rounded p-4" id="resources">
+<div class="panel-soft p-4" id="resources">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">Resources</h2>
     <%= link_to "Library", resources_path, class: "text-xs text-sky-700 hover:underline" %>

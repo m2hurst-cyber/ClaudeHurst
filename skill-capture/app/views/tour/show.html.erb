@@ -6,7 +6,7 @@
     often enough you get asked whether it's worth keeping. These are the steps that make that work.</p>
 
   <%# Progress is computed from what the person has actually done, not from screens they clicked through. %>
-  <div class="mt-5 bg-white border rounded p-4">
+  <div class="mt-5 panel-soft p-4">
     <div class="flex items-baseline justify-between text-sm">
       <span class="font-medium"><%= @tour.done_count %> of <%= @tour.total %> done</span>
       <span class="text-slate-500"><%= @tour.complete? ? "You're set up." : "Nothing here expires — come back to it." %></span>
@@ -18,7 +18,7 @@
 
   <ol class="mt-5 space-y-3">
     <% @tour.steps.each_with_index do |step, i| %>
-      <li class="bg-white border rounded p-4 flex gap-4 <%= "opacity-70" if step.done? %>">
+      <li class="panel-soft p-4 flex gap-4 <%= "opacity-70" if step.done? %>">
         <span class="shrink-0 w-7 h-7 rounded-full grid place-items-center text-xs font-semibold
                      <%= step.done? ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500" %>">
           <%= step.done? ? "✓" : i + 1 %>

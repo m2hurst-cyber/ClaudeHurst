@@ -17,14 +17,14 @@
 
 <% if pb.pack? %>
   <% cmds = FormulaCommand.where(provider: pb.provider) %>
-  <div class="bg-white border rounded p-4 mb-4 text-sm flex flex-wrap items-center gap-3">
+  <div class="panel-soft p-4 mb-4 text-sm flex flex-wrap items-center gap-3">
     <span><strong><%= cmds.count %></strong> <%= FormulaCommand.provider_name(pb.provider) %> commands · <%= cmds.where(status: "verified").count %> verified</span>
     <%= link_to "Open the formula library →", formulas_path(provider: pb.provider), class: "text-sky-700 hover:underline" %>
     <%= link_to "See it on the map →", skill_map_path(field: "investment-analysis", hide: 1), class: "text-sky-700 hover:underline" if pb.installed? %>
   </div>
   <div class="grid md:grid-cols-2 gap-4">
     <% pb.routes.each do |rk, r| %>
-      <div class="bg-white border rounded p-4 text-sm">
+      <div class="panel-soft p-4 text-sm">
         <h2 class="font-semibold mb-3"><%= r["title"] %></h2>
         <ol>
           <% Array(r["steps"]).each_with_index do |st, i| %>
@@ -44,7 +44,7 @@
 <% end %>
 
 <% if pb.installed? && pb.runnable? %>
-  <div class="bg-white border rounded p-4 mb-4 text-sm">
+  <div class="panel-soft p-4 mb-4 text-sm">
     <h2 class="font-semibold mb-2">Start a return</h2>
     <%= form_with url: playbook_runs_path, method: :post, class: "flex flex-wrap gap-2 items-end" do %>
       <%= hidden_field_tag :playbook_key, pb.key %>
@@ -60,7 +60,7 @@
 
 <% unless pb.pack? %>
 <div class="grid lg:grid-cols-[1fr_22rem] gap-4">
-  <div class="bg-white border rounded p-4">
+  <div class="panel-soft p-4">
     <h2 class="font-semibold mb-3">The route</h2>
     <ol class="relative">
       <% pb.mainline_names.each_with_index do |name, i| %>
@@ -90,14 +90,14 @@
     </ol>
   </div>
   <div class="space-y-4 text-sm">
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">Situations (<%= @situations.size %>)</h2>
       <p class="text-xs text-slate-500 mb-2">Asked at intake. A yes adds the branch after its step. New ones are proposed from returns in progress and go live when their branch is published.</p>
       <ul class="space-y-1 text-xs">
         <% @situations.each do |s| %><li><%= s.status == "proposed" ? "🟡" : "⑂" %> <%= s.question %></li><% end %>
       </ul>
     </div>
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">Resources</h2>
       <ul class="space-y-1">
         <% Array(pb.data.dig("resources", "items")).each do |item| %>

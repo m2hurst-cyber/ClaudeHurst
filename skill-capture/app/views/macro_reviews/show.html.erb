@@ -10,7 +10,7 @@
 </div>
 
 <div class="grid lg:grid-cols-[1fr_20rem] gap-4">
-  <section class="bg-white border rounded p-4 text-sm">
+  <section class="panel-soft p-4 text-sm">
     <div class="flex flex-wrap items-center gap-2 mb-2">
       <span class="px-2 py-0.5 rounded <%= { 'macro' => 'bg-emerald-100 text-emerald-900', 'partial' => 'bg-amber-100 text-amber-900', 'ai' => 'bg-slate-100 text-slate-700' }[r.verdict] %>"><%= r.verdict_label %></span>
       <span class="text-slate-500">score <%= r.score %></span>
@@ -42,14 +42,14 @@
     <% end %>
   </section>
   <aside class="space-y-3 text-sm">
-    <div class="bg-white border rounded p-3">
+    <div class="panel-soft p-3">
       <h2 class="font-semibold mb-1">What approving saves</h2>
       <% e = Capture::Estimator.for_step({ "title" => r.title, "nature" => nil }) %>
       <p class="text-slate-600">About <strong><%= number_with_delimiter(e["tokens"]) %> tokens</strong> and <strong><%= number_to_currency(e["cost"], unit: "", precision: 3) %> credits</strong> per run, by the current estimate (<%= e["basis"] %>).</p>
       <% if r.runs_saved.positive? %><p class="mt-1 text-emerald-800">Already saved <%= number_with_delimiter(r.tokens_saved) %> tokens over <%= pluralize(r.runs_saved, "run") %>.</p><% end %>
     </div>
     <% if r.approved? %>
-      <div class="bg-white border rounded p-3">
+      <div class="panel-soft p-3">
         <h2 class="font-semibold mb-1">Share it</h2>
         <p class="text-slate-600 mb-2">Now <%= { "private" => "kept to yourself", "firm" => "shared with the firm", "market" => "in the market" }[r.visibility] %>.</p>
         <% if @can_review %>
@@ -71,6 +71,6 @@
         <% if @copies.any? %><p class="text-xs text-slate-500 mt-2">Also used on: <%= safe_join(@copies.map { |c| link_to(c.title, macro_review_path(c), class: "text-sky-700 hover:underline") }, ", ") %></p><% end %>
       </div>
     <% end %>
-    <% if r.review_notes.present? %><div class="bg-white border rounded p-3"><h2 class="font-semibold mb-1">Review notes</h2><p class="text-slate-600"><%= r.review_notes %></p></div><% end %>
+    <% if r.review_notes.present? %><div class="panel-soft p-3"><h2 class="font-semibold mb-1">Review notes</h2><p class="text-slate-600"><%= r.review_notes %></p></div><% end %>
   </aside>
 </div>

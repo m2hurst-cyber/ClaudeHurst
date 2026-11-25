@@ -35,10 +35,10 @@
            class="border rounded px-3 py-2 text-sm w-full bg-white" data-route-map-target="search"
            data-action="input->route-map#searchInput keydown->route-map#searchKey" aria-controls="map-search-results">
     <div id="map-search-results" data-route-map-target="results" hidden
-         class="absolute z-20 left-0 right-0 mt-1 bg-white border rounded shadow-sm max-h-80 overflow-auto text-sm" role="listbox"></div>
+         class="absolute z-20 left-0 right-0 mt-1 panel-soft shadow-sm max-h-80 overflow-auto text-sm" role="listbox"></div>
   </div>
 
-  <form class="bg-white border rounded p-3 mb-3 flex flex-wrap items-end gap-2 text-sm" data-action="submit->route-map#plan">
+  <form class="panel-soft p-3 mb-3 flex flex-wrap items-end gap-2 text-sm" data-action="submit->route-map#plan">
     <label class="flex flex-col gap-1">From
       <select data-route-map-target="from" class="border rounded px-2 py-1.5 min-w-48">
         <option value="">Choose a skill</option>
@@ -60,7 +60,7 @@
     </div>
   </form>
 
-  <section class="bg-white border rounded p-3 mb-3 text-sm" aria-labelledby="map-filters-h">
+  <section class="panel-soft p-3 mb-3 text-sm" aria-labelledby="map-filters-h">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
       <h2 id="map-filters-h" class="font-semibold mr-1">Filter</h2>
       <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Apps">
@@ -75,7 +75,7 @@
         <button type="button" class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs bg-white" data-route-map-target="fieldButton"
                 data-action="route-map#toggleFieldTree" aria-expanded="false" aria-controls="field-tree">Field: All fields ▾</button>
         <div id="field-tree" data-route-map-target="fieldTree" hidden
-             class="absolute z-30 mt-1 w-80 max-h-96 overflow-auto bg-white border rounded shadow-sm p-2 text-sm" role="tree" aria-label="Fields"></div>
+             class="absolute z-30 mt-1 w-80 max-h-96 overflow-auto panel-soft shadow-sm p-2 text-sm" role="tree" aria-label="Fields"></div>
       </div>
       <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Stage">
         <% [["local", "🧪 Local"], ["firm", "🏢 Firm"], ["market", "🌐 Market"]].each do |st, label| %>
@@ -134,15 +134,15 @@
       <% if @map[:nodes].empty? %>
         <p class="absolute inset-0 grid place-items-center text-sm text-slate-500 p-6 text-center">No skills yet. Roads appear as workflows are published and people go from one skill to the next.</p>
       <% end %>
-      <div data-route-map-target="tip" role="tooltip" hidden class="absolute z-10 pointer-events-none bg-white border rounded shadow-sm px-2 py-1.5 text-xs text-slate-900 max-w-64"></div>
+      <div data-route-map-target="tip" role="tooltip" hidden class="absolute z-10 pointer-events-none panel-soft shadow-sm px-2 py-1.5 text-xs text-slate-900 max-w-64"></div>
     </div>
-    <aside class="hidden absolute top-2 right-2 bottom-2 w-80 max-w-[calc(100%-1rem)] overflow-auto bg-white border rounded shadow-lg p-3 pt-8 text-sm z-20"
+    <aside class="hidden absolute top-2 right-2 bottom-2 w-80 max-w-[calc(100%-1rem)] overflow-auto panel-soft shadow-lg p-3 pt-8 text-sm z-20"
            data-route-map-target="panel" aria-live="polite"></aside>
     <button type="button" class="hidden absolute top-3 right-4 z-30 text-slate-500 hover:text-slate-900 text-lg leading-none" data-route-map-target="panelClose"
             data-action="route-map#closePanel" aria-label="Close details">×</button>
   </div>
 
-  <details class="mt-4 bg-white border rounded p-3 text-sm">
+  <details class="mt-4 panel-soft p-3 text-sm">
     <summary class="cursor-pointer text-slate-600">Show as list</summary>
     <ul class="mt-2 space-y-2">
       <% @map[:nodes].sort_by { |n| [n[:area].to_s, n[:title].downcase] }.each do |n| %>

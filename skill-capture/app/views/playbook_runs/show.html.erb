@@ -25,7 +25,7 @@
 </p>
 
 <div class="grid lg:grid-cols-[1fr_25rem] gap-4">
-  <div class="bg-white border rounded p-4" id="route">
+  <div class="panel-soft p-4" id="route">
     <h2 class="font-semibold mb-1">The road for this <%= lb["run"] %></h2>
     <p class="text-xs text-slate-500 mb-3">Each leg: upload its documents, <%= Capture::Config.llm_enabled? ? "let the AI prepare it" : "prepare it" %>, resolve what the checks flag. A leg is done only when it verifies.</p>
     <ol>
@@ -47,7 +47,7 @@
   </div>
 
   <div class="space-y-4 text-sm">
-    <div class="bg-white border rounded p-4" id="documents">
+    <div class="panel-soft p-4" id="documents">
       <div class="flex items-baseline justify-between"><h2 class="font-semibold">Documents</h2>
         <span class="text-xs text-slate-500"><%= @documents.count { |d| d.status == "confirmed" } %> of <%= @documents.size %> confirmed</span></div>
       <% if mine %>
@@ -66,7 +66,7 @@
     </div>
 
     <% if @situations.any? %>
-    <div class="bg-white border rounded p-4" id="situations">
+    <div class="panel-soft p-4" id="situations">
       <h2 class="font-semibold mb-1">Situation questions</h2>
       <p class="text-xs text-slate-500 mb-2">Yes (or not sure) adds the branch to the road; "not sure" has to be settled before the first leg verifies.</p>
       <%= form_with url: playbook_run_path(r), method: :patch do %>
@@ -88,7 +88,7 @@
     </div>
     <% end %>
     <% if mine && @situations.any? %>
-      <div class="bg-white border rounded p-4">
+      <div class="panel-soft p-4">
         <h2 class="font-semibold mb-1">Something not covered?</h2>
         <p class="text-xs text-slate-500 mb-2">Describe what's different about this client's year. A known situation joins the road; a new one is proposed as a branch for the tax reviewers. Numbers and emails are removed before the AI sees it.</p>
         <%= form_with url: situation_playbook_run_path(r), method: :post do %>

@@ -4,7 +4,7 @@
 <div class="grid md:grid-cols-2 gap-4">
   <% @playbooks.each do |pb| %>
     <% st = pb.status %>
-    <div class="bg-white border rounded p-4 text-sm">
+    <div class="panel-soft p-4 text-sm">
       <div class="flex items-baseline justify-between gap-2">
         <%= link_to pb.title, playbook_path(pb.key), class: "font-semibold text-base text-sky-700 hover:underline" %>
         <span class="text-xs text-slate-500">v<%= pb.version %></span>
@@ -25,7 +25,7 @@
 </div>
 <% if @runs.any? %>
   <h2 class="font-semibold mt-6 mb-2">Your returns</h2>
-  <div class="bg-white border rounded divide-y text-sm">
+  <div class="panel-soft divide-y divide-sage-200 text-sm">
     <% @runs.each do |r| %>
       <% done, total = r.progress %>
       <%= link_to playbook_run_path(r), class: "flex items-center gap-3 px-4 py-2 hover:bg-slate-50" do %>

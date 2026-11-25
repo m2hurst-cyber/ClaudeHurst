@@ -4,7 +4,7 @@
   <%= search_field_tag :q, params[:q], placeholder: "Action prefix, e.g. skill.", class: "border rounded px-2 py-1.5 text-sm w-72" %>
   <%= f.submit "Filter", class: btn %>
 <% end %>
-<div class="bg-white border rounded overflow-x-auto">
+<div class="panel-soft overflow-x-auto">
   <table class="w-full text-sm">
     <thead class="bg-slate-100"><tr><th class="px-3 py-2 text-left">When</th><th class="px-3 py-2 text-left">Who</th><th class="px-3 py-2 text-left">Action</th><th class="px-3 py-2 text-left">Subject</th><th class="px-3 py-2 text-left">Details</th></tr></thead>
     <tbody class="divide-y">

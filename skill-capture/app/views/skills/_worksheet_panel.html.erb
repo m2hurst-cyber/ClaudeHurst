@@ -1,7 +1,7 @@
 <% bp = s.source["worksheet"] %>
 <% if bp.is_a?(Hash) %>
   <% keys = Capture::Worksheets.command_keys(bp); cmds = FormulaCommand.where(provider: s.domain, key: keys).index_by(&:key) %>
-  <div class="bg-white border rounded p-4" id="worksheet">
+  <div class="panel-soft p-4" id="worksheet">
     <div class="flex items-baseline justify-between gap-2">
       <h2 class="font-semibold">▦ Worksheet</h2>
       <span class="text-xs text-slate-500"><%= (bp["kind"] || "table").capitalize %> · <%= area_name(s.domain) %></span>

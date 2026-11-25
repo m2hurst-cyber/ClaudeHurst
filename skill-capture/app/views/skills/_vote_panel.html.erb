@@ -2,7 +2,7 @@
 <% mine = SkillVote.find_by(user: current_user, skill_name: s.name) %>
 <% own = Capture::Voting.own?(current_user, s) %>
 <% alternatives = s.family.count { |x| x.visible_to?(current_user) } %>
-<div class="bg-white border rounded p-4">
+<div class="panel-soft p-4">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">Is this the better way?</h2>
     <span class="tabular-nums font-semibold"><%= format("%+d", t[:score]) %></span>

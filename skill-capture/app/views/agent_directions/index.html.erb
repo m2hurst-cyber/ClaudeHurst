@@ -20,7 +20,7 @@
 
   <ul class="mt-5 space-y-2">
     <% @levels.each do |level, s| %>
-      <li class="bg-white border rounded p-3 <%= "border-slate-900" if level == @level %>">
+      <li class="panel-soft p-3 <%= "border-slate-900" if level == @level %>">
         <p class="font-medium">
           <%= link_to s[:label], agent_direction_path(s[:key]), class: "hover:underline" %>
           <% if level == @level %><span class="ml-1 text-xs bg-slate-900 text-white rounded px-1.5 py-0.5">in use</span><% end %>

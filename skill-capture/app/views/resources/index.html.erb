@@ -6,7 +6,7 @@
 
 <div class="grid lg:grid-cols-[16rem_1fr] gap-4">
   <aside class="space-y-3 text-sm">
-    <nav class="bg-white border rounded p-2" aria-label="Folders">
+    <nav class="panel-soft p-2" aria-label="Folders">
       <%= link_to "All folders", resources_path, class: "block rounded px-2 py-1.5 #{@folder ? 'hover:bg-slate-50' : 'bg-slate-900 text-white'}" %>
       <% @folders.each do |f, depth| %>
         <%= link_to resources_path(folder: f.path), class: "flex items-center gap-1.5 rounded px-2 py-1.5 #{@folder == f ? 'bg-slate-900 text-white' : 'hover:bg-slate-50'}", style: "padding-left: #{8 + depth * 14}px" do %>
@@ -15,7 +15,7 @@
         <% end %>
       <% end %>
     </nav>
-    <details class="bg-white border rounded p-3">
+    <details class="panel-soft p-3">
       <summary class="cursor-pointer font-medium">New folder</summary>
       <%= form_with model: ResourceFolder.new, url: resource_folders_path, class: "space-y-2 mt-2" do |f| %>
         <%= f.text_field :name, placeholder: "e.g. Templates", required: true, class: input_css, "aria-label": "Folder name" %>
@@ -42,7 +42,7 @@
 
     <div class="grid md:grid-cols-2 gap-2 mb-4">
       <% @resources.each do |r| %>
-        <%= link_to resource_path(r), class: "flex items-start gap-3 bg-white border rounded p-3 hover:shadow-sm" do %>
+        <%= link_to resource_path(r), class: "flex items-start gap-3 panel-soft p-3 hover:shadow-sm" do %>
           <%= file_badge(r) %>
           <span class="flex-1 min-w-0">
             <span class="block font-medium text-sky-700"><%= r.name %></span>
@@ -51,10 +51,10 @@
           </span>
         <% end %>
       <% end %>
-      <% if @resources.empty? %><p class="md:col-span-2 bg-white border rounded p-6 text-center text-sm text-slate-500">Nothing here yet.</p><% end %>
+      <% if @resources.empty? %><p class="md:col-span-2 panel-soft p-6 text-center text-sm text-slate-500">Nothing here yet.</p><% end %>
     </div>
 
-    <details class="bg-white border rounded p-3 text-sm" <%= "open" if @folder && @resources.empty? %>>
+    <details class="panel-soft p-3 text-sm" <%= "open" if @folder && @resources.empty? %>>
       <summary class="cursor-pointer font-medium">Add a file or link<%= " to #{@folder.name}" if @folder %></summary>
       <%= form_with model: @new_resource, url: resources_path, multipart: true, class: "grid sm:grid-cols-2 gap-2 mt-2" do |f| %>
         <div><%= f.label :folder_id, "Folder" %><%= f.select :folder_id, @folders.map { |x, d| ["#{"  " * d * 2}#{x.name}", x.id] }, { selected: @folder&.id }, class: input_css %></div>

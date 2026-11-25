@@ -24,7 +24,7 @@
 <% end %>
 
 <div class="grid md:grid-cols-3 gap-4">
-  <div class="md:col-span-2 bg-white border rounded p-4">
+  <div class="md:col-span-2 panel-soft p-4">
     <p class="text-sm mb-3"><%= s.description %></p>
     <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= s.body %></pre>
   </div>
@@ -38,7 +38,7 @@
     <%= render "vote_panel", s: s %>
     <%= render "usage_panel", s: s %>
     <%= render "rest_stops_panel", s: s %>
-    <div class="bg-white border rounded p-4 space-y-1">
+    <div class="panel-soft p-4 space-y-1">
       <h2 class="font-semibold mb-1 flex items-baseline gap-2">Origin
         <%= link_to "Provenance", provenance_skill_path(s), class: "ml-auto text-xs font-normal text-sky-700 hover:underline" %>
       </h2>
@@ -59,7 +59,7 @@
       <div>License: <%= s.license %></div>
     </div>
     <% metric = SkillMetric.for(s.name); bounty = Bounty.active_for(s.name) %>
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">Traffic &amp; price</h2>
       <% if metric&.priced? %>
         <div class="mb-1"><%= tier_badge(metric.tier) %> <span class="text-xs text-slate-500">· index <%= metric.congestion_index %></span></div>
@@ -86,7 +86,7 @@
     <% nexts = SkillLink.neighbours(s.name, direction: :next).filter_map { |l| (sk = Skill.current(l[:name])) && sk.visible_to?(current_user) && l.merge(skill: sk) } %>
     <% prevs = SkillLink.neighbours(s.name, direction: :previous).filter_map { |l| (sk = Skill.current(l[:name])) && sk.visible_to?(current_user) && l.merge(skill: sk) } %>
     <% manual_next = SkillLink.manual.where(from_node: s.name).pluck(:to_node) %>
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <div class="flex items-baseline justify-between">
         <h2 class="font-semibold mb-1">On the map</h2>
         <%= link_to "Open map", skill_map_path, class: "text-xs text-sky-700 hover:underline" %>
@@ -118,7 +118,7 @@
         <% end %>
       <% end %>
     </div>
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">Versions</h2>
       <ul class="space-y-1">
         <% s.versions.each do |v| %>

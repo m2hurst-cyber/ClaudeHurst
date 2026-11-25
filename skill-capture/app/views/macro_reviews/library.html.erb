@@ -16,12 +16,12 @@
 </div>
 
 <% if @macros.empty? && @mine.empty? %>
-  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No shared macros yet. Approve one on <%= link_to "Macro review", macro_reviews_path, class: "text-sky-700 hover:underline" %>, then share it with the firm.</p>
+  <p class="text-sm text-slate-500 panel-soft p-6 text-center">No shared macros yet. Approve one on <%= link_to "Macro review", macro_reviews_path, class: "text-sky-700 hover:underline" %>, then share it with the firm.</p>
 <% end %>
 
 <div class="grid md:grid-cols-2 gap-3">
   <% (@macros + @mine).uniq.each do |r| %>
-    <article class="bg-white border rounded p-4 text-sm flex flex-col gap-2">
+    <article class="panel-soft p-4 text-sm flex flex-col gap-2">
       <div class="flex justify-between gap-2">
         <%= link_to r.title, macro_review_path(r), class: "font-semibold text-sky-700 hover:underline" %>
         <span class="text-xs px-1.5 py-0.5 rounded <%= { 'market' => 'bg-sky-100 text-sky-900', 'firm' => 'bg-slate-100 text-slate-700', 'private' => 'bg-amber-100 text-amber-900' }[r.visibility] %>"><%= { "market" => "🌐 Market", "firm" => "🏢 Firm", "private" => "🔒 Mine" }[r.visibility] %></span>

@@ -1,7 +1,7 @@
 <%# One branch of the field hierarchy. locals: field, depth %>
 <% kids = Array(@children[field.id]).sort_by { |f| [f.position, f.name] }.select { |k| @counts[k.id].positive? } %>
 <% here = Array(@by_field[field.id]) %>
-<details class="<%= depth.zero? ? 'bg-white border rounded' : 'border-l-2 border-slate-200 ml-2' %>" open>
+<details class="<%= depth.zero? ? 'panel-soft' : 'border-l-2 border-slate-200 ml-2' %>" open>
   <summary class="cursor-pointer flex items-center gap-2 px-3 py-2 <%= depth.zero? ? 'font-semibold text-base' : 'font-medium' %>">
     <span class="flex-1"><%= field.name %></span>
     <span class="text-xs text-slate-500 tabular-nums"><%= pluralize(@counts[field.id], "skill") %></span>

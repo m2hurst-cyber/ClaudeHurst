@@ -5,7 +5,7 @@
   <p class="text-sm text-slate-500">Straight to one person, without moving anything up a level. They accept it into their library; if you set a price, the credits move from their balance to yours when they accept.</p>
 </div>
 <%= form_with url: transfers_path, method: :post, class: "grid lg:grid-cols-[1fr_20rem] gap-4", data: { controller: "transfer-form" } do %>
-  <section class="bg-white border rounded p-4 text-sm">
+  <section class="panel-soft p-4 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
       <h2 class="font-semibold">Skills <span class="text-slate-500 font-normal" data-transfer-form-target="count"></span></h2>
       <input type="search" placeholder="Filter skills" data-action="transfer-form#filter" class="border rounded px-2 py-1" aria-label="Filter skills">
@@ -25,7 +25,7 @@
       <% end %>
     </ul>
   </section>
-  <aside class="bg-white border rounded p-4 text-sm space-y-3 self-start">
+  <aside class="panel-soft p-4 text-sm space-y-3 self-start">
     <label class="block">Coworker
       <select name="recipient_id" required class="mt-1 w-full border rounded px-2 py-1.5">
         <option value="">Choose…</option>

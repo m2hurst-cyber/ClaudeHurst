@@ -1,5 +1,5 @@
 <% content_for :title, "Sign in" %>
-<div class="max-w-sm mx-auto mt-16 bg-white border rounded p-6">
+<div class="max-w-sm mx-auto mt-16 panel-soft p-6">
   <h1 class="text-xl font-semibold mb-4">Skill Capture</h1>
   <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-3" }) do |f| %>
     <div><%= f.label :email, class: "text-sm" %><%= f.email_field :email, autofocus: true, autocomplete: "email", class: input_css %></div>

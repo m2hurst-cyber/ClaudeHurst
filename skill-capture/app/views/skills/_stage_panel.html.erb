@@ -1,6 +1,6 @@
 <% open_promo = Promotion.open.find_by(skill_name: s.name) %>
 <% to = s.next_stage %>
-<div class="bg-white border rounded p-4">
+<div class="panel-soft p-4">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">Stage</h2>
     <%= stage_badge(s.stage) %>

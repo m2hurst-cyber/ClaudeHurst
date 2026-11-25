@@ -9,7 +9,7 @@
       ["In the pools", credits(@active.sum(&:pool))],
       ["Paid out", credits(CreditEntry.sum(:amount))],
       ["Your credits", credits(current_user.credits)]].each do |label, value| %>
-    <div class="bg-white border rounded p-3"><div class="text-xs text-slate-500"><%= label %></div><div class="text-xl font-semibold"><%= value %></div></div>
+    <div class="panel-soft p-3"><div class="text-xs text-slate-500"><%= label %></div><div class="text-xl font-semibold"><%= value %></div></div>
   <% end %>
 </div>
 
@@ -17,7 +17,7 @@
   <div class="space-y-3">
     <% @active.each do |b| %>
       <% m = @metrics[b.skill_name]; s = @skills[b.skill_name] %>
-      <section class="bg-white border rounded p-4 text-sm">
+      <section class="panel-soft p-4 text-sm">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
             <%= s ? link_to(s.title, skill_path(s), class: "font-semibold text-base text-sky-700 hover:underline") : tag.span(b.skill_name, class: "font-semibold") %>
@@ -62,18 +62,18 @@
       </section>
     <% end %>
     <% if @active.empty? %>
-      <p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No congested skills right now. Bounties open automatically when a skill reaches <strong><%= @schedule.tier(@schedule.bounty_tier)&.dig("label") %></strong> traffic.</p>
+      <p class="panel-soft p-6 text-center text-sm text-slate-500">No congested skills right now. Bounties open automatically when a skill reaches <strong><%= @schedule.tier(@schedule.bounty_tier)&.dig("label") %></strong> traffic.</p>
     <% end %>
   </div>
 
   <aside class="space-y-4 text-sm">
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-2">Leaderboard</h2>
       <% if @leaders.any? %>
         <ol class="space-y-1"><% @leaders.each_with_index do |(u, amt), i| %><li class="flex justify-between gap-2"><span><%= i + 1 %>. <%= u.name %></span><span class="tabular-nums"><%= credits(amt) %></span></li><% end %></ol>
       <% else %><p class="text-slate-500">No payouts yet.</p><% end %>
     </div>
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-2">Most congested</h2>
       <ul class="space-y-1">
         <% @congested.each do |m| %>
@@ -83,7 +83,7 @@
       <% if @congested.empty? %><p class="text-slate-500">Not enough traffic to price yet.</p><% end %>
     </div>
     <% if @paid.any? %>
-      <div class="bg-white border rounded p-4">
+      <div class="panel-soft p-4">
         <h2 class="font-semibold mb-2">Recently paid</h2>
         <ul class="space-y-1"><% @paid.each do |b| %><li><%= b.solver&.name %>: <%= credits(b.payout) %> <span class="text-xs text-slate-500">· <%= b.skill_name %></span></li><% end %></ul>
       </div>

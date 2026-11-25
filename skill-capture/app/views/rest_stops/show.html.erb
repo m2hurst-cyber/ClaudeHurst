@@ -38,7 +38,7 @@
        ["Apps", Array(snap["apps"]), Array(now["apps"])]
      ] %>
   <% changed = rows.reject { |_, a, b| a == b } %>
-  <div class="bg-white border rounded p-4 text-sm mb-4">
+  <div class="panel-soft p-4 text-sm mb-4">
     <h2 class="font-semibold mb-1">Compared with the current version (v<%= cur.version %>)</h2>
     <% if changed.empty? %>
       <p class="text-slate-500">Identical to the current version<%= " (same content, different version number)" if cur.version != r.skill_version %>.</p>
@@ -70,7 +70,7 @@
 <% end %>
 
 <div class="grid md:grid-cols-3 gap-4">
-  <div class="md:col-span-2 bg-white border rounded p-4">
+  <div class="md:col-span-2 panel-soft p-4">
     <h2 class="font-semibold mb-1"><%= snap["title"] %></h2>
     <p class="text-sm mb-3"><%= snap["description"] %></p>
     <pre class="whitespace-pre-wrap text-sm bg-slate-50 border rounded p-3"><%= snap["body"] %></pre>
@@ -80,11 +80,11 @@
     <% end %>
   </div>
   <div class="space-y-4 text-sm">
-    <div class="bg-white border rounded p-4">
+    <div class="panel-soft p-4">
       <h2 class="font-semibold mb-1">Steps</h2>
       <ol class="list-decimal ml-5"><% labels.(Array(snap["workflow"])).each do |l| %><li><%= l %></li><% end %></ol>
     </div>
-    <div class="bg-white border rounded p-4 space-y-1">
+    <div class="panel-soft p-4 space-y-1">
       <h2 class="font-semibold mb-1">Also saved</h2>
       <div><span class="text-slate-500">Resources:</span> <%= Array(snap["resources"]).map { |x| x["name"] }.join(", ").presence || "none" %></div>
       <div><span class="text-slate-500">Fields:</span> <%= Array(snap["fields"]).join(", ").presence || "none" %></div>

@@ -1,5 +1,5 @@
 <% u = Capture::Intensity.for(s.name) %>
-<div class="bg-white border rounded p-4 text-sm" id="agent-usage">
+<div class="panel-soft p-4 text-sm" id="agent-usage">
   <div class="flex items-center justify-between gap-2 mb-1">
     <h2 class="font-semibold">AI agent usage</h2>
     <% if (mr = MacroReview.for_subject("skill", s.name)) && mr.approved? %><span class="px-1.5 py-0.5 rounded text-xs bg-emerald-100 text-emerald-900" title="An approved macro does this without the AI">⚙ Macro</span><% end %>

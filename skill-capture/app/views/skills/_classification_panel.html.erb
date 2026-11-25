@@ -1,6 +1,6 @@
 <% c = SkillClassification.for(s.name) %>
 <% can = policy(s).classify? %>
-<div class="bg-white border rounded p-4" id="classification">
+<div class="panel-soft p-4" id="classification">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="font-semibold">Classification</h2>
     <%= classification_source(c) %>

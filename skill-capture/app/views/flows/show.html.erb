@@ -29,7 +29,7 @@
     <% if @live %><%= link_to "Open the run", flow_run_path(@live), class: "text-sky-700 hover:underline ml-auto" %><% end %>
   </div>
   <div class="grid lg:grid-cols-[15rem_1fr_17rem] gap-3">
-    <aside class="bg-white border rounded p-3 text-sm self-start">
+    <aside class="panel-soft p-3 text-sm self-start">
       <h2 class="font-semibold mb-1">Palette</h2>
       <p class="text-xs text-slate-500 mb-2">Drag onto a lane, or click to add at the end.</p>
       <% blank = { title: "New task" } %>
@@ -48,13 +48,13 @@
         <% end %>
       </ul>
     </aside>
-    <div class="bg-white border rounded overflow-auto relative" data-flow-map-target="canvas" data-action="dragover->flow-map#over dragleave->flow-map#leave drop->flow-map#drop" aria-label="Process map">
+    <div class="panel-soft overflow-auto relative" data-flow-map-target="canvas" data-action="dragover->flow-map#over dragleave->flow-map#leave drop->flow-map#drop" aria-label="Process map">
       <div class="relative" data-flow-map-target="nodes">
         <svg data-flow-map-target="svg" class="absolute inset-0" aria-hidden="true"></svg>
         <div data-flow-map-target="marker" class="absolute w-1 rounded bg-sky-600" style="display:none"></div>
       </div>
     </div>
-    <aside class="bg-white border rounded p-3 text-sm self-start" data-flow-map-target="editor"></aside>
+    <aside class="panel-soft p-3 text-sm self-start" data-flow-map-target="editor"></aside>
   </div>
   <% if @runs.any? %>
     <section class="mt-4 text-sm"><h2 class="font-semibold mb-1">Runs</h2>

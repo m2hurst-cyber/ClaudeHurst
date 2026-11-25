@@ -11,11 +11,11 @@
           title: "This guide as Markdown, for pasting into a model" %>
   </div>
 
-  <article class="mt-5 bg-white border rounded p-5 prose-sm"><%= skill_markdown(@guide.body) %></article>
+  <article class="mt-5 panel-soft p-5 prose-sm"><%= skill_markdown(@guide.body) %></article>
 
   <% if @questions.any? %>
     <h2 class="font-semibold mt-7 mb-2">Questions about this</h2>
-    <div class="bg-white border rounded divide-y">
+    <div class="panel-soft divide-y divide-sage-200">
       <% @questions.each do |q| %>
         <div class="p-3">
           <p class="font-medium"><%= q.question %></p>
@@ -29,7 +29,7 @@
     <h2 class="font-semibold mt-7 mb-2">Related</h2>
     <ul class="grid sm:grid-cols-3 gap-2">
       <% @related.each do |g| %>
-        <li class="bg-white border rounded p-3">
+        <li class="panel-soft p-3">
           <%= link_to g.title, help_guide_path(g.slug), class: "font-medium hover:underline" %>
           <p class="text-sm text-slate-600 mt-0.5"><%= g.summary.truncate(80) %></p>
         </li>

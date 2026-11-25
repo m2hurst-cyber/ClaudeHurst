@@ -24,7 +24,7 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 text-sm">
     <% [["Areas", @areas.count { |a| !a.unassigned? }], ["Published skills", totals["published"]],
         ["Awaiting review", totals["awaiting_review"]], ["Areas with gaps", gap_areas]].each do |label, value| %>
-      <div class="bg-white border rounded p-3">
+      <div class="panel-soft p-3">
         <div class="text-xs text-slate-500"><%= label %></div>
         <div class="text-2xl font-semibold"><%= number_with_delimiter(value) %></div>
       </div>
@@ -32,9 +32,9 @@
   </div>
 
   <% if @areas.empty? %>
-    <p class="bg-white border rounded p-6 text-center text-sm text-slate-500">No areas yet. Areas appear when skills are captured or reviewers are given areas on the People page.</p>
+    <p class="panel-soft p-6 text-center text-sm text-slate-500">No areas yet. Areas appear when skills are captured or reviewers are given areas on the People page.</p>
   <% else %>
-    <section class="bg-white border rounded p-4 mb-6" aria-labelledby="by-area">
+    <section class="panel-soft p-4 mb-6" aria-labelledby="by-area">
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
         <h2 id="by-area" class="font-semibold">Skills by area</h2>
         <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600" aria-label="Legend">
@@ -84,7 +84,7 @@
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <% @areas.each do |a| %>
-        <section id="area-<%= a.name.parameterize %>" class="bg-white border rounded p-4 text-sm flex flex-col gap-2 scroll-mt-4">
+        <section id="area-<%= a.name.parameterize %>" class="panel-soft p-4 text-sm flex flex-col gap-2 scroll-mt-4">
           <div class="flex items-baseline justify-between gap-2">
             <h3 class="font-semibold text-base"><%= area_label.(a) %></h3>
             <%= link_to "#{a.published} published", (a.unassigned? ? skills_path : skills_path(params: { domain: a.name })), class: "text-sky-700 hover:underline text-xs whitespace-nowrap" %>
@@ -118,5 +118,5 @@
   <% end %>
 
   <div data-map-tooltip-target="tip" role="tooltip" hidden
-       class="fixed z-10 pointer-events-none bg-white border rounded shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
+       class="fixed z-10 pointer-events-none panel-soft shadow-sm px-2 py-1.5 text-xs text-slate-900"></div>
 </div>

@@ -4,7 +4,7 @@
   <p class="text-slate-600 mt-1">How the system treats you. Everything here affects only your own prompts and drafts.</p>
 
   <%= form_with url: settings_path, method: :patch, class: "mt-5 space-y-4" do %>
-    <fieldset class="bg-white border rounded p-4">
+    <fieldset class="panel-soft p-4">
       <legend class="px-1 font-semibold">How finely your work is cut</legend>
       <p class="text-sm text-slate-600 mb-3">This decides how big a thing has to be before you are asked about it.
         Coarser means fewer prompts, each about a larger piece of work.
@@ -33,7 +33,7 @@
     </fieldset>
   <% end %>
 
-  <div class="bg-white border rounded p-4 mt-4 text-sm">
+  <div class="panel-soft p-4 mt-4 text-sm">
     <h2 class="font-semibold mb-1">Getting started</h2>
     <p class="text-slate-600"><%= @tour.done_count %> of <%= @tour.total %> steps done.</p>
     <p class="mt-2 flex gap-2">
@@ -42,7 +42,7 @@
     </p>
   </div>
 
-  <div class="bg-white border rounded p-4 mt-4 text-sm">
+  <div class="panel-soft p-4 mt-4 text-sm">
     <h2 class="font-semibold mb-1">Your account</h2>
     <dl class="grid grid-cols-[7rem_1fr] gap-y-0.5">
       <dt class="text-slate-500">Name</dt><dd><%= current_user.name %></dd>

@@ -14,9 +14,9 @@
   <section class="mb-5">
     <h2 class="font-semibold mb-2"><%= heading %></h2>
     <% if list.empty? %>
-      <p class="text-sm text-slate-500 bg-white border rounded p-4"><%= heading == "Received" ? "Nothing sent to you yet." : "You haven't sent anything yet." %></p>
+      <p class="text-sm text-slate-500 panel-soft p-4"><%= heading == "Received" ? "Nothing sent to you yet." : "You haven't sent anything yet." %></p>
     <% else %>
-      <div class="bg-white border rounded overflow-x-auto">
+      <div class="panel-soft overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-left text-xs text-slate-500"><tr><th class="px-3 py-2">Skills</th><th class="px-3 py-2"><%= who_label %></th><th class="px-3 py-2">Price</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">When</th><th class="px-3 py-2"></th></tr></thead>
           <tbody>
@@ -47,7 +47,7 @@
 <% if @ledger.any? %>
   <section>
     <h2 class="font-semibold mb-2">Credits from transfers</h2>
-    <ul class="bg-white border rounded divide-y text-sm">
+    <ul class="panel-soft divide-y divide-sage-200 text-sm">
       <% @ledger.each do |e| %>
         <li class="px-3 py-2 flex justify-between gap-2"><span><%= e.reason %></span><span class="<%= e.amount.negative? ? 'text-red-700' : 'text-emerald-700' %> font-medium"><%= e.amount.positive? ? "+" : "" %><%= credits(e.amount) %></span></li>
       <% end %>

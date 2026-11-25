@@ -4,9 +4,9 @@
   <p class="text-sm text-slate-500">Sheets captured from Excel (Skill Capture tab › Capture sheet). Each one is observed, interpreted, documented and written up as a draft skill for the area's reviewers. Only labels and formulas are captured, never the numbers.</p>
 </div>
 <% if @captures.empty? %>
-  <p class="text-sm text-slate-500 bg-white border rounded p-6 text-center">No captured worksheets yet. In Excel, open a BQL or FactSet sheet and choose <strong>Capture sheet</strong> on the Skill Capture tab.</p>
+  <p class="text-sm text-slate-500 panel-soft p-6 text-center">No captured worksheets yet. In Excel, open a BQL or FactSet sheet and choose <strong>Capture sheet</strong> on the Skill Capture tab.</p>
 <% else %>
-  <div class="bg-white border rounded overflow-x-auto">
+  <div class="panel-soft overflow-x-auto">
     <table class="w-full text-sm">
       <thead class="bg-slate-50 text-left text-xs text-slate-500"><tr><th class="px-3 py-2">Sheet</th><th class="px-3 py-2">Provider</th><th class="px-3 py-2">Formulas</th><th class="px-3 py-2">Draft skill</th><th class="px-3 py-2">By</th><th class="px-3 py-2">When</th></tr></thead>
       <tbody>

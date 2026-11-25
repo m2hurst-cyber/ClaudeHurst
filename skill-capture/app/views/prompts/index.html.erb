@@ -6,7 +6,7 @@
 <% if @live.any? %>
   <div class="space-y-3 mb-6"><%= render partial: "prompt", collection: @live, as: :p %></div>
 <% else %>
-  <div class="bg-white border rounded p-6 text-sm text-slate-500 mb-6">Nothing to decide right now. Prompts appear here and in the Office add-in as patterns show up in your work.</div>
+  <div class="panel-soft p-6 text-sm text-slate-500 mb-6">Nothing to decide right now. Prompts appear here and in the Office add-in as patterns show up in your work.</div>
 <% end %>
 <% if @answered.any? %>
   <h2 class="font-semibold mb-2">Earlier</h2>

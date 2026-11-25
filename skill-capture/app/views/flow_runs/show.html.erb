@@ -39,7 +39,7 @@
   <div class="mb-3 rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm" role="status">✓ Every task is done.</div>
 <% end %>
 
-<div class="bg-white border rounded overflow-auto mb-4" aria-label="Run map">
+<div class="panel-soft overflow-auto mb-4" aria-label="Run map">
   <svg width="<%= width %>" height="<%= lanes.size * h %>" role="img" aria-label="<%= r.steps.each_with_index.map { |s, i| "#{i + 1}. #{s['title']}: #{s['state']}#{' (current)' if i == r.current_index && r.active?}" }.join('; ') %>">
     <defs><marker id="rarrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>
     <% lanes.each_with_index do |l, i| %>
@@ -66,7 +66,7 @@
   </svg>
 </div>
 
-<section class="mb-4 bg-white border rounded p-3 text-sm" aria-label="Cost and time">
+<section class="mb-4 panel-soft p-3 text-sm" aria-label="Cost and time">
   <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
     <h2 class="font-semibold">Anticipated vs actual</h2>
     <span class="text-xs text-slate-500"><%= t.dig("estimate", "ai_steps") %> AI · <%= t.dig("estimate", "macro_steps") %> macro · models: <%= (t.dig("estimate", "models") || {}).map { |m, n| "#{Capture::Models.label(m)}×#{n}" }.join(", ") %></span>
@@ -83,7 +83,7 @@
 </section>
 
 <div class="grid lg:grid-cols-[1fr_22rem] gap-4">
-  <ol class="bg-white border rounded divide-y text-sm">
+  <ol class="panel-soft divide-y divide-sage-200 text-sm">
     <% r.steps.each_with_index do |s, i| %>
       <% now = i == r.current_index && r.active? %>
       <li class="p-3 <%= now ? 'bg-sky-50' : '' %> <%= 'opacity-60' if s['state'] == 'skipped' %>" id="step-<%= i %>">
@@ -145,7 +145,7 @@
       </li>
     <% end %>
   </ol>
-  <aside class="bg-white border rounded p-4 text-sm self-start">
+  <aside class="panel-soft p-4 text-sm self-start">
     <% if r.running? && Flow.split?(cur.to_h) && r.doer?(user: current_user) %>
       <h2 class="font-semibold mb-1">Your part of task <%= r.current_index + 1 %></h2>
       <p class="text-slate-600 mb-2">This task is split: <%= Flow.parts(cur).map { |p| "#{Flow.engine_label(p['engine'])} #{p['title']}" }.join(" · ") %>. Finish yours in the list; the task hands off when every part is done.</p>
