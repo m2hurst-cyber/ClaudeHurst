@@ -1,84 +1,87 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Ledger — the design language for Skill Capture.
+   Foolscap — the design language for Skill Capture.
 
-   The principle is subtraction. A box, a border and a shadow around every
-   element is how enterprise software looks; calm software groups things by
-   space and tone and draws a line only where two things genuinely touch.
+   The product is institutional memory: what the firm knows, written down and
+   kept. So the surface is paper, not glass. Warm off-white page, warm near-
+   black ink, a serif for anything said at size, and a sans built for small
+   dense text everywhere else.
 
-     · Near-neutral greys, not blue-grey. Warm white page, pure white surfaces.
-     · One blue, used sparingly, almost always as a tint rather than a fill.
-     · Hairlines inside lists; no border around cards.
-     · Shadow means "this floats", never "this is a card".
-     · Generous radii, generous padding, text doing the hierarchy.
-     · Everything that moves uses one curve, and briefly.
+   Colour is rationed. The semantics are earthy and low-chroma — sage, ochre,
+   brick, slate, plum — so the single saturated colour in the system, a deep
+   verdigris, is always the loudest thing on screen and always means "act
+   here". A marker yellow exists for exactly one job: showing you what matched.
 
-   Additive: tokens and components only. No existing view changes until it
-   opts in.
+   Structure is still subtraction: no border around surfaces, hairlines only
+   inside lists, shadow only for things that float.
+
+   Additive — tokens and components. No existing view changes until it opts in.
    ────────────────────────────────────────────────────────────────────────── */
 @theme static {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
-               "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", "Cascadia Mono", monospace;
+  --font-sans:    "Inter Display", "Inter", "Segoe UI Variable Text", system-ui, sans-serif;
+  --font-display: "Charter", "Bitstream Charter", "Iowan Old Style", "Palatino Linotype",
+                  Palatino, Georgia, serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Mono", monospace;
 
-  /* Greys: near-neutral, so colour never has to fight the chrome. */
-  --color-ink-50:  #fbfbfd;   /* the page                                  */
-  --color-ink-100: #f4f4f7;   /* a quiet fill: fields, hovered rows        */
-  --color-ink-200: #e8e8ed;   /* hairline                                  */
-  --color-ink-300: #d2d2d7;   /* a border you are meant to notice          */
-  --color-ink-400: #aeaeb2;
-  --color-ink-500: #8e8e93;   /* secondary text                            */
-  --color-ink-600: #6e6e73;
-  --color-ink-700: #48484a;
-  --color-ink-800: #2c2c2e;
-  --color-ink-900: #1c1c1e;   /* primary text                              */
-  --color-ink-950: #0b0b0c;
+  /* Paper → ink. Warm, low chroma. Nothing here is grey in the blue sense. */
+  --color-paper-50:  #faf9f5;   /* the page: warm off-white                 */
+  --color-paper-100: #f2f0e9;   /* a quiet fill: fields, hovered rows       */
+  --color-paper-200: #e6e2d8;   /* hairline                                 */
+  --color-paper-300: #d3cec1;   /* a line you are meant to notice           */
+  --color-paper-400: #b0aa9c;
+  --color-paper-500: #8a8577;   /* secondary text                           */
+  --color-paper-600: #6a6558;
+  --color-paper-700: #49453c;
+  --color-paper-800: #2e2b25;
+  --color-paper-900: #1b1915;   /* primary text: warm near-black            */
+  --color-paper-950: #100f0c;
 
-  /* One blue. Mostly as a 10% tint; filled only for the single primary act. */
-  --color-accent-50:  #f2f8ff;
-  --color-accent-100: #e1efff;
-  --color-accent-200: #bcdcff;
-  --color-accent-300: #86c2ff;
-  --color-accent-400: #3ba0ff;
-  --color-accent-500: #0a84ff;
-  --color-accent-600: #0071e3;
-  --color-accent-700: #0058b9;
-  --color-accent-800: #00458f;
+  /* Verdigris: the only saturated voice. Primary actions, links, "you are here". */
+  --color-signal-50:  #ecf7f6;
+  --color-signal-100: #d0ecea;
+  --color-signal-200: #a2d9d6;
+  --color-signal-300: #68c0be;
+  --color-signal-400: #2ba3a2;
+  --color-signal-500: #0d8a8a;
+  --color-signal-600: #0a7074;
+  --color-signal-700: #08585d;
+  --color-signal-800: #064349;
 
-  /* Meaning. Tints for fills, the darker step for text on them. */
-  --color-verified-100: #e4f6ea;  --color-verified-600: #1d8a44;  /* passed, signed off     */
-  --color-waiting-100:  #fff0e0;  --color-waiting-600:  #a85b00;  /* in review, paused      */
-  --color-blocked-100:  #ffe8e8;  --color-blocked-600:  #c9222c;  /* refused, over budget   */
-  --color-macro-100:    #e0f3f8;  --color-macro-600:    #0b7b8f;  /* a script — no tokens   */
-  --color-ai-100:       #f1e9fd;  --color-ai-600:       #7a3fbf;  /* a model — tokens       */
+  /* Meaning — earthy and deliberately quieter than the signal. */
+  --color-verified-100: #e7eee2;  --color-verified-600: #3f6b45;  /* sage:  signed off     */
+  --color-waiting-100:  #f6ebd4;  --color-waiting-600:  #8a6418;  /* ochre: someone's turn */
+  --color-blocked-100:  #f8e3de;  --color-blocked-600:  #a8392b;  /* brick: refused        */
+  --color-macro-100:    #e6eaf0;  --color-macro-600:    #4a5f7a;  /* slate: a script, free */
+  --color-model-100:    #efe7f3;  --color-model-600:    #6b4a86;  /* plum:  a model, paid  */
 
-  /* Corners, generous. Pills for anything you press. */
+  /* A highlighter, for one job only: what matched your search. */
+  --color-marker: #ffe9a3;
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 22px;
   --radius-2xl: 28px;
 
-  /* Depth only where something leaves the page. */
-  --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.03), 0 6px 20px -14px rgb(0 0 0 / 0.14);
-  --shadow-lift: 0 2px 6px -2px rgb(0 0 0 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.16);
-  --shadow-pop:  0 8px 24px -8px rgb(0 0 0 / 0.12), 0 24px 64px -16px rgb(0 0 0 / 0.22);
-  --shadow-knob: 0 1px 1px rgb(0 0 0 / 0.04), 0 3px 8px -2px rgb(0 0 0 / 0.12);
+  /* Depth is warm too — paper shadows, not black ones. */
+  --shadow-rest: 0 1px 2px rgb(60 48 24 / 0.04), 0 6px 20px -14px rgb(60 48 24 / 0.18);
+  --shadow-lift: 0 2px 6px -2px rgb(60 48 24 / 0.07), 0 12px 32px -12px rgb(60 48 24 / 0.20);
+  --shadow-pop:  0 8px 24px -8px rgb(45 36 18 / 0.14), 0 24px 64px -16px rgb(45 36 18 / 0.26);
+  --shadow-knob: 0 1px 1px rgb(60 48 24 / 0.06), 0 3px 8px -2px rgb(60 48 24 / 0.16);
 
-  /* One curve, used by everything. */
   --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-  /* Optical tracking: tighten as type grows, the way a typesetter would. */
-  h1, .t-display { letter-spacing: -0.022em; }
-  h2, h3, .t-title { letter-spacing: -0.016em; }
-  /* A column of figures that does not line up is a column you cannot read. */
+  /* The serif is for anything said at size; it never appears below 17px. */
+  .t-display { font-family: var(--font-display); letter-spacing: -0.012em; font-weight: 600; }
+  h1, h2, h3 { letter-spacing: -0.014em; }
   table, .tabular, [data-figures] { font-variant-numeric: tabular-nums; }
+  mark { background: var(--color-marker); color: inherit; border-radius: 3px; padding: 0 2px; }
   :where(input, select, textarea, button, [tabindex]):focus-visible {
-    outline: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent-500) 28%, transparent);
+    outline: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-signal-500) 26%, transparent);
   }
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -86,34 +89,29 @@
 }
 
 @layer components {
-  /* Surfaces — no border. Tone and radius do the separating. */
   .lg-surface { @apply bg-white rounded-xl shadow-rest; }
   .lg-sheet   { @apply bg-white rounded-2xl shadow-pop; }
-  .lg-inset   { @apply bg-ink-100 rounded-xl; }
-  .lg-hair    { @apply border-b border-ink-200 last:border-0; }
+  .lg-inset   { @apply bg-paper-100 rounded-xl; }
 
-  /* The toolbar is a material: the page shows through it. */
-  .lg-bar { @apply bg-white/72 backdrop-blur-xl border-b border-ink-200/80; }
+  /* The toolbar is paper too, with the page showing faintly through. */
+  .lg-bar { @apply bg-paper-50/80 backdrop-blur-xl border-b border-paper-200; }
 
-  /* Pressable things are pills and they respond to the press. */
-  .lg-press { @apply transition-all duration-200 active:scale-[0.97]; }
   .lg-filled { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
-                      bg-accent-600 text-white hover:bg-accent-700 transition-all duration-200 active:scale-[0.97]; }
+                      bg-signal-600 text-white hover:bg-signal-700 transition-all duration-200 active:scale-[0.97]; }
   .lg-tinted { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
-                      bg-accent-100 text-accent-700 hover:bg-accent-200 transition-all duration-200 active:scale-[0.97]; }
+                      bg-signal-100 text-signal-700 hover:bg-signal-200 transition-all duration-200 active:scale-[0.97]; }
   .lg-quiet  { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium
-                      text-ink-700 hover:bg-ink-100 transition-all duration-200 active:scale-[0.97]; }
-  .lg-plain  { @apply inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700
+                      text-paper-700 hover:bg-paper-100 transition-all duration-200 active:scale-[0.97]; }
+  .lg-plain  { @apply inline-flex items-center gap-1 text-sm font-medium text-signal-600 hover:text-signal-700
                       transition-colors duration-200; }
   .lg-destruct { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
                       text-blocked-600 hover:bg-blocked-100 transition-all duration-200 active:scale-[0.97]; }
   .lg-tap-sm { @apply px-3 py-1 text-xs; }
 
-  /* Fields are filled, not outlined, until you are in them. */
-  .lg-field { @apply w-full bg-ink-100 rounded-xl px-3.5 py-2.5 text-ink-900 placeholder:text-ink-400
-                     border border-transparent transition-all duration-200 focus:bg-white focus:border-ink-200; }
+  .lg-field { @apply w-full bg-paper-100 rounded-xl px-3.5 py-2.5 text-paper-900 placeholder:text-paper-400
+                     border border-transparent transition-all duration-200 focus:bg-white focus:border-paper-200; }
 
   .lg-pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
-  .lg-sub  { @apply text-[13px] text-ink-500; }
-  .lg-row  { @apply flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-ink-100/70; }
+  .lg-sub  { @apply text-[13px] text-paper-500; }
+  .lg-row  { @apply flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/70; }
 }

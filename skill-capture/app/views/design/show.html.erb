@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= stylesheet_link_tag "tailwind" %>
   </head>
-  <body class="bg-ink-50 text-ink-900 font-sans">
+  <body class="bg-paper-50 text-paper-900 font-sans">
 
   <% sect = ->(id, title, note) { capture do %>
     <div class="mt-16 mb-4" id="<%= id %>">
-      <h2 class="text-[22px] font-semibold t-title"><%= title %></h2>
+      <h2 class="text-[26px] t-display"><%= title %></h2>
       <p class="lg-sub mt-0.5"><%= note %></p>
     </div>
   <% end } %>
@@ -18,18 +18,18 @@
   <header class="lg-bar sticky top-0 z-30">
     <div class="max-w-5xl mx-auto px-6 h-[52px] flex items-center gap-1">
       <span class="flex items-center gap-2 mr-5">
-        <span class="w-[22px] h-[22px] rounded-md bg-ink-900 text-white grid place-items-center text-[10px] font-semibold">SC</span>
-        <span class="text-[15px] font-semibold t-title">Skill Capture</span>
+        <span class="w-[22px] h-[22px] rounded-md bg-signal-600 text-white grid place-items-center text-[10px] font-semibold">SC</span>
+        <span class="text-[15px] font-semibold">Skill Capture</span>
       </span>
       <% [["Library", true], ["Work", false], ["Flows", false], ["Market", false]].each do |t, on| %>
-        <span class="px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors duration-200 <%= on ? "text-ink-900 bg-ink-100" : "text-ink-600 hover:text-ink-900" %>"><%= t %></span>
+        <span class="px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors duration-200 <%= on ? "text-paper-900 bg-paper-100" : "text-paper-600 hover:text-paper-900" %>"><%= t %></span>
       <% end %>
       <span class="ml-auto flex items-center gap-3">
-        <span class="hidden sm:flex items-center gap-2 bg-ink-100 rounded-full pl-3 pr-4 py-1.5 w-72">
-          <svg class="w-3.5 h-3.5 text-ink-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/></svg>
-          <span class="text-[13px] text-ink-400">Ask for anything</span>
+        <span class="hidden sm:flex items-center gap-2 bg-paper-100 rounded-full pl-3 pr-4 py-1.5 w-72">
+          <svg class="w-3.5 h-3.5 text-paper-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14" stroke-linecap="round"/></svg>
+          <span class="text-[13px] text-paper-400">Ask for anything</span>
         </span>
-        <span class="w-7 h-7 rounded-full bg-ink-200 text-ink-700 grid place-items-center text-[11px] font-semibold">SO</span>
+        <span class="w-7 h-7 rounded-full bg-paper-200 text-paper-700 grid place-items-center text-[11px] font-semibold">SO</span>
       </span>
     </div>
   </header>
@@ -37,36 +37,36 @@
   <main class="max-w-5xl mx-auto px-6 pb-32">
 
     <div class="pt-20 pb-2 max-w-2xl">
-      <p class="text-[13px] font-medium text-accent-600 mb-3">Design language</p>
-      <h1 class="text-[52px] leading-[1.05] font-semibold t-display">Ledger</h1>
-      <p class="mt-5 text-[19px] leading-relaxed text-ink-600">Built by subtraction. No box around everything — space and
-        tone do the grouping, a hairline appears only where two things genuinely touch, and a shadow means something is
-        floating, never that it is a card.</p>
+      <p class="text-[13px] font-medium tracking-wide uppercase text-signal-600 mb-4">Design language</p>
+      <h1 class="text-[56px] leading-[1.02] t-display">Foolscap</h1>
+      <p class="mt-5 text-[19px] leading-relaxed text-paper-600">The product is institutional memory, so the surface is
+        paper rather than glass: a warm page, warm near-black ink, a serif for anything said at size. Colour is
+        rationed — the states are earthy and quiet so the one saturated colour always means <em>act here</em>.</p>
       <p class="lg-sub mt-4">Shown on finance work: equity research, month-end close, partnership K-1s.</p>
     </div>
 
-    <%= sect.("palette", "Colour", "Near-neutral greys so one blue can carry the whole interface. Everything else is reserved for meaning.") %>
+    <%= sect.("palette", "Colour", "Warm paper, earthy states, and one saturated verdigris that always means act here.") %>
     <div class="lg-surface p-7">
-      <p class="text-[13px] font-medium text-ink-500 mb-3">Grey</p>
+      <p class="text-[13px] font-medium text-paper-500 mb-3">Paper → ink</p>
       <div class="flex rounded-xl overflow-hidden h-14 mb-1.5">
         <% %w[50 100 200 300 400 500 600 700 800 900 950].each do |s| %>
-          <span class="flex-1" style="background: var(--color-ink-<%= s %>)"></span>
+          <span class="flex-1" style="background: var(--color-paper-<%= s %>)"></span>
         <% end %>
       </div>
-      <div class="flex mb-7"><% %w[50 100 200 300 400 500 600 700 800 900 950].each do |s| %><span class="flex-1 text-center text-[10px] text-ink-400"><%= s %></span><% end %></div>
+      <div class="flex mb-7"><% %w[50 100 200 300 400 500 600 700 800 900 950].each do |s| %><span class="flex-1 text-center text-[10px] text-paper-400"><%= s %></span><% end %></div>
 
-      <p class="text-[13px] font-medium text-ink-500 mb-3">Blue — sparingly, and usually as a tint</p>
+      <p class="text-[13px] font-medium text-paper-500 mb-3">Verdigris — the only saturated voice</p>
       <div class="flex rounded-xl overflow-hidden h-14 mb-1.5">
         <% %w[50 100 200 300 400 500 600 700 800].each do |s| %>
-          <span class="flex-1" style="background: var(--color-accent-<%= s %>)"></span>
+          <span class="flex-1" style="background: var(--color-signal-<%= s %>)"></span>
         <% end %>
       </div>
-      <div class="flex mb-7"><% %w[50 100 200 300 400 500 600 700 800].each do |s| %><span class="flex-1 text-center text-[10px] text-ink-400"><%= s %></span><% end %></div>
+      <div class="flex mb-7"><% %w[50 100 200 300 400 500 600 700 800].each do |s| %><span class="flex-1 text-center text-[10px] text-paper-400"><%= s %></span><% end %></div>
 
-      <p class="text-[13px] font-medium text-ink-500 mb-3">Meaning</p>
+      <p class="text-[13px] font-medium text-paper-500 mb-3">Meaning</p>
       <div class="grid sm:grid-cols-5 gap-2">
-        <% [["verified", "Verified", "signed off"], ["waiting", "Waiting", "someone's turn"], ["blocked", "Blocked", "over budget"],
-            ["macro", "Macro", "no tokens"], ["ai", "Model", "tokens"]].each do |k, name, why| %>
+        <% [["verified", "Verified", "signed off"], ["waiting", "Waiting", "someone's turn"], ["blocked", "Blocked", "refused"],
+            ["macro", "Macro", "no tokens"], ["model", "Model", "tokens"]].each do |k, name, why| %>
           <div class="rounded-xl p-3" style="background: var(--color-<%= k %>-100)">
             <p class="text-sm font-semibold" style="color: var(--color-<%= k %>-600)"><%= name %></p>
             <p class="text-[11px] mt-0.5" style="color: var(--color-<%= k %>-600); opacity: .72"><%= why %></p>
@@ -75,24 +75,31 @@
       </div>
     </div>
 
-    <%= sect.("type", "Type and shape", "Hierarchy comes from size and weight, not from rules and boxes.") %>
+    <div class="lg-surface p-7 mt-5">
+      <p class="text-[13px] font-medium text-paper-500 mb-3">Marker — one job only: what matched</p>
+      <p class="text-[15px] leading-relaxed max-w-2xl">Pulls levered <mark>betas</mark> for the comp set over BQL,
+        unlevers at each name's net debt to equity, relevers at the target structure, and writes the
+        discount row the <mark>beta</mark>-driven model reads.</p>
+    </div>
+
+    <%= sect.("type", "Type and shape", "Charter for anything said at size. Inter, tight and small, for everything you work in.") %>
     <div class="grid md:grid-cols-2 gap-5">
       <div class="lg-surface p-7">
-        <p class="text-[40px] leading-tight font-semibold t-display">Discounted cash flow</p>
-        <p class="text-[22px] font-semibold t-title mt-4">Build WACC from the comp set</p>
-        <p class="text-[15px] text-ink-700 mt-2 leading-relaxed">Body copy at fifteen. Long enough lines to read, short
+        <p class="text-[40px] leading-tight t-display">Discounted cash flow</p>
+        <p class="text-[22px] t-display mt-4">Build WACC from the comp set</p>
+        <p class="text-[15px] text-paper-700 mt-2 leading-relaxed">Body copy at fifteen. Long enough lines to read, short
           enough to scan, and tracking that tightens as the type grows.</p>
         <p class="lg-sub mt-2">Secondary at thirteen, grey five hundred.</p>
         <p class="text-[17px] mt-5 tabular">1,284,500.00 · 97,300.25 · (4,118.70)</p>
         <p class="lg-sub">Tabular figures everywhere, without exception.</p>
       </div>
       <div class="lg-surface p-7">
-        <p class="text-[13px] font-medium text-ink-500 mb-4">Corners and depth</p>
+        <p class="text-[13px] font-medium text-paper-500 mb-4">Corners and depth</p>
         <div class="flex items-end gap-3 mb-6">
           <% [["rounded-sm", "8"], ["rounded-md", "12"], ["rounded-lg", "16"], ["rounded-xl", "22"], ["rounded-full", "pill"]].each do |cls, px| %>
             <span class="text-center">
-              <span class="block w-16 h-14 bg-ink-100 <%= cls %>"></span>
-              <span class="block mt-1.5 text-[11px] text-ink-400"><%= px %></span>
+              <span class="block w-16 h-14 bg-paper-100 <%= cls %>"></span>
+              <span class="block mt-1.5 text-[11px] text-paper-400"><%= px %></span>
             </span>
           <% end %>
         </div>
@@ -116,10 +123,10 @@
 
         <div>
           <p class="lg-sub mb-2">Segmented</p>
-          <div class="relative inline-flex bg-ink-100 rounded-full p-1 text-[13px] font-medium">
+          <div class="relative inline-flex bg-paper-100 rounded-full p-1 text-[13px] font-medium">
             <span class="absolute inset-y-1 left-1 w-[88px] bg-white rounded-full shadow-knob"></span>
             <% ["Mine", "My team", "Firm", "Market"].each_with_index do |t, i| %>
-              <span class="relative w-[88px] text-center py-1 <%= i.zero? ? "text-ink-900" : "text-ink-500" %>"><%= t %></span>
+              <span class="relative w-[88px] text-center py-1 <%= i.zero? ? "text-paper-900" : "text-paper-500" %>"><%= t %></span>
             <% end %>
           </div>
         </div>
@@ -128,7 +135,7 @@
           <p class="lg-sub">Switches, not checkboxes</p>
           <% [["Require a reviewer before anyone runs it", true], ["Let the firm see my token spend", false]].each do |label, on| %>
             <label class="flex items-center gap-3">
-              <span class="w-[46px] h-[28px] rounded-full p-[3px] transition-colors duration-200 <%= on ? "bg-verified-600" : "bg-ink-300" %>">
+              <span class="w-[46px] h-[28px] rounded-full p-[3px] transition-colors duration-200 <%= on ? "bg-verified-600" : "bg-paper-300" %>">
                 <span class="block w-[22px] h-[22px] rounded-full bg-white shadow-knob transition-transform duration-200 <%= on ? "translate-x-[18px]" : "" %>"></span>
               </span>
               <span class="text-sm"><%= label %></span>
@@ -139,15 +146,15 @@
 
       <div class="lg-surface p-7 space-y-4">
         <label class="block">
-          <span class="block text-[13px] font-medium text-ink-600 mb-1.5">Name</span>
+          <span class="block text-[13px] font-medium text-paper-600 mb-1.5">Name</span>
           <input class="lg-field font-mono text-[13px]" value="equity.dcf.wacc-build">
         </label>
         <label class="block">
-          <span class="block text-[13px] font-medium text-ink-600 mb-1.5">What it does</span>
+          <span class="block text-[13px] font-medium text-paper-600 mb-1.5">What it does</span>
           <textarea class="lg-field text-sm leading-relaxed" rows="3">Pulls levered betas for the comp set over BQL, unlevers at each name's net debt to equity, relevers at the target structure, and writes the discount row the model reads.</textarea>
         </label>
         <label class="block">
-          <span class="block text-[13px] font-medium text-ink-600 mb-1.5">Area</span>
+          <span class="block text-[13px] font-medium text-paper-600 mb-1.5">Area</span>
           <select class="lg-field text-sm"><option>Equity research</option><option>Month-end close</option><option>Tax — partnership</option></select>
         </label>
         <div class="flex justify-end gap-2 pt-1">
@@ -159,20 +166,20 @@
 
     <%= sect.("pills", "Status", "Colour appears only when it is telling you something.") %>
     <div class="lg-surface p-7 flex flex-wrap items-center gap-2">
-      <span class="lg-pill bg-ink-100 text-ink-600">Sandbox</span>
-      <span class="lg-pill bg-ink-100 text-ink-600">Firm</span>
-      <span class="lg-pill bg-ink-900 text-white">Market</span>
-      <span class="w-px h-5 bg-ink-200 mx-2"></span>
+      <span class="lg-pill bg-paper-100 text-paper-600">Sandbox</span>
+      <span class="lg-pill bg-paper-100 text-paper-600">Firm</span>
+      <span class="lg-pill bg-paper-900 text-paper-50">Market</span>
+      <span class="w-px h-5 bg-paper-200 mx-2"></span>
       <span class="lg-pill bg-verified-100 text-verified-600">Verified</span>
       <span class="lg-pill bg-waiting-100 text-waiting-600">In review</span>
       <span class="lg-pill bg-blocked-100 text-blocked-600">Failed check</span>
-      <span class="w-px h-5 bg-ink-200 mx-2"></span>
-      <span class="lg-pill bg-ai-100 text-ai-600">Model · 31k</span>
+      <span class="w-px h-5 bg-paper-200 mx-2"></span>
+      <span class="lg-pill bg-model-100 text-model-600">Model · 31k</span>
       <span class="lg-pill bg-macro-100 text-macro-600">Macro · free</span>
-      <span class="lg-pill bg-ink-100 text-ink-600">Person</span>
-      <span class="w-px h-5 bg-ink-200 mx-2"></span>
+      <span class="lg-pill bg-paper-100 text-paper-600">Person</span>
+      <span class="w-px h-5 bg-paper-200 mx-2"></span>
       <% [["X", "#107c41", "Excel"], ["W", "#185abd", "Word"], ["P", "#c43e1c", "PowerPoint"]].each do |a, hex, name| %>
-        <span class="lg-pill bg-ink-100 text-ink-700">
+        <span class="lg-pill bg-paper-100 text-paper-700">
           <span class="w-[15px] h-[15px] rounded-[4px] text-white text-[8px] grid place-items-center font-bold" style="background: <%= hex %>"><%= a %></span><%= name %>
         </span>
       <% end %>
@@ -181,28 +188,28 @@
     <%= sect.("list", "Lists", "The inset grouped list: one surface, hairlines between rows, the whole row is the target.") %>
     <div class="grid md:grid-cols-2 gap-5">
       <div class="lg-surface overflow-hidden">
-        <div class="px-4 pt-4 pb-2"><p class="text-[13px] font-medium text-ink-500">Equity research</p></div>
+        <div class="px-4 pt-4 pb-2"><p class="text-[13px] font-medium text-paper-500">Equity research</p></div>
         <% [["Build WACC from the comp set", "Verified · 412 runs", "verified"],
             ["Unlever the comp betas", "Verified · 388 runs", "verified"],
             ["Sensitivity grid: WACC × growth", "In review · Rae", "waiting"],
-            ["Draft the valuation note", "Model · 84k avg", "ai"]].each do |title, note, tone| %>
-          <div class="lg-row relative cursor-default after:absolute after:left-9 after:right-0 after:bottom-0 after:h-px after:bg-ink-200 last:after:hidden">
+            ["Draft the valuation note", "Model · 84k avg", "model"]].each do |title, note, tone| %>
+          <div class="lg-row relative cursor-default after:absolute after:left-9 after:right-0 after:bottom-0 after:h-px after:bg-paper-200 last:after:hidden">
             <span class="w-2 h-2 rounded-full shrink-0" style="background: var(--color-<%= tone %>-600)"></span>
             <span class="min-w-0 flex-1">
               <span class="block text-[15px] truncate"><%= title %></span>
               <span class="block lg-sub"><%= note %></span>
             </span>
-            <svg class="w-3 h-3 text-ink-300 shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 2.5 3.5 3.5-3.5 3.5"/></svg>
+            <svg class="w-3 h-3 text-paper-300 shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 2.5 3.5 3.5-3.5 3.5"/></svg>
           </div>
         <% end %>
       </div>
 
       <div class="lg-surface p-7">
-        <p class="text-[13px] font-medium text-ink-500">This run</p>
-        <p class="text-[44px] leading-none font-semibold t-display mt-2 tabular">$0.37</p>
+        <p class="text-[13px] font-medium text-paper-500">This run</p>
+        <p class="text-[46px] leading-none t-display mt-2 tabular">$0.37</p>
         <p class="lg-sub mt-1">of $0.84 anticipated · 9 tasks, 3 models</p>
-        <span class="mt-5 block h-1.5 rounded-full bg-ink-100 overflow-hidden">
-          <span class="block h-full rounded-full bg-accent-600" style="width: 44%"></span>
+        <span class="mt-5 block h-1.5 rounded-full bg-paper-100 overflow-hidden">
+          <span class="block h-full rounded-full bg-signal-600" style="width: 44%"></span>
         </span>
         <div class="mt-6 grid grid-cols-2 gap-5">
           <span><span class="block text-[22px] font-semibold tabular">128,400</span><span class="lg-sub">tokens of ~290k</span></span>
@@ -215,15 +222,15 @@
     <div class="lg-surface px-8 py-9">
       <div class="flex items-start">
         <% [["Pull comps", :done], ["Unlever betas", :done], ["Build WACC", :here], ["Discount FCF", :todo], ["Sensitivity", :todo], ["Write the note", :todo]].each_with_index do |(label, st), i| %>
-          <% if i > 0 %><span class="h-[2px] flex-1 mt-[13px] rounded-full <%= st == :todo ? "bg-ink-200" : "bg-verified-600" %>"></span><% end %>
+          <% if i > 0 %><span class="h-[2px] flex-1 mt-[13px] rounded-full <%= st == :todo ? "bg-paper-200" : "bg-verified-600" %>"></span><% end %>
           <span class="flex flex-col items-center gap-2.5 px-1">
             <span class="w-7 h-7 rounded-full grid place-items-center text-[11px] font-semibold transition-all duration-200 <%=
               st == :done ? "bg-verified-600 text-white" :
-              st == :here ? "bg-accent-600 text-white shadow-[0_0_0_5px_var(--color-accent-100)]" :
-                            "bg-ink-100 text-ink-400" %>">
+              st == :here ? "bg-signal-600 text-white shadow-[0_0_0_5px_var(--color-signal-100)]" :
+                            "bg-paper-100 text-paper-400" %>">
               <% if st == :done %><svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 6.5 2.5 2.5 4.5-5"/></svg><% else %><%= i + 1 %><% end %>
             </span>
-            <span class="text-[11px] leading-tight text-center w-[72px] <%= st == :here ? "font-semibold text-ink-900" : "text-ink-500" %>"><%= label %></span>
+            <span class="text-[11px] leading-tight text-center w-[72px] <%= st == :here ? "font-semibold text-paper-900" : "text-paper-500" %>"><%= label %></span>
           </span>
         <% end %>
       </div>
@@ -233,13 +240,13 @@
     <div class="lg-surface overflow-hidden">
       <div class="px-6 py-5 flex items-center gap-3">
         <span>
-          <h3 class="text-[17px] font-semibold t-title">Month-end close</h3>
+          <h3 class="text-[20px] t-display">Month-end close</h3>
           <p class="lg-sub">Variance by account · October</p>
         </span>
         <span class="lg-pill bg-waiting-100 text-waiting-600 ml-auto">3 over materiality</span>
       </div>
       <table class="w-full text-[13px]">
-        <thead><tr class="text-ink-500 border-b border-ink-200">
+        <thead><tr class="text-paper-500 border-b border-paper-200">
           <th class="text-left font-medium px-6 py-2">Account</th>
           <th class="text-left font-medium px-3 py-2">Skill</th>
           <th class="text-right font-medium px-3 py-2">Actual</th>
@@ -253,13 +260,13 @@
               ["7010 Travel", "close.travel.recode", "96,120", "61,000", "+35,120", true],
               ["4000 Fee revenue", "close.revenue.tieout", "3,884,200", "3,900,000", "(15,800)", false],
               ["8100 Interest", "close.debt.schedule", "74,610", "52,000", "+22,610", true]].each do |acct, skill, act, bud, var, over| %>
-            <tr class="border-b border-ink-200 hover:bg-ink-100/60 transition-colors duration-150">
+            <tr class="border-b border-paper-200 hover:bg-paper-100/60 transition-colors duration-150">
               <td class="px-6 py-2.5 font-medium"><%= acct %></td>
-              <td class="px-3 py-2.5 font-mono text-[11px] text-ink-500"><%= skill %></td>
+              <td class="px-3 py-2.5 font-mono text-[11px] text-paper-500"><%= skill %></td>
               <td class="px-3 py-2.5 text-right tabular"><%= act %></td>
-              <td class="px-3 py-2.5 text-right tabular text-ink-500"><%= bud %></td>
-              <td class="px-3 py-2.5 text-right tabular <%= over ? "text-blocked-600 font-medium" : "text-ink-500" %>"><%= var %></td>
-              <td class="px-6 py-2.5 text-right"><%= over ? '<span class="lg-plain">Explain</span>'.html_safe : '<span class="text-ink-300">—</span>'.html_safe %></td>
+              <td class="px-3 py-2.5 text-right tabular text-paper-500"><%= bud %></td>
+              <td class="px-3 py-2.5 text-right tabular <%= over ? "text-blocked-600 font-medium" : "text-paper-500" %>"><%= var %></td>
+              <td class="px-6 py-2.5 text-right"><%= over ? '<span class="lg-plain">Explain</span>'.html_safe : '<span class="text-paper-300">—</span>'.html_safe %></td>
             </tr>
           <% end %>
           <tr class="font-semibold">
@@ -279,9 +286,9 @@
         <p class="lg-sub mb-3">Menu</p>
         <div class="bg-white rounded-xl shadow-pop p-1.5">
           <% [["Open in Excel", false], ["Copy as Markdown", false], ["Send to a coworker", false], ["Promote to Firm", true]].each do |l, on| %>
-            <span class="block px-3 py-2 rounded-lg text-[13px] <%= on ? "bg-accent-600 text-white" : "hover:bg-ink-100" %>"><%= l %></span>
+            <span class="block px-3 py-2 rounded-lg text-[13px] <%= on ? "bg-signal-600 text-white" : "hover:bg-paper-100" %>"><%= l %></span>
           <% end %>
-          <span class="block h-px bg-ink-200 my-1.5 mx-3"></span>
+          <span class="block h-px bg-paper-200 my-1.5 mx-3"></span>
           <span class="block px-3 py-2 rounded-lg text-[13px] text-blocked-600 hover:bg-blocked-100">Withdraw</span>
         </div>
       </div>
@@ -289,8 +296,8 @@
       <div class="lg-surface p-5">
         <p class="lg-sub mb-3">Sheet</p>
         <div class="rounded-2xl bg-white shadow-pop p-5">
-          <p class="text-[17px] font-semibold t-title">Send to a coworker</p>
-          <p class="text-[13px] text-ink-600 mt-1 leading-relaxed">Skill and payment are both held until the transfer crosses.</p>
+          <p class="text-[19px] t-display">Send to a coworker</p>
+          <p class="text-[13px] text-paper-600 mt-1 leading-relaxed">Skill and payment are both held until the transfer crosses.</p>
           <input class="lg-field mt-4 text-sm" value="rae@firm.com">
           <div class="flex gap-2 mt-4">
             <button class="lg-filled flex-1">Hold in escrow</button>
@@ -303,7 +310,7 @@
         <p class="lg-sub">Notices and empty states</p>
         <div class="rounded-xl bg-verified-100 px-4 py-3 text-[13px] text-verified-600 font-medium">Promoted to Firm. 14 people can run it.</div>
         <div class="rounded-xl bg-blocked-100 px-4 py-3 text-[13px] text-blocked-600 font-medium">Run stopped at task 6 — budget reached.</div>
-        <div class="rounded-xl bg-ink-100 px-4 py-6 text-center">
+        <div class="rounded-xl bg-paper-100 px-4 py-6 text-center">
           <p class="text-sm font-medium">No K-1 skills yet</p>
           <p class="lg-sub mt-1">Open a partnership workbook to capture the first one.</p>
           <button class="lg-tinted lg-tap-sm mt-3">Capture</button>
@@ -312,13 +319,13 @@
     </div>
 
     <%= sect.("code", "Formulas", "The part the agents read. Dark, quiet, monospaced.") %>
-    <div class="rounded-xl bg-ink-950 p-6 overflow-x-auto">
-      <pre class="font-mono text-[12.5px] leading-[1.7] text-ink-300"><span class="text-ink-600"># equity.dcf.wacc-build · v4 · firm</span>
-<span class="text-accent-400">get</span>(px_last, beta_raw(period=<span class="text-verified-600">5Y</span>))
-  <span class="text-accent-400">for</span>(members(<span class="text-waiting-600">'SPX Index'</span>) <span class="text-accent-400">filter</span> gics_sector = <span class="text-waiting-600">'Industrials'</span>)
+    <div class="rounded-xl bg-paper-900 p-6 overflow-x-auto">
+      <pre class="font-mono text-[12.5px] leading-[1.7] text-paper-200"><span class="text-paper-500"># equity.dcf.wacc-build · v4 · firm</span>
+<span class="text-signal-300">get</span>(px_last, beta_raw(period=<span class="text-verified-100">5Y</span>))
+  <span class="text-signal-300">for</span>(members(<span class="text-waiting-100">'SPX Index'</span>) <span class="text-signal-300">filter</span> gics_sector = <span class="text-waiting-100">'Industrials'</span>)
 
-<span class="text-ink-600">-- unlever:  βu = βl / (1 + (1 − t) × D/E)</span>
-=D4/(1+(1-$B$2)*C4)   <span class="text-ink-600">→ {row:beta_unlevered}</span></pre>
+<span class="text-paper-500">-- unlever:  βu = βl / (1 + (1 − t) × D/E)</span>
+=D4/(1+(1-$B$2)*C4)   <span class="text-paper-500">→ {row:beta_unlevered}</span></pre>
     </div>
 
   </main>
