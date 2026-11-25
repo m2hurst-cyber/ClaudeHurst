@@ -28,7 +28,7 @@ class FindController < ApplicationController
           next: name && (Skill.current(name)&.title || name),
           blocking: Array(state&.dig("checks")).reject { |c| c["ok"] }.map { |c| c["label"] }.first(2) }
       end,
-      prompts: current_user.skill_prompts.live.limit(3).map { |p| { title: p.title, url: prompts_path } },
+      prompts: current_user.skill_prompts.live.limit(3).map { |p| { title: p.headline, url: prompts_path } },
       transfers: current_user.received_transfers.pending.limit(3).map { |t| { label: t.label, from: t.sender.name, url: transfer_path(t) } },
       reviews: (SkillCandidate.open.select { |c| c.reviewable_by?(current_user) }.first(3).map { |c| { title: c.display_title, url: skill_candidate_path(c) } } if current_user.reviewer? || current_user.admin?),
       mine: Skill.published.at_level("mine", current_user).recent.limit(4).map { |s| { title: s.title, url: skill_path(s) } }

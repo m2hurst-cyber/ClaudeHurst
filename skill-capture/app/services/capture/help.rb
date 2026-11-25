@@ -74,10 +74,20 @@ module Capture
     # One search box over both, because nobody knows whether their question is a FAQ or a guide.
     Hit = Struct.new(:kind, :title, :blurb, :slug, :score, keyword_init: true)
 
+    # Words that appear in any paragraph of English and so cannot narrow anything.
+    STOP = %w[the a an and or of to in on for with at by from is are was be been it its this that
+              these those i you we they do does did how what when where why which who can could
+              should would will my our your their there here about into over after before too
+              many much some any all not no if then than as but].to_set.freeze
+
     def search(query)
       q = query.to_s.downcase.strip
       return [] if q.length < 2
-      words = q.split(/\s+/).reject { |w| w.length < 2 }
+      words = q.scan(/[\w-]+/).reject { |w| w.length < 3 || STOP.include?(w) }
+      phrase = q.length >= 4
+      # Help answers a question or it stays quiet. Half a sentence in common with a guide is
+      # not an answer — the front door would fill with pages that merely share English.
+      return [] if words.empty? && !phrase
 
       hits = guides.filter_map do |g|
         score = relevance(g.haystack, q, words, title: g.title.downcase)
@@ -90,13 +100,21 @@ module Capture
       hits.sort_by { |h| [-h.score, h.title] }
     end
 
+    # Either the whole phrase appears, or every word that carries meaning does. Anything
+    # looser answers questions it was not asked.
     def relevance(haystack, phrase, words, title:)
+      whole = haystack.include?(phrase)
+      return 0 unless whole || (words.any? && words.all? { |w| haystack.include?(w) })
+
       score = 0
       score += 100 if title.include?(phrase)
-      score += 40 if haystack.include?(phrase)
-      matched = words.count { |w| haystack.include?(w) }
-      return 0 if matched.zero?
-      score + ((matched.to_f / words.size) * 30).round + (words.count { |w| title.include?(w) } * 15)
+      score += 40 if whole
+      score += 30 if words.any?
+      # How much the page is *about* the word, not merely whether it mentions it once.
+      # How much the page is *about* the word, not merely whether it mentions it once —
+      # capped, so a long page cannot out-rank the page actually named for the subject.
+      density = [words.sum { |w| [haystack.scan(w).size, 4].min }, 12].min
+      score + (words.count { |w| title.include?(w) } * 25) + density
     end
   end
 end

@@ -50,6 +50,22 @@
     <h2 class="font-semibold">Escrow contract</h2>
     <span class="text-xs font-mono text-slate-500" title="sha256 of the parties, skills, fingerprints, price and expiry">terms <%= t.terms_hash.to_s.first(16) %>…</span>
   </div>
+  <%# Pinned at the moment of the offer: this is the identity the transfer refuses to deviate from. %>
+  <div class="mt-3 bg-white border rounded divide-y text-sm">
+    <% t.items.each do |i| %>
+      <div class="p-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span class="font-medium"><%= i["title"] %></span>
+        <span class="text-slate-500">v<%= i["version"] %></span>
+        <span class="ml-auto font-mono text-xs text-slate-400" title="The content hash pinned when this was offered: <%= i["sha256"] %>">
+          <%= i["sha256"].to_s.first(12) %>…
+        </span>
+        <% if (sk = Skill.current(i["name"])) %>
+          <%= link_to "Provenance", provenance_skill_path(sk), class: "text-xs text-sky-700 hover:underline" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
   <% skill_in = t.contract_log.any? { |e| e["event"] == "skill_leg_deposited" } %>
   <% pay_in = t.free? || t.contract_log.any? { |e| e["event"] == "payment_leg_deposited" } %>
   <% crossed = t.settled? %>

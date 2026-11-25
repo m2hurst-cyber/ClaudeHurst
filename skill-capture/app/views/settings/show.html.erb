@@ -1,0 +1,54 @@
+<% content_for :title, "Your settings" %>
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold">Your settings</h1>
+  <p class="text-slate-600 mt-1">How the system treats you. Everything here affects only your own prompts and drafts.</p>
+
+  <%= form_with url: settings_path, method: :patch, class: "mt-5 space-y-4" do %>
+    <fieldset class="bg-white border rounded p-4">
+      <legend class="px-1 font-semibold">How finely your work is cut</legend>
+      <p class="text-sm text-slate-600 mb-3">This decides how big a thing has to be before you are asked about it.
+        Coarser means fewer prompts, each about a larger piece of work.
+        <%= link_to "What each setting means", help_guide_path("granularity"), class: "underline" %>.</p>
+
+      <label class="flex items-start gap-2 mb-2 text-sm">
+        <%= radio_button_tag :granularity, "inherit", @personal.nil?, class: "mt-1" %>
+        <span>
+          <span class="font-medium">Use my area's setting</span>
+          <span class="block text-slate-500">Currently <%= Capture::Granularity.label(@inherited) %><%= " — the #{current_user.domains.first} area" if current_user.domains.first %>.</span>
+        </span>
+      </label>
+
+      <% Capture::Granularity::LEVELS.each do |level, s| %>
+        <label class="flex items-start gap-2 mb-2 text-sm">
+          <%= radio_button_tag :granularity, level, @personal&.level == level, class: "mt-1" %>
+          <span>
+            <span class="font-medium"><%= s[:label] %></span>
+            <span class="text-slate-400">· <%= s[:min_steps] %>–<%= s[:max_steps] %> steps</span>
+            <span class="block text-slate-500"><%= s[:blurb] %></span>
+          </span>
+        </label>
+      <% end %>
+
+      <%= submit_tag "Save", class: btn_primary %>
+    </fieldset>
+  <% end %>
+
+  <div class="bg-white border rounded p-4 mt-4 text-sm">
+    <h2 class="font-semibold mb-1">Getting started</h2>
+    <p class="text-slate-600"><%= @tour.done_count %> of <%= @tour.total %> steps done.</p>
+    <p class="mt-2 flex gap-2">
+      <%= link_to "Open the walkthrough", tour_path, class: btn %>
+      <% if @tour.dismissed? %><%= button_to "Show the reminder again", restart_tour_path, class: btn %><% end %>
+    </p>
+  </div>
+
+  <div class="bg-white border rounded p-4 mt-4 text-sm">
+    <h2 class="font-semibold mb-1">Your account</h2>
+    <dl class="grid grid-cols-[7rem_1fr] gap-y-0.5">
+      <dt class="text-slate-500">Name</dt><dd><%= current_user.name %></dd>
+      <dt class="text-slate-500">Role</dt><dd><%= current_user.role.humanize %></dd>
+      <dt class="text-slate-500">Areas</dt><dd><%= current_user.domains.presence&.join(", ") || "—" %></dd>
+    </dl>
+    <p class="text-slate-500 mt-2">Roles and areas are set by an admin.</p>
+  </div>
+</div>

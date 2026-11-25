@@ -1,5 +1,5 @@
 class SkillsController < ApplicationController
-  before_action :set_skill, only: %i[show edit update download deprecate compare audience]
+  before_action :set_skill, only: %i[show edit update download deprecate compare audience provenance]
 
   def index
     authorize Skill
@@ -22,6 +22,19 @@ class SkillsController < ApplicationController
   end
 
   # Which process is better? The skill and its alternatives (same lineage), side by side.
+  # What this skill is, and the chain of everything that has happened to it. The identity
+  # is the content hash; the history is hash-linked, so the page can say plainly whether
+  # it still holds rather than asking anyone to trust the database.
+  def provenance
+    @entries = Capture::Provenance.history(@skill.name).reverse
+    @anchors = ProvenanceAnchor.recent.limit(5)
+    @verdict = Capture::Provenance.verify if current_user.admin?
+    respond_to do |format|
+      format.html
+      format.json { render json: Capture::Provenance.manifest(@skill) }
+    end
+  end
+
   def compare
     @family = @skill.family.select { |s| s.visible_to?(current_user) }
     @rows = Capture::Voting.comparison(@family)

@@ -6,7 +6,7 @@ module Capture
   # The same service answers the console's search box, the add-in's, and anything else that needs to
   # turn a sentence into "here is the thing, here is where it sits, here is what you can do with it".
   module Find
-    GROUPS = %w[skills playbooks jobs flows resources formulas macros].freeze
+    GROUPS = %w[skills playbooks jobs flows resources formulas macros help].freeze
     FLOOR = 12 # a real answer
     LOOSE = 4  # only worth showing when nothing answered properly
     # Words that mean "I want to do this", not "I want to read about it".
@@ -33,7 +33,10 @@ module Capture
         "flows" => both.(:flows, viewer, limit),
         "resources" => both.(:resources, viewer, limit),
         "formulas" => both.(:formulas, limit),
-        "macros" => both.(:macros, viewer, limit)
+        "macros" => both.(:macros, viewer, limit),
+        # Someone asking the one box how something works should not be told nothing
+        # exists. The help is part of what the company knows.
+        "help" => both.(:help, limit)
       }.transform_values { |hits| strong = hits.select { |x| x.score >= FLOOR }; strong.presence || hits.select { |x| x.score >= LOOSE }.first(3) }
                  .reject { |_, v| v.empty? }
       loose = groups.values.flatten.none? { |x| x.score >= FLOOR }
@@ -172,6 +175,25 @@ module Capture
                 subtitle: m.reason.to_s.truncate(140), badge: "#{m.language_label} · saved #{number_with_delimiter(m.tokens_saved)} tokens",
                 score: score_text(q, m.title) + 5)
       end.sort_by { |x| [-x.score, x.key.to_s] }
+    end
+
+    # Guides and answers from the help centre. Scored a little below the real thing, so a
+    # question about billing still leads with the skill that bills, not the page about billing.
+    # The help centre scores on its own scale, which runs higher than ours. Rescale it so a
+    # perfect help match sits below a strong match on the real thing and above a weak one:
+    # asking "send a skill" should lead with the skill that sends, then the guide about it.
+    HELP_CEILING = 70
+    HELP_RAW_MAX = 215.0
+
+    def help(q, limit)
+      Capture::Help.search(q).first(limit).map do |hit|
+        guide = hit.slug && Help.find(hit.slug)
+        Hit.new(group: "help", key: "#{hit.kind}:#{hit.title.parameterize.first(40)}",
+                title: hit.title, subtitle: hit.blurb.to_s.truncate(140),
+                url: guide ? h.help_guide_path(guide.slug) : h.help_path(q: hit.title),
+                badge: hit.kind == "question" ? "Answer" : "Guide",
+                score: [((hit.score / HELP_RAW_MAX) * HELP_CEILING).round, LOOSE].max)
+      end
     end
 
     # The road around one skill: what comes before, what comes after, and the branches hanging off it.

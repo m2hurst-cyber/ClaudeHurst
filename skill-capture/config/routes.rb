@@ -97,6 +97,8 @@ Rails.application.routes.draw do
     get "find", to: "find#show"
 
     # The walkthrough and the help centre.
+    get "settings", to: "settings#show", as: :settings
+    patch "settings", to: "settings#update"
     get "start", to: "tour#show", as: :tour
     post "start/dismiss", to: "tour#dismiss", as: :dismiss_tour
     post "start/restart", to: "tour#restart", as: :restart_tour
@@ -135,6 +137,7 @@ Rails.application.routes.draw do
       resources :rest_stops, only: :create
       member do
         get :compare
+        get :provenance
         get :download
         post :deprecate
         patch :audience
