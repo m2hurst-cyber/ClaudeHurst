@@ -44,11 +44,16 @@ module Capture
         best: best(groups, intent), loose: loose, empty: false }
     end
 
+    # When two answers score the same, the thing itself beats the material about it: a
+    # skill before the formula it uses, either before the guide explaining them. Without
+    # this the tie fell to whichever group name sorted first, which is not a reason.
+    PRECEDENCE = %w[jobs flows playbooks skills macros resources formulas help].freeze
+
     # The one answer to put at the top: an action beats a document when the question starts with a verb.
     def best(groups, intent)
       all = groups.values.flatten
       return nil if all.empty?
-      all.min_by { |x| [-(x.score + (intent && x.action ? 25 : 0)), x.key.to_s] }
+      all.min_by { |x| [-(x.score + (intent && x.action ? 25 : 0)), PRECEDENCE.index(x.group) || 99, x.key.to_s] }
     end
 
     def like(term) = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"

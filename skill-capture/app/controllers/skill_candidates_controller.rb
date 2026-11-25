@@ -50,9 +50,17 @@ class SkillCandidatesController < ApplicationController
 
   def update
     attrs = params.require(:skill_candidate).permit(:draft_name, :draft_title, :draft_description, :draft_body,
-                                                    :draft_tags, :draft_inputs, :draft_outputs, :review_notes).to_h
+                                                    :draft_tags, :draft_inputs, :draft_outputs, :review_notes,
+                                                    capabilities: {}).to_h
     attrs["draft_tags"] = attrs["draft_tags"].to_s.split(/[,\n]/).map { |t| t.strip.parameterize }.reject(&:blank?).uniq if attrs.key?("draft_tags")
     %w[draft_inputs draft_outputs].each { |k| attrs[k] = attrs[k].to_s.lines.map(&:strip).reject(&:blank?) if attrs.key?(k) }
+    # What the skill touches, declared one per line so it reads like the rest of the form.
+    if attrs.key?("capabilities")
+      caps = attrs["capabilities"]
+      attrs["capabilities"] = Capture::Capabilities::KEYS.index_with do |k|
+        k == "needs_credentials" ? caps[k] : caps[k].to_s.split(/[,\n]/).map(&:strip).reject(&:blank?)
+      end
+    end
     if attrs["draft_body"].present? && @candidate.status == "detected"
       attrs.merge!("status" => "drafted", "draft_generator" => "human", "drafted_at" => Time.current)
     end

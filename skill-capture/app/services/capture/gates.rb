@@ -25,6 +25,17 @@ module Capture
 
     private
 
+    # The text itself has to be safe for someone else to run. At firm level a warning is
+    # a warning; at market, where the reader is a stranger, everything the screen raises
+    # has to be dealt with first.
+    def safety_check(strict:)
+      report = SafetyScreen.call(@skill)
+      failing = strict ? report.findings : report.blocking
+      Check.new(key: "safe_to_share", label: "Nothing in the text that should not be there",
+                passed: failing.empty?,
+                detail: failing.empty? ? report.summary : failing.map(&:why).first(2).join("; "))
+    end
+
     def score = SkillVote.tallies([@skill.name])[@skill.name][:score]
 
     def firm_checks
@@ -43,7 +54,8 @@ module Capture
                   passed: trips >= @policy.firm_min_trips && people >= @policy.firm_min_people,
                   detail: "#{trips} trips by #{people} #{'person'.pluralize(people)} (needs #{@policy.firm_min_trips} by #{@policy.firm_min_people})"),
         Check.new(key: "votes", label: "Colleagues vote for it", passed: score >= @policy.firm_min_score,
-                  detail: "Net #{format('%+d', score)} (needs #{format('%+d', @policy.firm_min_score)})")
+                  detail: "Net #{format('%+d', score)} (needs #{format('%+d', @policy.firm_min_score)})"),
+        safety_check(strict: false)
       ]
     end
 
@@ -63,6 +75,7 @@ module Capture
         Check.new(key: "license", label: "Licensed for sharing", passed: @skill.license.present? && !@skill.license.match?(/internal|proprietary/i),
                   detail: @skill.license)
       ]
+      checks << safety_check(strict: true)
       if @policy.market_requires_directions
         checks << Check.new(key: "directions", label: "Has written agent directions", passed: Waypoint.exists?(key: "road:#{@skill.name}"),
                             detail: Waypoint.exists?(key: "road:#{@skill.name}") ? "Road directions written" : "Write the road's directions first")

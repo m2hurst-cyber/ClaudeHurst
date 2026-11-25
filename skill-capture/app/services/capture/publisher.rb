@@ -8,7 +8,7 @@ module Capture
     PROVENANCE_EVENTS = { "skill.published" => "skill.published", "skill.revised" => "skill.revised",
                           "skill.forked" => "skill.branched" }.freeze
 
-    DRAFT_KEYS = %i[draft_name draft_title draft_description draft_body draft_tags draft_inputs draft_outputs review_notes].freeze
+    DRAFT_KEYS = %i[draft_name draft_title draft_description draft_body draft_tags draft_inputs draft_outputs review_notes capabilities].freeze
 
     def self.publish!(candidate, reviewer:, attrs: {}, source_extra: {}) = new(reviewer).publish!(candidate, attrs, source_extra)
     def self.revise!(skill, editor:, attrs:) = new(editor).revise!(skill, attrs)
@@ -34,7 +34,7 @@ module Capture
           title: candidate.draft_title.presence || candidate.display_title,
           description: candidate.draft_description, body: candidate.draft_body,
           domain: candidate.domain, tags: candidate.draft_tags,
-          inputs: candidate.draft_inputs, outputs: candidate.draft_outputs,
+          inputs: candidate.draft_inputs, outputs: candidate.draft_outputs, capabilities: candidate.capabilities,
           parent_skill: previous || branch_of, published_by: @user, published_at: Time.current,
           source: provenance(candidate).merge(candidate.worksheet.present? ? { "worksheet" => candidate.worksheet } : {}).merge(source_extra.to_h.stringify_keys),
           stage: previous&.stage || PromotionPolicy.current.initial_stage, stage_changed_at: previous&.stage_changed_at || Time.current

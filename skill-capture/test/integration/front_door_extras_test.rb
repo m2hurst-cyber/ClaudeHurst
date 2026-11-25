@@ -177,4 +177,13 @@ class FrontDoorExtrasTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match(/Extend the skill/, response.body)
   end
+
+  test "when two answers score the same the thing itself wins, not the material about it" do
+    hits = {
+      "formulas" => [Capture::Find::Hit.new(group: "formulas", key: "aaa", title: "A formula", score: 40)],
+      "skills"   => [Capture::Find::Hit.new(group: "skills", key: "zzz", title: "A skill", score: 40)],
+      "help"     => [Capture::Find::Hit.new(group: "help", key: "000", title: "A guide", score: 40)]
+    }
+    assert_equal "skills", Capture::Find.best(hits, nil).group
+  end
 end

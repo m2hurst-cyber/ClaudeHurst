@@ -66,6 +66,7 @@
 
   <div class="space-y-4 text-sm">
     <% if c.drafted? %><%= render "skills/standard", report: Capture::SkillStandard.check_candidate(c) %><% end %>
+    <% if c.drafted? %><%= render "shared/safety", subject: c %><% end %>
     <div class="panel-soft p-4 space-y-1">
       <h2 class="font-semibold mb-1">Evidence</h2>
       <div>Seen <strong><%= c.occurrence_count %></strong> times by <strong><%= c.distinct_actor_count %></strong> <%= "person".pluralize(c.distinct_actor_count) %></div>

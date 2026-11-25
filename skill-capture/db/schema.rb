@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_25_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -473,6 +473,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_140000) do
     t.string "proposal_kind"
     t.bigint "base_skill_id"
     t.jsonb "worksheet"
+    t.jsonb "capabilities", default: {}, null: false
     t.index ["base_skill_id"], name: "index_skill_candidates_on_base_skill_id"
     t.index ["requested_by_id"], name: "index_skill_candidates_on_requested_by_id"
     t.index ["reviewer_id"], name: "index_skill_candidates_on_reviewer_id"
@@ -674,6 +675,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_140000) do
     t.datetime "stage_changed_at"
     t.string "market_audience", default: "global", null: false
     t.string "content_hash"
+    t.jsonb "capabilities", default: {}, null: false
     t.index ["content_hash"], name: "index_skills_on_content_hash"
     t.index ["name", "version"], name: "index_skills_on_name_and_version", unique: true
     t.index ["parent_skill_id"], name: "index_skills_on_parent_skill_id"

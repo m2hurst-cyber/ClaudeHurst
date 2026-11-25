@@ -11,6 +11,8 @@ class SkillCandidate < ApplicationRecord
   has_one :worksheet_capture, foreign_key: :candidate_id, dependent: :nullify
   PROPOSALS = %w[save extend branch].freeze
 
+  before_validation { self.capabilities = Capture::Capabilities.normalize(capabilities) }
+
   validates :signature, presence: true, uniqueness: true
   validates :status, inclusion: { in: STATUSES }
   validates :origin, inclusion: { in: %w[detected manual] }

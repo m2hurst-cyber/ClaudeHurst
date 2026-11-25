@@ -21,6 +21,31 @@
     <div><%= f.label :draft_inputs, "Inputs (one per line)" %><%= f.text_area :draft_inputs, value: Array(c.draft_inputs).join("\n"), rows: 3, class: input_css %></div>
     <div><%= f.label :draft_outputs, "Outputs (one per line)" %><%= f.text_area :draft_outputs, value: Array(c.draft_outputs).join("\n"), rows: 3, class: input_css %></div>
   </div>
+
+  <%# What it touches. The screen checks the body against this, so leaving it empty is a
+      claim: that the skill stays inside the file in front of it. %>
+  <fieldset class="panel-soft p-4 mt-4">
+    <legend class="px-1 font-semibold text-sm">What this skill touches</legend>
+    <p class="text-xs text-slate-500 mb-3">One per line. Leave a box empty to say the skill does not do that.
+      The text is checked against what you declare here before it can be shared.</p>
+    <div class="grid sm:grid-cols-2 gap-3 text-sm">
+      <% caps = Capture::Capabilities.of(c) %>
+      <% %w[reads writes sends tools hosts].each do |k| %>
+        <div>
+          <%= label_tag "skill_candidate_capabilities_#{k}", Capture::Capabilities::LABELS[k] %>
+          <%= text_area_tag "skill_candidate[capabilities][#{k}]", Array(caps[k]).join("\n"),
+                id: "skill_candidate_capabilities_#{k}", rows: 2, class: input_css,
+                placeholder: { "reads" => "the open workbook", "writes" => "a new sheet", "sends" => "finance inbox",
+                               "tools" => "a macro", "hosts" => "api.example.com" }[k] %>
+        </div>
+      <% end %>
+      <label class="flex items-center gap-2 sm:col-span-2">
+        <%= hidden_field_tag "skill_candidate[capabilities][needs_credentials]", "0", id: nil %>
+        <%= check_box_tag "skill_candidate[capabilities][needs_credentials]", "1", caps["needs_credentials"] %>
+        Needs someone to sign in or supply a key
+      </label>
+    </div>
+  </div>
   <div><%= f.label :draft_body, "Instructions (Markdown)" %><%= f.text_area :draft_body, rows: 18, class: input_css + " font-mono text-sm" %></div>
   <div><%= f.label :review_notes, "Reviewer notes" %><%= f.text_area :review_notes, rows: 2, class: input_css %></div>
   <div class="flex gap-2">

@@ -1,0 +1,39 @@
+<%# What this skill says it touches, and what reading its text turned up. Shown to whoever
+    approves it, because consenting to a skill you cannot see the reach of is not consent. %>
+<% report = Capture::SafetyScreen.call(subject) %>
+<% caps = report.declared %>
+<div class="panel-soft p-4 space-y-2">
+  <h2 class="font-semibold flex items-baseline gap-2">
+    Reach and safety
+    <span class="ml-auto text-xs font-normal <%= report.clean? ? "text-emerald-700" : report.safe_to_share? ? "text-amber-700" : "text-red-700" %>">
+      <%= report.clean? ? "✓ nothing flagged" : report.summary %>
+    </span>
+  </h2>
+
+  <p class="text-slate-600"><%= Capture::Capabilities.summary(caps) %></p>
+
+  <% unless Capture::Capabilities.empty?(caps) %>
+    <dl class="grid grid-cols-[6.5rem_1fr] gap-y-0.5 text-xs">
+      <% Capture::Capabilities::KEYS.each do |k| %>
+        <% next if k == "needs_credentials" ? !caps[k] : Array(caps[k]).empty? %>
+        <dt class="text-slate-500"><%= Capture::Capabilities::LABELS[k] %></dt>
+        <dd><%= k == "needs_credentials" ? "yes" : Array(caps[k]).to_sentence %></dd>
+      <% end %>
+    </dl>
+  <% end %>
+
+  <% if report.findings.any? %>
+    <ul class="space-y-1.5 pt-1">
+      <% report.findings.each do |f| %>
+        <li class="rounded-lg p-2 <%= f.blocking? ? "bg-red-50 text-red-900" : "bg-amber-50 text-amber-900" %>">
+          <p class="text-xs font-medium"><%= f.blocking? ? "Blocks sharing" : "Worth a look" %> — <%= f.why %></p>
+          <p class="text-[11px] font-mono mt-0.5 opacity-80 break-words"><%= f.evidence %></p>
+        </li>
+      <% end %>
+    </ul>
+    <% unless report.safe_to_share? %>
+      <p class="text-xs text-slate-500 pt-1">A skill cannot leave the sandbox while anything here blocks. Edit the
+        text, or declare what it reaches, and this clears.</p>
+    <% end %>
+  <% end %>
+</div>

@@ -12,6 +12,8 @@ class Skill < ApplicationRecord
   has_many :children, class_name: "Skill", foreign_key: :parent_skill_id, dependent: :nullify
   has_one :source_candidate, class_name: "SkillCandidate", dependent: :nullify
 
+  before_validation { self.capabilities = Capture::Capabilities.normalize(capabilities) }
+
   validates :name, presence: true, length: { maximum: 64 }, format: { with: NAME_FORMAT }
   validates :version, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :name }
   validates :title, :body, presence: true
