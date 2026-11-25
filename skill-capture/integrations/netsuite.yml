@@ -1,0 +1,48 @@
+key: netsuite
+name: Oracle NetSuite
+vendor: Oracle
+category: erp
+auth: oauth2
+docs: https://docs.oracle.com/en/cloud/saas/netsuite/
+blurb: >-
+  The mid-market ERP most finance teams in professional services meet first. Order to cash, procure to pay, and the close.
+actions:
+  - key: netsuite.open:record
+    label: Open a record
+    domain: finance
+  - key: netsuite.create:sales_order
+    label: Create a sales order
+    domain: finance
+  - key: netsuite.approve:purchase_order
+    label: Approve a purchase order
+    domain: finance
+  - key: netsuite.create:invoice
+    label: Raise an invoice
+    domain: finance
+  - key: netsuite.apply:payment
+    label: Apply a payment
+    domain: finance
+  - key: netsuite.post:journal
+    label: Post a journal entry
+    domain: finance
+  - key: netsuite.run:saved_search
+    label: Run a saved search
+    domain: finance
+  - key: netsuite.close:period
+    label: Close the period
+    domain: finance
+  - key: netsuite.export:report
+    label: Export a report
+    domain: finance
+records:
+  - customer
+  - sales order
+  - invoice
+  - vendor bill
+  - journal entry
+  - subsidiary
+# Recorded as steps only. These never leave the system of record:
+never:
+  - customer contact details
+  - bank account numbers
+  - anything in a free-text memo

@@ -256,6 +256,7 @@ Rails.application.routes.draw do
       get :deploy, to: "deploy#show"
       resource :pricing, only: %i[show update], controller: :pricing
       resource :gates, only: %i[show update]
+      resources :integrations, only: %i[index create update destroy]
       resource :protocols, only: %i[show update] do
         get :preview, on: :member
       end

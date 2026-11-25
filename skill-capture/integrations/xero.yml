@@ -1,0 +1,41 @@
+key: xero
+name: Xero
+vendor: Xero
+category: accounting
+auth: oauth2
+docs: https://developer.xero.com/documentation/
+blurb: >-
+  The other small-client ledger, strongest outside the US. Bank rules and reconciliation first.
+actions:
+  - key: xero.open:account
+    label: Open an account
+    domain: finance
+  - key: xero.create:invoice
+    label: Create an invoice
+    domain: finance
+  - key: xero.apply:bank_rule
+    label: Apply a bank rule
+    domain: finance
+  - key: xero.reconcile:statement_line
+    label: Reconcile a statement line
+    domain: finance
+  - key: xero.enter:bill
+    label: Enter a bill
+    domain: finance
+  - key: xero.run:report
+    label: Run a report
+    domain: finance
+  - key: xero.lock:period
+    label: Lock the period
+    domain: finance
+records:
+  - contact
+  - invoice
+  - bill
+  - bank transaction
+  - tracking category
+# Recorded as steps only. These never leave the system of record:
+never:
+  - contact details
+  - statement line narratives
+  - bank balances

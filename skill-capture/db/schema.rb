@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_25_170000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -199,6 +199,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_170000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["scope", "scope_key"], name: "index_granularity_overrides_on_scope_and_scope_key", unique: true
+  end
+
+  create_table "integrations", force: :cascade do |t|
+    t.string "provider", null: false
+    t.string "label"
+    t.bigint "source_id"
+    t.bigint "connected_by_id"
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_event_at"
+    t.integer "event_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["connected_by_id"], name: "index_integrations_on_connected_by_id"
+    t.index ["provider"], name: "index_integrations_on_provider", unique: true
+    t.index ["source_id"], name: "index_integrations_on_source_id"
   end
 
   create_table "macro_reviews", force: :cascade do |t|
@@ -979,6 +994,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_170000) do
   add_foreign_key "formula_commands", "users", column: "created_by_id"
   add_foreign_key "formula_commands", "users", column: "verified_by_id"
   add_foreign_key "git_backups", "users"
+  add_foreign_key "integrations", "sources"
+  add_foreign_key "integrations", "users", column: "connected_by_id"
   add_foreign_key "macro_reviews", "users", column: "proposed_by_id"
   add_foreign_key "macro_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "notifications", "users"

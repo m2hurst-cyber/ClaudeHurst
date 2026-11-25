@@ -1,0 +1,44 @@
+key: sap-s4hana
+name: SAP S/4HANA
+vendor: SAP
+category: erp
+auth: oauth2
+docs: https://api.sap.com/
+blurb: >-
+  The largest ERP by share. Where the biggest clients' trial balances and intercompany live.
+actions:
+  - key: sap.open:transaction
+    label: Open a transaction
+    domain: finance
+  - key: sap.post:document
+    label: Post a document
+    domain: finance
+  - key: sap.park:document
+    label: Park a document for review
+    domain: finance
+  - key: sap.clear:open_item
+    label: Clear an open item
+    domain: finance
+  - key: sap.run:fbl3n
+    label: Run a G/L line item report
+    domain: finance
+  - key: sap.execute:intercompany_reconciliation
+    label: Reconcile intercompany
+    domain: finance
+  - key: sap.close:period
+    label: Close the period
+    domain: finance
+  - key: sap.export:trial_balance
+    label: Export the trial balance
+    domain: finance
+records:
+  - company code
+  - G/L account
+  - document
+  - cost centre
+  - profit centre
+# Recorded as steps only. These never leave the system of record:
+never:
+  - employee identifiers
+  - vendor bank details
+  - document line text

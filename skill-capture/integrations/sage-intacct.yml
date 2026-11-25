@@ -1,0 +1,44 @@
+key: sage-intacct
+name: Sage Intacct
+vendor: Sage
+category: erp
+auth: api_key
+docs: https://developer.sage.com/intacct/
+blurb: >-
+  The accounting system professional services firms run their own books on. Dimensions, not departments.
+actions:
+  - key: sage.open:record
+    label: Open a record
+    domain: finance
+  - key: sage.create:ap_bill
+    label: Enter a bill
+    domain: finance
+  - key: sage.approve:ap_bill
+    label: Approve a bill
+    domain: finance
+  - key: sage.create:ar_invoice
+    label: Raise an invoice
+    domain: finance
+  - key: sage.post:journal
+    label: Post a journal entry
+    domain: finance
+  - key: sage.run:financial_report
+    label: Run a financial report
+    domain: finance
+  - key: sage.allocate:dimension
+    label: Allocate across dimensions
+    domain: finance
+  - key: sage.close:book
+    label: Close the book
+    domain: finance
+records:
+  - entity
+  - dimension
+  - AP bill
+  - AR invoice
+  - journal entry
+# Recorded as steps only. These never leave the system of record:
+never:
+  - employee names in dimensions
+  - bank details
+  - memo text

@@ -1,0 +1,37 @@
+key: bill
+name: BILL
+vendor: BILL
+category: accounting
+auth: oauth2
+docs: https://developer.bill.com/docs
+blurb: >-
+  Accounts payable and receivable between the ledger and the bank. Where approvals actually happen.
+actions:
+  - key: bill.open:bill
+    label: Open a bill
+    domain: finance
+  - key: bill.code:bill
+    label: Code a bill
+    domain: finance
+  - key: bill.route:for_approval
+    label: Route for approval
+    domain: finance
+  - key: bill.approve:bill
+    label: Approve a bill
+    domain: finance
+  - key: bill.schedule:payment
+    label: Schedule a payment
+    domain: finance
+  - key: bill.sync:to_ledger
+    label: Sync to the ledger
+    domain: finance
+records:
+  - vendor
+  - bill
+  - approval
+  - payment
+# Recorded as steps only. These never leave the system of record:
+never:
+  - vendor bank details
+  - invoice images
+  - approver comments

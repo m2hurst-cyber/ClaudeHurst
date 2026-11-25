@@ -1,0 +1,44 @@
+key: salesforce
+name: Salesforce
+vendor: Salesforce
+category: crm
+auth: oauth2
+docs: https://developer.salesforce.com/docs
+blurb: >-
+  The CRM most pipelines are run from, and the system of record for what was promised to a client.
+actions:
+  - key: salesforce.open:record
+    label: Open a record
+    domain: sales
+  - key: salesforce.create:opportunity
+    label: Create an opportunity
+    domain: sales
+  - key: salesforce.advance:stage
+    label: Move a deal to the next stage
+    domain: sales
+  - key: salesforce.log:activity
+    label: Log an activity
+    domain: sales
+  - key: salesforce.generate:quote
+    label: Generate a quote
+    domain: sales
+  - key: salesforce.close:opportunity
+    label: Close an opportunity
+    domain: sales
+  - key: salesforce.run:report
+    label: Run a report
+    domain: sales
+  - key: salesforce.export:to_excel
+    label: Export to Excel
+    domain: sales
+records:
+  - account
+  - contact
+  - opportunity
+  - quote
+  - case
+# Recorded as steps only. These never leave the system of record:
+never:
+  - contact names and emails
+  - deal values on named accounts
+  - call notes

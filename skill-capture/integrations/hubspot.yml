@@ -1,0 +1,38 @@
+key: hubspot
+name: HubSpot
+vendor: HubSpot
+category: crm
+auth: oauth2
+docs: https://developers.hubspot.com/docs/api/overview
+blurb: >-
+  The CRM growing firms start on. Marketing, pipeline and quoting in one place.
+actions:
+  - key: hubspot.open:record
+    label: Open a record
+    domain: sales
+  - key: hubspot.create:deal
+    label: Create a deal
+    domain: sales
+  - key: hubspot.advance:deal_stage
+    label: Move a deal stage
+    domain: sales
+  - key: hubspot.log:engagement
+    label: Log an engagement
+    domain: sales
+  - key: hubspot.send:quote
+    label: Send a quote
+    domain: sales
+  - key: hubspot.run:workflow
+    label: Run a workflow
+    domain: sales
+records:
+  - company
+  - contact
+  - deal
+  - quote
+  - ticket
+# Recorded as steps only. These never leave the system of record:
+never:
+  - contact details
+  - email bodies
+  - form submissions

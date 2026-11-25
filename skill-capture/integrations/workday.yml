@@ -1,0 +1,41 @@
+key: workday
+name: Workday
+vendor: Workday
+category: erp
+auth: oauth2
+docs: https://community.workday.com/api
+blurb: >-
+  Financials and the people data beside them. Where time, expense and project billing meet the ledger.
+actions:
+  - key: workday.open:worklet
+    label: Open a worklet
+    domain: finance
+  - key: workday.submit:expense_report
+    label: Submit an expense report
+    domain: finance
+  - key: workday.approve:expense_report
+    label: Approve an expense report
+    domain: finance
+  - key: workday.enter:time
+    label: Enter time
+    domain: finance
+  - key: workday.run:report
+    label: Run a report
+    domain: finance
+  - key: workday.create:supplier_invoice
+    label: Create a supplier invoice
+    domain: finance
+  - key: workday.close:period
+    label: Close the period
+    domain: finance
+records:
+  - worker
+  - supplier invoice
+  - expense report
+  - project
+  - ledger account
+# Recorded as steps only. These never leave the system of record:
+never:
+  - worker names
+  - compensation
+  - anything from an expense receipt

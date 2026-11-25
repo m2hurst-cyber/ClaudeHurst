@@ -1,0 +1,41 @@
+key: dynamics-365
+name: Microsoft Dynamics 365
+vendor: Microsoft
+category: erp
+auth: oauth2
+docs: https://learn.microsoft.com/en-us/dynamics365/
+blurb: >-
+  Business Central and Sales in one tenant, next to the Office the add-in already watches.
+actions:
+  - key: dynamics.open:card
+    label: Open a card
+    domain: finance
+  - key: dynamics.create:sales_invoice
+    label: Create a sales invoice
+    domain: finance
+  - key: dynamics.post:journal_batch
+    label: Post a journal batch
+    domain: finance
+  - key: dynamics.run:account_schedule
+    label: Run an account schedule
+    domain: finance
+  - key: dynamics.create:opportunity
+    label: Create an opportunity
+    domain: sales
+  - key: dynamics.advance:opportunity
+    label: Move an opportunity on
+    domain: sales
+  - key: dynamics.export:to_excel
+    label: Send to Excel
+    domain: finance
+records:
+  - customer
+  - vendor
+  - sales invoice
+  - general journal
+  - opportunity
+# Recorded as steps only. These never leave the system of record:
+never:
+  - contact details
+  - credit limits
+  - notes

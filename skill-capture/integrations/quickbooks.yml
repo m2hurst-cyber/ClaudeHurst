@@ -1,0 +1,44 @@
+key: quickbooks
+name: QuickBooks Online
+vendor: Intuit
+category: accounting
+auth: oauth2
+docs: https://developer.intuit.com/app/developer/qbo/docs/get-started
+blurb: >-
+  What most small clients keep their books in, and what a firm's bookkeeping team lives in all day.
+actions:
+  - key: quickbooks.open:register
+    label: Open a register
+    domain: finance
+  - key: quickbooks.create:invoice
+    label: Create an invoice
+    domain: finance
+  - key: quickbooks.receive:payment
+    label: Receive a payment
+    domain: finance
+  - key: quickbooks.enter:bill
+    label: Enter a bill
+    domain: finance
+  - key: quickbooks.reconcile:account
+    label: Reconcile an account
+    domain: finance
+  - key: quickbooks.categorise:transaction
+    label: Categorise a transaction
+    domain: finance
+  - key: quickbooks.run:report
+    label: Run a report
+    domain: finance
+  - key: quickbooks.close:books
+    label: Close the books
+    domain: finance
+records:
+  - customer
+  - invoice
+  - bill
+  - bank transaction
+  - chart of accounts
+# Recorded as steps only. These never leave the system of record:
+never:
+  - customer names
+  - bank feed descriptions
+  - amounts on named accounts

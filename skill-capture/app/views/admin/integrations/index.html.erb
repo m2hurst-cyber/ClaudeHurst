@@ -1,0 +1,90 @@
+<% content_for :title, "Integrations" %>
+<div class="max-w-4xl">
+  <h1 class="text-2xl font-bold">Integrations</h1>
+  <p class="text-slate-600 mt-1">The business systems work happens in. Connecting one gives it a token to post
+    events to and teaches Skill Capture that system's vocabulary, so a repeated sequence reads as
+    “Code a bill → Route for approval → Approve a bill” rather than three keys nobody can judge.</p>
+
+  <% if @issued %>
+    <div class="panel-soft p-4 mt-5 border-l-4 border-verified-600">
+      <h2 class="font-semibold">Token for <%= @issued_for %></h2>
+      <p class="text-sm text-slate-600 mt-0.5">Shown once. Point the system's webhook, middleware or scheduled
+        export at the endpoint below with this token.</p>
+      <pre class="mt-3 bg-white rounded-lg p-3 text-xs font-mono overflow-x-auto select-all"><%= @issued %></pre>
+      <pre class="mt-2 bg-paper-900 text-paper-200 rounded-lg p-3 text-[11px] font-mono overflow-x-auto select-all">POST <%= request.base_url %>/api/v1/events
+Authorization: Bearer <%= @issued %>
+Content-Type: application/json
+
+{"events":[{"action":"netsuite.create:invoice","actor":{"id":"u-7f3a"},"occurred_at":"<%= Time.current.utc.iso8601 %>"}]}</pre>
+    </div>
+  <% end %>
+
+  <% if @connected.any? %>
+    <h2 class="font-semibold mt-7 mb-2">Connected</h2>
+    <ul class="panel-soft divide-y divide-sage-200">
+      <% @connected.each do |i| %>
+        <% d = i.definition %>
+        <li class="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+          <span class="min-w-0 flex-1">
+            <span class="block font-medium"><%= i.name %>
+              <span class="text-xs font-normal text-slate-500">· <%= d&.category_label %> · <%= d&.vendor %></span></span>
+            <span class="block text-xs text-slate-500">
+              <%= i.event_count.positive? ? "#{number_with_delimiter(i.event_count)} #{'step'.pluralize(i.event_count)} collected" : "nothing collected yet" %>
+              <%= "· last #{nice_time(i.last_event_at)}" if i.last_event_at %>
+              <%= "· connected by #{i.connected_by.name}" if i.connected_by %>
+            </span>
+          </span>
+          <span class="flex items-center gap-1.5 text-xs shrink-0 w-[64px]">
+            <span class="w-2 h-2 rounded-full <%= { "live" => "bg-verified-600 animate-pulse", "quiet" => "bg-verified-600/40", "off" => "bg-slate-300" }[i.state] %>"></span>
+            <span class="<%= i.live? ? "text-verified-600 font-medium" : "text-slate-500" %>"><%= i.live? ? "Live" : i.enabled? ? "Quiet" : "Off" %></span>
+          </span>
+          <%= render "switch", integration: i %>
+          <%= button_to "Disconnect", admin_integration_path(i), method: :delete, class: "text-xs text-blocked-600 hover:underline",
+                data: { turbo_confirm: "Disconnect #{i.name}? Its token stops working. Steps already collected are kept." } %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <h2 class="font-semibold mt-8 mb-1">The catalogue</h2>
+  <p class="text-sm text-slate-500 mb-3">Ten systems, with the steps each one produces and what we refuse to keep
+    from it. Adding an eleventh is a file in <code class="text-xs">integrations/</code>, not a deployment.</p>
+
+  <% @catalogue.each do |category, providers| %>
+    <p class="text-xs uppercase tracking-wide text-slate-400 mt-5 mb-1.5"><%= Capture::Integrations::CATEGORIES[category] %></p>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <% providers.each do |p| %>
+        <div class="panel-soft p-4">
+          <div class="flex items-baseline gap-2">
+            <h3 class="font-medium"><%= p.name %></h3>
+            <span class="text-xs text-slate-500"><%= p.vendor %></span>
+            <% if p.connected? %><span class="lg-pill bg-verified-100 text-verified-600 ml-auto">connected</span><% end %>
+          </div>
+          <p class="text-sm text-slate-600 mt-1"><%= p.blurb %></p>
+
+          <details class="mt-2 text-xs">
+            <summary class="cursor-pointer text-signal-700"><%= pluralize(p.actions.size, "step") %> it produces</summary>
+            <ul class="mt-1.5 space-y-0.5">
+              <% p.actions.each do |a| %>
+                <li class="flex gap-2"><span class="font-mono text-[10px] text-slate-400 w-40 shrink-0 truncate"><%= a["key"] %></span><%= a["label"] %></li>
+              <% end %>
+            </ul>
+            <p class="mt-2 text-slate-500"><span class="font-medium">Never kept:</span> <%= p.never.to_sentence %>.</p>
+          </details>
+
+          <div class="flex items-center gap-2 mt-3">
+            <% unless p.connected? %>
+              <%= form_with url: admin_integrations_path, method: :post, class: "flex gap-2 items-center" do %>
+                <%= hidden_field_tag :provider, p.key %>
+                <%= text_field_tag :label, nil, placeholder: "#{p.name} (production)",
+                      class: "bg-white border-0 rounded-lg px-2.5 py-1.5 shadow-sm text-xs w-44" %>
+                <%= submit_tag "Connect", class: "px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs hover:bg-slate-700 transition-colors cursor-pointer" %>
+              <% end %>
+            <% end %>
+            <%= link_to "API docs ↗", p.docs, class: "text-xs text-slate-500 hover:underline ml-auto", target: "_blank", rel: "noopener" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
