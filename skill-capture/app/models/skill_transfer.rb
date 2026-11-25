@@ -68,7 +68,9 @@ class SkillTransfer < ApplicationRecord
     end
   end
   # What is being sold: the skill's content at that version (not its stage, which may change).
-  def self.content_fingerprint(s) = fingerprint({ name: s.name, version: s.version, title: s.title, description: s.description, body: s.body }.to_json)
+  # The skill's own content hash: the same identity the provenance chain and any
+  # counterparty use, so "this is what was offered" means one thing everywhere.
+  def self.content_fingerprint(s) = s.compute_content_hash
 
   # ---------- 1. offer: the sender's leg goes into escrow ----------
   def self.offer!(sender:, recipient:, names:, price: 0, message: nil, allow_forward: false)
@@ -132,6 +134,12 @@ class SkillTransfer < ApplicationRecord
         end
         update!(status: "settled", settled_at: Time.current, responded_at: Time.current)
         log!("crossed", by, delivered: names, paid: price.to_s("F"))
+        # Each delivered skill is recorded in the provenance chain by its content hash, so
+        # the recipient can prove later exactly what they were given.
+        items.each do |i|
+          Capture::Provenance.append!(event: "skill.transferred", skill: i["name"], actor: sender, content_hash: i["sha256"],
+                                      version: i["version"], transfer: id, to: recipient_id, from: sender_id, price: price.to_s("F"))
+        end
       else
         problems << "escrow holds #{escrow_balance.to_s('F')}, expected #{price.to_s('F')}" if problems.empty?
         refund_inside!(by, problems)

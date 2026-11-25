@@ -26,6 +26,23 @@ class Skill < ApplicationRecord
   MARKET_AUDIENCES = %w[industry global].freeze
   validates :market_audience, inclusion: { in: MARKET_AUDIENCES }
 
+  # What makes this skill what it is. Stage, votes, metrics, timestamps and who published
+  # it are deliberately absent: promoting a skill does not change the skill. Two firms that
+  # hold the same skill compute the same hash from the same bytes, which is what lets it be
+  # referred to, transferred and checked by someone with no access to this database.
+  def content_fields
+    { "name" => name, "title" => title, "description" => description, "body" => body,
+      "tags" => Array(tags).map(&:to_s).sort, "inputs" => inputs, "outputs" => outputs,
+      "workflow" => Array(source["workflow"]), "license" => license }
+  end
+
+  def compute_content_hash = Capture::Canonical.digest(content_fields)
+  def content_hash_intact? = content_hash == compute_content_hash
+  # Short form for the interface: enough to compare by eye, never to rely on.
+  def short_hash = content_hash&.first(12)
+
+  before_save { self.content_hash = compute_content_hash }
+
   scope :published, -> { where(status: "published") }
   scope :shared, -> { where(stage: SHARED_STAGES) }
 

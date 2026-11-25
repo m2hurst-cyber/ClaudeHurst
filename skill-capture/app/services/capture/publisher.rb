@@ -4,6 +4,10 @@ module Capture
   class Publisher
     class Error < StandardError; end
 
+    # The chain calls a fork a branch, because that is what it is to the people using it.
+    PROVENANCE_EVENTS = { "skill.published" => "skill.published", "skill.revised" => "skill.revised",
+                          "skill.forked" => "skill.branched" }.freeze
+
     DRAFT_KEYS = %i[draft_name draft_title draft_description draft_body draft_tags draft_inputs draft_outputs review_notes].freeze
 
     def self.publish!(candidate, reviewer:, attrs: {}, source_extra: {}) = new(reviewer).publish!(candidate, attrs, source_extra)
@@ -149,6 +153,7 @@ module Capture
     def after_publish(skill, action, **meta)
       classify(skill)
       AuditLog.record(action, user: @user, subject: skill, name: skill.name, version: skill.version, **meta)
+      Provenance.append!(event: PROVENANCE_EVENTS.fetch(action, "skill.published"), skill: skill, actor: @user, **meta)
       SkillFile.export(skill) if skill.shared? # sandbox skills stay out of the skill repository
       check_publish_rate!
     end

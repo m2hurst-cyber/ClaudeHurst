@@ -3,6 +3,10 @@ default: &default
     class: CaptureSweepJob
     queue: default
     schedule: every hour at minute 23
+  provenance_anchor:
+    class: ProvenanceAnchorJob
+    queue: default
+    schedule: every day at 3:07am
   rest_stop_sweep:
     class: RestStopSweepJob
     queue: default

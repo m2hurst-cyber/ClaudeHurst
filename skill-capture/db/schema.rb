@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000021) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -304,6 +304,35 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000021) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_protocols_on_key", unique: true
+  end
+
+  create_table "provenance_anchors", force: :cascade do |t|
+    t.date "on_date", null: false
+    t.bigint "from_sequence", null: false
+    t.bigint "to_sequence", null: false
+    t.integer "entry_count", default: 0, null: false
+    t.string "root_hash", null: false
+    t.string "tip_hash", null: false
+    t.datetime "created_at", null: false
+    t.index ["on_date"], name: "index_provenance_anchors_on_on_date", unique: true
+  end
+
+  create_table "provenance_entries", force: :cascade do |t|
+    t.bigint "sequence", null: false
+    t.string "prev_hash", null: false
+    t.string "entry_hash", null: false
+    t.string "event", null: false
+    t.string "skill_name"
+    t.integer "skill_version"
+    t.string "content_hash"
+    t.string "actor_key"
+    t.jsonb "payload", default: {}, null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["content_hash"], name: "index_provenance_entries_on_content_hash"
+    t.index ["entry_hash"], name: "index_provenance_entries_on_entry_hash", unique: true
+    t.index ["sequence"], name: "index_provenance_entries_on_sequence", unique: true
+    t.index ["skill_name"], name: "index_provenance_entries_on_skill_name"
   end
 
   create_table "resource_folders", force: :cascade do |t|
@@ -635,6 +664,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000021) do
     t.string "stage", default: "local", null: false
     t.datetime "stage_changed_at"
     t.string "market_audience", default: "global", null: false
+    t.string "content_hash"
+    t.index ["content_hash"], name: "index_skills_on_content_hash"
     t.index ["name", "version"], name: "index_skills_on_name_and_version", unique: true
     t.index ["parent_skill_id"], name: "index_skills_on_parent_skill_id"
     t.index ["published_by_id"], name: "index_skills_on_published_by_id"
