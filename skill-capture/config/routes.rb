@@ -90,7 +90,8 @@ Rails.application.routes.draw do
   end
 
   authenticate :user do
-    root "skills#index"
+    root "find#show"
+    get "find", to: "find#show"
     get "map", to: "skill_maps#show", as: :skill_map
     get "map/route", to: "skill_maps#route", as: :skill_map_route
     get "map/areas", to: "skill_maps#areas", as: :skill_map_areas

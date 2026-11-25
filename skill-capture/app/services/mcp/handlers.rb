@@ -21,6 +21,14 @@ module Mcp
         note: skills.empty? ? "Nothing matched. Try fewer words, or search without an area." : nil }.compact
     end
 
+    def find_anything(a, ctx)
+      r = Capture::Find.call(a["question"], viewer: viewer(ctx), limit: [[a["limit"].to_i, 1].max, 20].min.nonzero? || 5)
+      return { question: r[:query], total: 0, note: "Nothing matched. If the company does this but nobody has written it down, capture it once and it becomes a skill." } if r[:total].to_i.zero?
+      { question: r[:query], intent: r[:intent], total: r[:total],
+        best: r[:best]&.to_h, road: r[:best]&.group == "skills" ? Capture::Find.neighbourhood(r[:best].key, viewer(ctx))&.except(:junction) : nil,
+        groups: r[:groups].transform_values { |hits| hits.map(&:to_h) } }.compact
+    end
+
     def get_skill(a, ctx)
       s = Skill.current(a["name"].to_s)
       raise Registry::Error.new(-32_000, "No skill named #{a['name']}") unless s && (viewer(ctx) ? s.visible_to?(viewer(ctx)) : s.shared?)

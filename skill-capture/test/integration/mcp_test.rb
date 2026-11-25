@@ -14,6 +14,7 @@ class McpTest < ActionDispatch::IntegrationTest
     @agent, @agent_token = Source.issue!(name: "Takeoff agent", kind: "integration")
     @person_token = AddinToken.issue!(user: @pm, host: "Excel").last
     Capture::Playbook.find("roofing-solar").install!(user: @admin)
+    Capture::Playbook.find("jobcost-worksheets").install!(user: @admin)
   end
 
   def rpc(method, params = nil, token: @agent_token, id: 1)
@@ -39,8 +40,8 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_equal({}, rpc("ping").fetch("result"))
 
     tools = rpc("tools/list").dig("result", "tools")
-    assert_equal 10, tools.size
-    assert_equal %w[add_job_document complete_task find_route get_job get_skill list_playbooks list_tasks report_usage search_skills start_job],
+    assert_equal 11, tools.size
+    assert_equal %w[add_job_document complete_task find_anything find_route get_job get_skill list_playbooks list_tasks report_usage search_skills start_job],
                  tools.map { |t| t["name"] }.sort
     tools.each do |t|
       assert t["description"].to_s.length > 40, "#{t['name']} needs a description an agent can act on"
@@ -60,7 +61,21 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
     assert_match(/integration token/, response.parsed_body.dig("error", "message"))
     get "/mcp", headers: { "Authorization" => "Bearer #{@agent_token}" }
-    assert_equal 10, response.parsed_body["tools"].size
+    assert_equal 11, response.parsed_body["tools"].size
+  end
+
+  test "the front door answers an agent's question across everything at once" do
+    r = data("find_anything", { question: "retainage on the pay application" })
+    assert_operator r["total"], :>, 0
+    assert_equal "skills", r.dig("best", "group")
+    assert r["road"], "a skill answer comes with the road it sits on"
+    assert r["groups"].keys.size >= 2, "one question, answers from more than one kind of thing"
+    # the same question across groups: the formula library answers it too
+    assert_includes r.dig("groups", "formulas").map { |f| f["key"] }, "retainage"
+    start = data("find_anything", { question: "start a roofing and solar job" })
+    assert_equal ["start", "playbooks"], [start["intent"], start.dig("best", "group")]
+    assert_equal "Start a job", start.dig("best", "action")
+    assert_equal 0, data("find_anything", { question: "zzzz nothing like this" })["total"]
   end
 
   test "an agent searches the library, reads a skill and follows the map" do

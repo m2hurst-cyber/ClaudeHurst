@@ -40,6 +40,14 @@ module Mcp
           limit: int("How many to return (default 20, max 100)")
         }, required: [] } },
 
+      { name: "find_anything", handler: :find_anything,
+        title: "Ask the front door",
+        description: "One question, answered across everything this company knows: skills, the playbooks a job runs through, jobs in flight, flows, templates, formula commands and approved macros. Start here when you don't know which of those you want; use search_skills when you know it's a procedure.",
+        input_schema: { type: "object", properties: {
+          question: str("What you are trying to do, in your own words"),
+          limit: int("Answers per group (default 5)")
+        }, required: %w[question] } },
+
       { name: "get_skill", handler: :get_skill,
         title: "Read one skill",
         description: "The whole skill: its SKILL.md, the directions for the road it sits on, the resources it calls for, what it costs to run, any approved macro that does it without the AI, and the worksheet blueprint when it builds a sheet.",

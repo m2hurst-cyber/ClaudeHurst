@@ -1,0 +1,113 @@
+<% content_for :title, @result[:query].presence || "Find anything" %>
+<% r = @result %>
+<div class="max-w-5xl mx-auto" data-controller="find">
+  <div class="text-center pt-2 pb-5">
+    <h1 class="text-2xl font-bold mb-1"><%= r[:empty] ? "What are you trying to do?" : "#{pluralize(r[:total], 'answer')} for “#{r[:query]}”" %></h1>
+    <p class="text-sm text-slate-500 mb-3">Ask for a procedure, a job, a formula, a template, or say what you want to start. Everything the company knows is in here.</p>
+    <%= form_with url: find_path, method: :get, class: "flex gap-2 max-w-2xl mx-auto" do %>
+      <input name="q" value="<%= r[:query] %>" data-find-target="box" autofocus autocomplete="off"
+             placeholder="How do we bill a commercial re-roof?   ·   Start a roofing job   ·   retainage   ·   J-2041"
+             class="flex-1 border rounded-lg px-4 py-2.5 shadow-sm" aria-label="Ask for anything">
+      <button class="px-4 py-2.5 rounded-lg bg-slate-900 text-white font-medium">Find</button>
+    <% end %>
+    <p class="text-xs text-slate-400 mt-1.5">Press <kbd class="px-1 border rounded bg-white">/</kbd> anywhere to come back here</p>
+  </div>
+
+  <% if r[:total].to_i.zero? && !r[:empty] %>
+    <div class="bg-white border rounded p-6 text-center text-sm text-slate-600">
+      <p class="mb-2">Nothing matched “<%= r[:query] %>”.</p>
+      <p>If the company does this but nobody has written it down, that's what capture is for:
+        <%= link_to "record it once in Office", prompts_path, class: "text-sky-700 hover:underline" %> and it becomes a skill for everyone.</p>
+    </div>
+  <% end %>
+
+  <% if r[:loose] && r[:total].to_i.positive? %>
+    <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-2 mb-3">Nothing answers that exactly. These are the closest things the company knows about.</p>
+  <% end %>
+
+  <% if (b = r[:best]) %>
+    <section class="bg-white border-2 border-slate-900 rounded-lg p-4 mb-4" aria-label="Best answer">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="flex-1 min-w-64">
+          <div class="text-xs uppercase tracking-wide text-slate-500 mb-0.5"><%= { "skills" => "Skill", "playbooks" => "Playbook", "jobs" => "In flight", "flows" => "Flow", "resources" => "Template", "formulas" => "Formula", "macros" => "Macro" }[b.group] %></div>
+          <%= link_to b.title, b.url, class: "text-lg font-semibold text-sky-700 hover:underline" %>
+          <p class="text-sm text-slate-700 mt-0.5"><%= b.subtitle %></p>
+          <div class="text-xs text-slate-500 mt-1"><%= b.badge %></div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <%= link_to "Open", b.url, class: "px-3 py-1.5 rounded bg-slate-900 text-white text-sm text-center" %>
+          <% if b.action %><%= link_to b.action, b.action_url, class: "px-3 py-1.5 rounded border bg-white text-sm text-center" %><% end %>
+          <% if b.group == "skills" %><%= link_to "Copy for LLM", skill_path(b.key, format: :md), class: "px-3 py-1.5 rounded border bg-white text-sm text-center" %><% end %>
+        </div>
+      </div>
+
+      <% if @map %>
+        <div class="border-t mt-3 pt-3">
+          <div class="text-xs text-slate-500 mb-2">Where it sits on the road</div>
+          <div class="flex flex-wrap items-center gap-2 text-sm">
+            <% @map[:before].each do |n| %>
+              <%= link_to n[:title], find_path(q: r[:query], centre: n[:name]), class: "px-2 py-1 rounded border bg-slate-50 hover:bg-white", title: "#{n[:traffic]} trips" %>
+              <span class="text-slate-400" aria-hidden="true">→</span>
+            <% end %>
+            <span class="px-2.5 py-1 rounded bg-slate-900 text-white font-medium"><%= @map[:centre][:title] %></span>
+            <% @map[:after].each do |n| %>
+              <span class="text-slate-400" aria-hidden="true">→</span>
+              <%= link_to n[:title], find_path(q: r[:query], centre: n[:name]), class: "px-2 py-1 rounded border bg-slate-50 hover:bg-white", title: "#{n[:traffic]} trips" %>
+            <% end %>
+            <% if @map[:before].empty? && @map[:after].empty? %><span class="text-slate-500 text-xs">Not yet connected to other skills.</span><% end %>
+            <%= link_to "Open the whole map →", skill_map_path(q: @map[:centre][:name]), class: "text-xs text-sky-700 hover:underline ml-auto" %>
+          </div>
+          <% if @map[:junction].present? %>
+            <details class="mt-2 text-xs"><summary class="cursor-pointer text-sky-700">Which way next</summary>
+              <div class="mt-1"><%= skill_markdown(@map[:junction]) %></div></details>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% r[:groups].each do |group, all| %>
+    <% hits = r[:best] ? all.reject { |x| x.group == r[:best].group && x.key == r[:best].key } : all %>
+    <% next if hits.empty? %>
+    <section class="mb-4">
+      <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1.5"><%= { "skills" => "Skills", "playbooks" => "Playbooks", "jobs" => "Jobs in flight", "flows" => "Flows", "resources" => "Templates and resources", "formulas" => "Formulas", "macros" => "Macros" }[group] %> <span class="text-slate-400">(<%= hits.size %>)</span></h2>
+      <ul class="bg-white border rounded divide-y">
+        <% hits.each do |x| %>
+          <li class="p-3 flex flex-wrap items-start justify-between gap-3">
+            <div class="flex-1 min-w-64">
+              <%= link_to x.title, x.url, class: "font-medium text-sky-700 hover:underline" %>
+              <p class="text-sm text-slate-600"><%= x.subtitle %></p>
+              <div class="text-xs text-slate-500 mt-0.5"><%= x.badge %></div>
+            </div>
+            <% if x.action %><%= link_to x.action, x.action_url, class: "px-2.5 py-1 rounded border bg-white text-xs" %><% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if @desk %>
+    <section class="mt-6" aria-label="Your desk">
+      <h2 class="font-semibold mb-2">Waiting on you</h2>
+      <div class="grid md:grid-cols-2 gap-3">
+        <% panel = ->(title, items, empty) { capture do %>
+          <div class="bg-white border rounded p-3 text-sm">
+            <h3 class="font-medium mb-1"><%= title %></h3>
+            <% if items.blank? %><p class="text-slate-500 text-xs"><%= empty %></p><% else %>
+              <ul class="space-y-1.5"><% items.each do |i| %><li><%= i %></li><% end %></ul>
+            <% end %>
+          </div>
+        <% end } %>
+
+        <%= panel.("Your turn in a flow", @desk[:tasks].map { |t| safe_join([link_to(t[:title], t[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " · #{t[:flow]}#{t[:app] != 'Agent' ? " · in #{t[:app]}" : ''}#{t[:split] ? ' · your part of a split task' : ''}", class: "text-xs text-slate-500")]) }, "No tasks are waiting for you.") %>
+
+        <%= panel.("Jobs in flight", @desk[:jobs].map { |j| safe_join([link_to("#{j[:called].capitalize} #{j[:reference]}", j[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " · #{j[:verified]} of #{j[:of]} verified", class: "text-xs text-slate-500"), (content_tag(:span, "Next: #{j[:next]}#{j[:blocking].any? ? " · waiting on #{j[:blocking].to_sentence.downcase}" : ''}", class: "block text-xs text-slate-600") if j[:next])].compact) }, "No open jobs.") %>
+
+        <% if @desk[:reviews] %><%= panel.("Waiting for your review", @desk[:reviews].map { |x| link_to(x[:title], x[:url], class: "text-sky-700 hover:underline") }, "Nothing to review.") %><% end %>
+        <%= panel.("Sent to you", @desk[:transfers].map { |t| safe_join([link_to(t[:label], t[:url], class: "text-sky-700 hover:underline"), content_tag(:span, " from #{t[:from]}", class: "text-xs text-slate-500")]) }, "Nothing sent to you.") %>
+        <%= panel.("Your repeated work", @desk[:prompts].map { |p| link_to(p[:title], p[:url], class: "text-sky-700 hover:underline") }, "Nothing to save, extend or branch yet.") %>
+        <%= panel.("Your skills", @desk[:mine].map { |s| link_to(s[:title], s[:url], class: "text-sky-700 hover:underline") }, "Nothing published by you yet.") %>
+      </div>
+    </section>
+  <% end %>
+</div>

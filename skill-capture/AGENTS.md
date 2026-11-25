@@ -411,5 +411,12 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 - `Mcp::Registry` (ten tools with JSON schemas) and `Mcp::Handlers`. Every call is audited (`mcp.call` / `mcp.refused`).
 - `FlowRun#close_dispatch!`: finishing a task (or a part) clears it from the doer's queue, so `list_tasks` only ever shows live work.
 - Connection snippet on Admin → Integrations.
-- Tests: 185 Rails runs, 42 JavaScript tests.
+
+
+## Changelog: the front door
+
+- `Capture::Find` — one question across skills (name, title, description and body), playbooks, jobs, flows, resources, formula commands and approved macros. Scoring: whole phrase > most of it > a word in passing, weighted by word length (long words are the specific ones) and by field (name > title > description > body), with a floor; below the floor it falls back to "loosely related" rather than an empty page. A leading verb sets `intent` and lifts the things you can *do*. Ties break on key, so ranking is deterministic.
+- `FindController` at `/` and `/find`: best answer + its neighbourhood (`Capture::Find.neighbourhood`: before, after, junction, re-centre by clicking), grouped results, and the desk (your turn in a flow, jobs in flight with the blocking check, transfers, reviews, prompts, your skills). `find_controller.js` binds `/`.
+- MCP gains `find_anything` (11 tools). `FlowRun`/desk fix: the next leg is the first unverified one *along the road*, not whichever the hash yields first.
+- Tests: 193 Rails runs, 42 JavaScript tests.
 
