@@ -30,13 +30,25 @@
   <%= f.submit "Filter", class: btn %>
 <% end %>
 
-<div class="flex flex-wrap items-center gap-1.5 mb-3 text-sm" aria-label="Filter by app">
-  <span class="text-xs text-slate-500 mr-1">App</span>
-  <%= link_to "All apps", skills_path(request.query_parameters.except("app", "page")), class: "px-2 py-1 rounded border text-xs #{params[:app].blank? ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { current: params[:app].blank? ? "true" : nil } %>
+<%# The app marks speak for themselves. No borders, no captions: the one you are in is
+    the one with a ring around it. %>
+<div class="flex flex-wrap items-center gap-2 mb-3" aria-label="Filter by app">
+  <% ring = ->(on) { "rounded-full p-1 transition-shadow duration-200 #{on ? 'shadow-[0_0_0_2px_var(--color-slate-900)]' : 'hover:shadow-[0_0_0_2px_var(--color-sage-300)]'}" } %>
+
+  <%= link_to skills_path(request.query_parameters.except("app", "page")), class: ring.(params[:app].blank?),
+        title: "Every app", "aria-label": "Show skills for every app",
+        aria: { current: params[:app].blank? ? "true" : nil } do %>
+    <span class="grid place-items-center w-7 h-7 rounded-full bg-sage-200 text-sage-700" aria-hidden="true">
+      <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="12" cy="4" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/></svg>
+    </span>
+  <% end %>
+
   <% SkillClassification::APPS.each do |a| %>
     <% on = params[:app] == a %>
-    <%= link_to skills_path(request.query_parameters.except("page").merge("app" => (on ? nil : a)).compact), class: "inline-flex items-center gap-1 px-2 py-1 rounded border text-xs #{on ? 'bg-slate-900 text-white' : 'bg-white'}", aria: { pressed: on } do %>
-      <span class="inline-grid place-items-center w-4 h-4 rounded-sm text-[9px] font-bold text-white" style="background: <%= ApplicationHelper::APP_STYLE[a][1] %>" aria-hidden="true"><%= ApplicationHelper::APP_STYLE[a][0] %></span><%= a %>
+    <%= link_to skills_path(request.query_parameters.except("page").merge("app" => (on ? nil : a)).compact),
+          class: ring.(on), title: a, "aria-label": "#{on ? "Stop filtering by" : "Only"} #{a}", aria: { pressed: on } do %>
+      <span class="grid place-items-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
+            style="background: <%= ApplicationHelper::APP_STYLE[a][1] %>" aria-hidden="true"><%= ApplicationHelper::APP_STYLE[a][0] %></span>
     <% end %>
   <% end %>
 </div>
