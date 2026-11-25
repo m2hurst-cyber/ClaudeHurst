@@ -102,6 +102,8 @@ Rails.application.routes.draw do
     post "start/restart", to: "tour#restart", as: :restart_tour
     get "help", to: "help#index", as: :help, format: /html|md/
     get "help/:slug", to: "help#show", as: :help_guide, format: /html|md/
+    get "agents/granularity", to: "agent_directions#index", as: :agent_directions, format: /html|md/
+    get "agents/granularity/:key", to: "agent_directions#show", as: :agent_direction, format: /html|md/
     get "map", to: "skill_maps#show", as: :skill_map
     get "map/route", to: "skill_maps#route", as: :skill_map_route
     get "map/areas", to: "skill_maps#areas", as: :skill_map_areas

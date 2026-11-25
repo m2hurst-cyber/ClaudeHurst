@@ -55,11 +55,26 @@ module Capture
       @client = client || Anthropic::Client.new
     end
 
+    # The firm's directions for the size of skill it wants, as agent-facing Markdown.
+    # Without this the drafter writes whatever size it feels like and the detector's
+    # granularity setting is undone at the last step.
+    def level = @level ||= Granularity.level_for(domain: @c.domain, user: @c.requested_by)
+
+    def system_prompt
+      g = Granularity.settings(level)
+      <<~PROMPT
+        #{SYSTEM_PROMPT}
+        ## House granularity: #{g[:label].upcase} — #{g[:summary]}
+
+        #{Granularity.directions(level)}
+      PROMPT
+    end
+
     def call
       message = @client.beta.messages.create(
         model: Config.llm_model,
         max_tokens: 16_000,
-        system_: SYSTEM_PROMPT,
+        system_: system_prompt,
         output_config: { effort: :medium, format: { type: :json_schema, schema: SCHEMA } },
         # If a safety classifier declines, retry server-side on a substitute model.
         fallbacks: :default,

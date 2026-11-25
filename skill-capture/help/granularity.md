@@ -45,6 +45,14 @@ override the firm default, and a person can override their area — useful for s
 simply wants fewer prompts. Detection still runs in one pass; each pattern is judged at its
 own area's setting.
 
+## What the agents are told
+
+Each setting has written directions for the agents that draft and judge skills — how big a
+skill should be, what to do with steps that belong to a neighbour, and when to save, extend
+or branch, with worked examples. The same text goes into the drafter's instructions, so what
+you read is what it is told. They are at [/agents/granularity](/agents/granularity), and
+each has a `.md` form.
+
 ## A caution
 
 Changing this does not re-cut skills that already exist. Move the firm to Atomic and the

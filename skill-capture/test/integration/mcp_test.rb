@@ -32,7 +32,7 @@ class McpTest < ActionDispatch::IntegrationTest
 
   def data(name, args = {}, token: @agent_token) = tool(name, args, token: token)["structuredContent"]
 
-  test "a client initializes, lists ten tools, and gets told what the server is for" do
+  test "a client initializes, lists its tools, and gets told what the server is for" do
     r = rpc("initialize", { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "test", version: "1" } })
     assert_equal "2025-03-26", r.dig("result", "protocolVersion"), "the client's version is echoed back"
     assert_equal "skill-capture", r.dig("result", "serverInfo", "name")
@@ -40,8 +40,9 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_equal({}, rpc("ping").fetch("result"))
 
     tools = rpc("tools/list").dig("result", "tools")
-    assert_equal 11, tools.size
-    assert_equal %w[add_job_document complete_task find_anything find_route get_job get_skill list_playbooks list_tasks report_usage search_skills start_job],
+    assert_equal Mcp::Registry.tools.size, tools.size
+    assert_includes tools.map { |t| t["name"] }, "house_style"
+    assert_equal %w[add_job_document complete_task find_anything find_route get_job get_skill house_style list_playbooks list_tasks report_usage search_skills start_job],
                  tools.map { |t| t["name"] }.sort
     tools.each do |t|
       assert t["description"].to_s.length > 40, "#{t['name']} needs a description an agent can act on"
@@ -61,7 +62,7 @@ class McpTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
     assert_match(/integration token/, response.parsed_body.dig("error", "message"))
     get "/mcp", headers: { "Authorization" => "Bearer #{@agent_token}" }
-    assert_equal 11, response.parsed_body["tools"].size
+    assert_equal Mcp::Registry.tools.size, response.parsed_body["tools"].size
   end
 
   test "the front door answers an agent's question across everything at once" do

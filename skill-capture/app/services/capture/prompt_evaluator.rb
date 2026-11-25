@@ -28,9 +28,10 @@ module Capture
       You may change the kind (an "extend" whose steps are really a separate task is a "save"; a branch
       everyone should adopt could be an "extend").
 
-      HOUSE GRANULARITY — %<granularity>s. %<guidance>s
-      Judge "worthwhile" against that: a pattern at the wrong size for this firm is not worth
-      raising, however often it recurs.
+      HOUSE GRANULARITY — %<granularity>s. Judge "worthwhile" against the directions below:
+      a pattern at the wrong size for this firm is not worth raising, however often it recurs.
+
+      %<guidance>s
 
       Write title and description in Anthropic's Agent Skills format: the title names the outcome in a
       few words; the description is third person, at most 1024 characters, no XML tags, and says what the
@@ -90,7 +91,8 @@ module Capture
 
     def system_prompt
       g = Granularity.settings(level)
-      format(SYSTEM_TEMPLATE, granularity: "#{g[:label].downcase} (#{g[:summary].downcase})", guidance: g[:guidance])
+      format(SYSTEM_TEMPLATE, granularity: "#{g[:label].downcase} (#{g[:summary].downcase})",
+                              guidance: Granularity.directions(level))
     end
 
     def claude

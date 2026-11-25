@@ -64,6 +64,22 @@ module Mcp
     end
 
     # ---------- playbooks and jobs ----------
+    # An agent that is going to propose a skill should know what size this firm wants
+    # before it writes one, not after a reviewer rejects it.
+    def house_style(a, _ctx)
+      area = a["area"].presence
+      level = Capture::Granularity.level_for(domain: area)
+      settings = Capture::Granularity.settings(level)
+      { granularity: settings[:key], label: settings[:label], summary: settings[:summary],
+        area: area, firm_default: Capture::Granularity.label(Capture::Granularity.firm_level),
+        steps: { minimum: settings[:min_steps], maximum: settings[:max_steps] },
+        must_appear_in_distinct_contexts: settings[:min_contexts],
+        when_one_pattern_contains_another: { shortest: "the smallest reusable unit wins",
+                                             longest: "the longest version wins",
+                                             maximal: "the longest version seen as often wins" }[settings[:prefer]],
+        directions: Capture::Granularity.directions(level) }
+    end
+
     def list_playbooks(a, ctx)
       pbs = Capture::Playbook.all.select(&:runnable?)
       pbs = pbs.select { |p| p.key == a["key"] } if a["key"].present?

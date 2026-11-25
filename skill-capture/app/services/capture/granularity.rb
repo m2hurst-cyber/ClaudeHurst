@@ -46,7 +46,31 @@ module Capture
                        "a different person or system takes over." }
     }.freeze
 
+    # The agent directions for each level: how to write a skill at this size, what to do
+    # with steps that belong to a neighbour, and when to save, extend or branch. Files
+    # rather than constants, because these are prose that wants editing and reviewing —
+    # and because agents and people read the same text.
+    DIR = Rails.root.join("granularity")
+
     module_function
+
+    def directions(level)
+      key = settings(level)[:key]
+      @directions = nil if !Rails.env.production? && directions_stale?
+      @directions ||= {}
+      @directions[key] ||= begin
+        file = DIR.join("#{key}.md")
+        @directions_loaded_at = Time.current
+        file.exist? ? file.read.strip : settings(level)[:guidance]
+      end
+    end
+
+    def directions_stale?
+      return true if @directions_loaded_at.nil?
+      Dir.glob(DIR.join("*.md")).any? { |f| File.mtime(f) > @directions_loaded_at }
+    end
+
+    def all_directions = LEVELS.keys.index_with { |l| directions(l) }
 
     def valid?(level) = RANGE.cover?(level.to_i)
     def clamp(level) = level.to_i.clamp(RANGE.min, RANGE.max)

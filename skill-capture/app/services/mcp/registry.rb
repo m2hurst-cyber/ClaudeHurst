@@ -64,6 +64,11 @@ module Mcp
           to: str("Optional: the skill to end at. Without it, returns what usually comes next.")
         }, required: %w[from] } },
 
+      { name: "house_style", handler: :house_style,
+        title: "How this firm cuts work into skills",
+        description: "The firm's granularity directions: how big a skill should be here, what to do with steps that belong to a neighbouring skill, and when to propose saving, extending or branching. Read this before proposing or drafting a skill — a proposal at the wrong size for this firm will be rejected however good it is.",
+        input_schema: { type: "object", properties: { area: str("Optional: the area of work, which may have its own setting, e.g. tax") }, required: [] } },
+
       { name: "list_playbooks", handler: :list_playbooks,
         title: "List the playbooks",
         description: "The curated workflows a job or a return can be run through: their steps, the branches a job can take, and the documents each one expects.",

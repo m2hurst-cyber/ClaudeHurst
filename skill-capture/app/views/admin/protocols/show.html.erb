@@ -25,6 +25,7 @@
       skill may be, whether the small reusable unit or the whole story wins when one sits inside the other, how much
       repetition counts as evidence, how varied a pattern's surroundings must be, and what the AI is told to prefer.</p>
 
+    <p class="mb-3"><%= link_to "Read the directions each setting gives the agents →", agent_directions_path, class: "underline" %></p>
     <input type="range" min="1" max="5" step="1" value="<%= level %>" class="w-full accent-teal-700"
            name="protocols[granularity][level]" id="protocols_granularity_level"
            data-granularity-target="slider" data-action="input->granularity#change">

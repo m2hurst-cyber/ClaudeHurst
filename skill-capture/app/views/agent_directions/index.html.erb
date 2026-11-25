@@ -1,0 +1,32 @@
+<% content_for :title, "Granularity directions" %>
+<div class="max-w-3xl">
+  <div class="flex flex-wrap items-start gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Granularity directions</h1>
+      <p class="text-slate-600 mt-1">What this firm means by "a skill", written for the agents that draft and judge
+        them. The same text goes into the drafter's instructions, so what you read here is what it is told.</p>
+    </div>
+    <%= link_to "Copy all as .md", agent_directions_path(format: :md), class: "#{btn} ml-auto shrink-0" %>
+  </div>
+
+  <p class="mt-4 text-sm">Currently set to
+    <span class="font-semibold"><%= Capture::Granularity.label(@level) %></span>.
+    <%= link_to "Change it", admin_protocols_path, class: "underline" if current_user.admin? %>
+  </p>
+  <% if @overrides.any? %>
+    <p class="text-sm text-slate-600 mt-1">Areas with their own setting:
+      <%= @overrides.map { |o| "#{o.scope_key} (#{o.label})" }.to_sentence %>.</p>
+  <% end %>
+
+  <ul class="mt-5 space-y-2">
+    <% @levels.each do |level, s| %>
+      <li class="bg-white border rounded p-3 <%= "border-slate-900" if level == @level %>">
+        <p class="font-medium">
+          <%= link_to s[:label], agent_direction_path(s[:key]), class: "hover:underline" %>
+          <% if level == @level %><span class="ml-1 text-xs bg-slate-900 text-white rounded px-1.5 py-0.5">in use</span><% end %>
+        </p>
+        <p class="text-sm text-slate-600 mt-0.5"><%= s[:blurb] %></p>
+      </li>
+    <% end %>
+  </ul>
+</div>

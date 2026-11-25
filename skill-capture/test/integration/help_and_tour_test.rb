@@ -158,4 +158,78 @@ class HelpAndTourTest < ActionDispatch::IntegrationTest
     assert_includes html, '<a href="/map"'
     refute_includes html, "javascript:"
   end
+
+  # ---------- agent directions ----------
+
+  test "every granularity level has written directions that say something" do
+    Capture::Granularity::LEVELS.each do |level, settings|
+      text = Capture::Granularity.directions(level)
+      assert text.length > 800, "#{settings[:key]} directions are too thin to steer anything"
+      assert_match(/#{settings[:label].split.first}/i, text.lines.first, "#{settings[:key]} is not titled for its level")
+      %w[Size What Save].each { |heading| assert_match(/^## #{heading}/, text, "#{settings[:key]} has no '#{heading}' section") }
+      assert_match(/example/i, text, "#{settings[:key]} has no worked example")
+    end
+  end
+
+  test "the directions are what the drafter and the judge are actually told" do
+    Protocol.for("granularity").update!(settings: { "level" => 1 })
+    candidate = drafted_candidate(domain: "finance")
+    drafter = Capture::ClaudeDrafter.new(candidate, client: Object.new)
+    assert_match(/ATOMIC/, drafter.send(:system_prompt))
+    assert_match(/building blocks/i, drafter.send(:system_prompt))
+
+    prompt = SkillPrompt.create!(user: @user, kind: "save", steps: %w[a.one b.two], fingerprint: SecureRandom.hex(8), occurrences: 3)
+    assert_match(/ATOMIC/, Capture::PromptEvaluator.new(prompt).send(:system_prompt))
+  end
+
+  test "an area with its own setting gets its own directions" do
+    Protocol.for("granularity").update!(settings: { "level" => 1 })
+    GranularityOverride.set!("domain", "tax", 5)
+    candidate = drafted_candidate(domain: "tax")
+    assert_match(/END-TO-END/, Capture::ClaudeDrafter.new(candidate, client: Object.new).send(:system_prompt))
+  end
+
+  test "the directions are readable as pages and as markdown" do
+    sign_in @user
+    get agent_directions_path
+    assert_response :success
+    assert_select "a[href=?]", agent_direction_path("atomic")
+
+    get agent_direction_path("end_to_end")
+    assert_response :success
+    assert_select "article", /whole runs/i
+
+    get agent_direction_path("atomic", format: :md)
+    assert_match(/^# Writing skills at ATOMIC granularity/, response.body)
+
+    get agent_directions_path(format: :md)
+    assert_match(/ATOMIC/, response.body)
+    assert_match(/END-TO-END/, response.body)
+    assert_match(/currently set to/i, response.body)
+  end
+
+  test "an unknown level says so instead of failing" do
+    sign_in @user
+    get agent_direction_path("enormous")
+    assert_redirected_to agent_directions_path
+  end
+
+  test "an agent can ask how this firm cuts skills" do
+    Protocol.for("granularity").update!(settings: { "level" => 3 })
+    GranularityOverride.set!("domain", "tax", 5)
+
+    firm = Mcp::Handlers.house_style({}, nil)
+    assert_equal "balanced", firm[:granularity]
+    assert_equal 6, firm[:steps][:maximum]
+    assert_match(/BALANCED/, firm[:directions])
+
+    tax = Mcp::Handlers.house_style({ "area" => "tax" }, nil)
+    assert_equal "end_to_end", tax[:granularity]
+    assert_equal "Balanced", tax[:firm_default]
+    assert_match(/END-TO-END/, tax[:directions])
+  end
+
+  test "house_style is offered to agents alongside the rest" do
+    assert_includes Mcp::Registry.tools.map { |t| t[:name] }, "house_style"
+  end
 end

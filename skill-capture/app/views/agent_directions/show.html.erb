@@ -1,0 +1,22 @@
+<% content_for :title, "#{@settings[:label]} directions" %>
+<div class="max-w-3xl">
+  <p class="text-sm text-slate-500"><%= link_to "Granularity directions", agent_directions_path, class: "hover:underline" %></p>
+  <div class="flex flex-wrap items-start gap-3 mt-1">
+    <div>
+      <h1 class="text-2xl font-bold">
+        <%= @settings[:label] %>
+        <% if @active %><span class="ml-1 align-middle text-xs bg-slate-900 text-white rounded px-1.5 py-0.5">in use</span><% end %>
+      </h1>
+      <p class="text-slate-600 mt-1"><%= @settings[:blurb] %></p>
+    </div>
+    <%= link_to "Copy as .md", agent_direction_path(@settings[:key], format: :md), class: "#{btn} ml-auto shrink-0" %>
+  </div>
+
+  <p class="mt-3 text-sm text-slate-500">
+    <%= @settings[:min_steps] %>–<%= @settings[:max_steps] %> steps ·
+    <%= @settings[:min_contexts] > 1 ? "must appear in #{@settings[:min_contexts]} different surroundings" : "any surroundings" %> ·
+    <%= { shortest: "the smallest reusable unit wins", longest: "the longest version wins", maximal: "the longest version that is seen as often wins" }[@settings[:prefer]] %>
+  </p>
+
+  <article class="mt-5 bg-white border rounded p-5"><%= skill_markdown(@directions) %></article>
+</div>
