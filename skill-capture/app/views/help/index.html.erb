@@ -10,9 +10,9 @@
   </div>
   <p class="text-slate-600 mt-1">How-to guides, how the thing works, and the questions people actually ask.</p>
 
-  <%= form_with url: help_path, method: :get, class: "mt-4" do %>
+  <%= form_with url: help_path, method: :get, class: "panel-tool p-3 mt-4" do %>
     <%= search_field_tag :q, @query, placeholder: "Search the help — escrow, granularity, why wasn't I asked…",
-          class: "#{input_css} max-w-xl", autofocus: @query.present? %>
+          class: "w-full max-w-xl bg-white border-0 rounded-lg px-3 py-2 shadow-sm", autofocus: @query.present? %>
   <% end %>
 
   <% if @query.present? %>

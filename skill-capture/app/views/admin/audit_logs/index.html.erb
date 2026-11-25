@@ -1,6 +1,6 @@
 <% content_for :title, "Audit" %>
 <h1 class="text-2xl font-bold mb-4">Audit log</h1>
-<%= form_with url: admin_audit_logs_path, method: :get, class: "mb-4 flex gap-2" do |f| %>
+<%= form_with url: admin_audit_logs_path, method: :get, class: "panel-tool p-3 mb-4 flex flex-wrap gap-2 items-center" do |f| %>
   <%= search_field_tag :q, params[:q], placeholder: "Action prefix, e.g. skill.", class: "border rounded px-2 py-1.5 text-sm w-72" %>
   <%= f.submit "Filter", class: btn %>
 <% end %>

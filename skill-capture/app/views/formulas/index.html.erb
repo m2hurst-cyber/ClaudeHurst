@@ -55,7 +55,7 @@
     <% end %>
   </aside>
   <div>
-    <%= form_with url: formulas_path, method: :get, class: "flex gap-2 mb-3" do %>
+    <%= form_with url: formulas_path, method: :get, class: "panel-tool p-3 mb-3 flex flex-wrap gap-2 items-center" do %>
       <%= hidden_field_tag :provider, @provider %><%= hidden_field_tag :category, params[:category] if params[:category].present? %>
       <input name="q" value="<%= params[:q] %>" placeholder="Search keys, names or formulas (e.g. ebitda, fpo, ESG)" class="<%= input_css %>" aria-label="Search formulas">
       <button class="<%= btn %>">Search</button>

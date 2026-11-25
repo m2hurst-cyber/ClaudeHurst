@@ -80,6 +80,14 @@
   --color-sage-300: #bdcdc0;
   --color-sage-700: #46584c;
 
+  /* The control tone. Filtering, searching and switching are not content, so they do not
+     sit on a content panel: a warm greige tray, recessed rather than raised, distinct
+     from both the ink of the bar above and the sage of the panels below. */
+  --color-tool-50:  #f7f4ef;
+  --color-tool-100: #efeae1;
+  --color-tool-200: #e2dace;
+  --color-tool-700: #5c5345;
+
   /* Panels that sit on the page rather than being drawn onto it: no outline, a wash of
      colour over whatever is behind, and a shadow soft enough to read as depth of field.
      The shadow is green-grey, not black — a black shadow over sage reads as dirt. */
@@ -131,6 +139,10 @@
   .panel-lead { @apply bg-sage-100 backdrop-blur-sm rounded-2xl shadow-soft-lift; }
   /* A hairline inside a panel is the panel's own colour, one step on — never grey. */
   .panel-rule { @apply border-sage-200; }
+  /* Controls sit in the page; content sits on it. No shadow, so the tray reads as
+     recessed against the panels that float above it. */
+  .panel-tool { @apply bg-tool-100/85 rounded-2xl; }
+  .panel-tool-rule { @apply border-tool-200; }
 
   .lg-pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
   .lg-sub  { @apply text-[13px] text-paper-500; }
