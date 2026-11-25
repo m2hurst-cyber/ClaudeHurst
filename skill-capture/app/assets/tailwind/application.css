@@ -1,94 +1,119 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Ledger: the design tokens for Skill Capture.
+   Ledger — the design language for Skill Capture.
 
-   A tool people keep open beside Excel all day. It should read as precise and
-   calm: cool neutrals, one confident accent, colour reserved for meaning
-   (verified, waiting, blocked, macro, AI) rather than decoration. Figures line
-   up because every number is tabular.
+   The principle is subtraction. A box, a border and a shadow around every
+   element is how enterprise software looks; calm software groups things by
+   space and tone and draws a line only where two things genuinely touch.
 
-   Everything here is additive — it defines tokens and utilities; it changes no
-   existing page until that page uses them.
+     · Near-neutral greys, not blue-grey. Warm white page, pure white surfaces.
+     · One blue, used sparingly, almost always as a tint rather than a fill.
+     · Hairlines inside lists; no border around cards.
+     · Shadow means "this floats", never "this is a card".
+     · Generous radii, generous padding, text doing the hierarchy.
+     · Everything that moves uses one curve, and briefly.
+
+   Additive: tokens and components only. No existing view changes until it
+   opts in.
    ────────────────────────────────────────────────────────────────────────── */
 @theme static {
-  /* Neutrals: a blue-cast grey. Ink for text and the top bar, paper for surfaces. */
-  --color-ink-50:  #f6f8fc;
-  --color-ink-100: #eef2f8;
-  --color-ink-200: #dfe5ef;
-  --color-ink-300: #c3ccdc;
-  --color-ink-400: #94a3be;
-  --color-ink-500: #6b7b99;
-  --color-ink-600: #475777;
-  --color-ink-700: #2b3850;
-  --color-ink-800: #1a2336;
-  --color-ink-900: #0e1626;
-  --color-ink-950: #080c16;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
+               "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", "Cascadia Mono", monospace;
 
-  /* The accent: a sober indigo-blue. Links, primary actions, the current thing. */
-  --color-accent-50:  #f2f4fe;
-  --color-accent-100: #e6e9fd;
-  --color-accent-200: #ccd3fb;
-  --color-accent-300: #a3b0f6;
-  --color-accent-400: #7d8cf0;
-  --color-accent-500: #5a6dea;
-  --color-accent-600: #3d53d9;
-  --color-accent-700: #2f41b4;
-  --color-accent-800: #26348d;
+  /* Greys: near-neutral, so colour never has to fight the chrome. */
+  --color-ink-50:  #fbfbfd;   /* the page                                  */
+  --color-ink-100: #f4f4f7;   /* a quiet fill: fields, hovered rows        */
+  --color-ink-200: #e8e8ed;   /* hairline                                  */
+  --color-ink-300: #d2d2d7;   /* a border you are meant to notice          */
+  --color-ink-400: #aeaeb2;
+  --color-ink-500: #8e8e93;   /* secondary text                            */
+  --color-ink-600: #6e6e73;
+  --color-ink-700: #48484a;
+  --color-ink-800: #2c2c2e;
+  --color-ink-900: #1c1c1e;   /* primary text                              */
+  --color-ink-950: #0b0b0c;
 
-  /* Meaning, not decoration. */
-  --color-verified-100: #d9f5ea;  /* a check that passes, a leg that is done   */
-  --color-verified-600: #0e9f6e;
-  --color-waiting-100:  #fdf0d7;  /* review, a pause, something's turn          */
-  --color-waiting-600:  #c2770b;
-  --color-blocked-100:  #fde4ea;  /* refused, over budget, a failed check       */
-  --color-blocked-600:  #d9365a;
-  --color-macro-100:    #d3eef8;  /* runs as a script: no tokens                */
-  --color-macro-600:    #0b87b0;
-  --color-ai-100:       #efe7fd;  /* runs on a model: tokens                    */
-  --color-ai-600:       #7c4dda;
+  /* One blue. Mostly as a 10% tint; filled only for the single primary act. */
+  --color-accent-50:  #f2f8ff;
+  --color-accent-100: #e1efff;
+  --color-accent-200: #bcdcff;
+  --color-accent-300: #86c2ff;
+  --color-accent-400: #3ba0ff;
+  --color-accent-500: #0a84ff;
+  --color-accent-600: #0071e3;
+  --color-accent-700: #0058b9;
+  --color-accent-800: #00458f;
 
-  /* Corners: controls are softly rounded, cards more so, dialogs most. */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  /* Meaning. Tints for fills, the darker step for text on them. */
+  --color-verified-100: #e4f6ea;  --color-verified-600: #1d8a44;  /* passed, signed off     */
+  --color-waiting-100:  #fff0e0;  --color-waiting-600:  #a85b00;  /* in review, paused      */
+  --color-blocked-100:  #ffe8e8;  --color-blocked-600:  #c9222c;  /* refused, over budget   */
+  --color-macro-100:    #e0f3f8;  --color-macro-600:    #0b7b8f;  /* a script — no tokens   */
+  --color-ai-100:       #f1e9fd;  --color-ai-600:       #7a3fbf;  /* a model — tokens       */
 
-  /* Shadows: barely there on the page, deliberate when something floats above it. */
-  --shadow-card: 0 1px 2px rgb(11 18 32 / 0.05), 0 1px 1px rgb(11 18 32 / 0.03);
-  --shadow-pop:  0 12px 32px -14px rgb(11 18 32 / 0.28), 0 2px 8px rgb(11 18 32 / 0.06);
+  /* Corners, generous. Pills for anything you press. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
 
-  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* Depth only where something leaves the page. */
+  --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.03), 0 6px 20px -14px rgb(0 0 0 / 0.14);
+  --shadow-lift: 0 2px 6px -2px rgb(0 0 0 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.16);
+  --shadow-pop:  0 8px 24px -8px rgb(0 0 0 / 0.12), 0 24px 64px -16px rgb(0 0 0 / 0.22);
+  --shadow-knob: 0 1px 1px rgb(0 0 0 / 0.04), 0 3px 8px -2px rgb(0 0 0 / 0.12);
+
+  /* One curve, used by everything. */
+  --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
-  /* Figures in a column have to line up: that is half of a finance tool's credibility. */
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  /* Optical tracking: tighten as type grows, the way a typesetter would. */
+  h1, .t-display { letter-spacing: -0.022em; }
+  h2, h3, .t-title { letter-spacing: -0.016em; }
+  /* A column of figures that does not line up is a column you cannot read. */
   table, .tabular, [data-figures] { font-variant-numeric: tabular-nums; }
-  :where(input, select, textarea, button):focus-visible {
-    outline: 2px solid var(--color-accent-500);
-    outline-offset: 1px;
+  :where(input, select, textarea, button, [tabindex]):focus-visible {
+    outline: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent-500) 28%, transparent);
   }
-  @media (prefers-reduced-motion: reduce) { *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
 }
 
 @layer components {
-  /* The handful of shapes the whole console is built from. */
-  .lg-card    { @apply bg-white border border-ink-200 rounded-lg shadow-card; }
-  .lg-panel   { @apply bg-white border border-ink-200 rounded-xl shadow-card; }
-  .lg-input   { @apply w-full bg-white border border-ink-300 rounded-md px-3 py-2 text-ink-900 placeholder:text-ink-400
-                       transition-colors duration-150 hover:border-ink-400 focus:border-accent-500; }
-  .lg-btn,
-  .lg-btn-primary, .lg-btn-secondary, .lg-btn-ghost, .lg-btn-danger {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150;
-  }
-  .lg-btn-primary   { @apply bg-accent-600 text-white hover:bg-accent-700 active:bg-accent-800 shadow-card; }
-  .lg-btn-secondary { @apply bg-white text-ink-800 border border-ink-300 hover:border-ink-400 hover:bg-ink-50; }
-  .lg-btn-ghost     { @apply text-ink-600 hover:text-ink-900 hover:bg-ink-100; }
-  .lg-btn-danger    { @apply bg-white text-blocked-600 border border-blocked-100 hover:bg-blocked-100; }
-  .lg-btn-sm        { @apply px-2.5 py-1 text-xs rounded-sm; }
-  .lg-chip    { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium; }
-  .lg-meta    { @apply text-xs text-ink-500; }
-  .lg-row     { @apply px-4 py-3 border-b border-ink-100 last:border-0; }
-  .lg-th      { @apply px-3 py-2 text-left text-xs font-semibold text-ink-500 bg-ink-50 border-b border-ink-200; }
-  .lg-td      { @apply px-3 py-2 border-b border-ink-100 text-sm; }
+  /* Surfaces — no border. Tone and radius do the separating. */
+  .lg-surface { @apply bg-white rounded-xl shadow-rest; }
+  .lg-sheet   { @apply bg-white rounded-2xl shadow-pop; }
+  .lg-inset   { @apply bg-ink-100 rounded-xl; }
+  .lg-hair    { @apply border-b border-ink-200 last:border-0; }
+
+  /* The toolbar is a material: the page shows through it. */
+  .lg-bar { @apply bg-white/72 backdrop-blur-xl border-b border-ink-200/80; }
+
+  /* Pressable things are pills and they respond to the press. */
+  .lg-press { @apply transition-all duration-200 active:scale-[0.97]; }
+  .lg-filled { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
+                      bg-accent-600 text-white hover:bg-accent-700 transition-all duration-200 active:scale-[0.97]; }
+  .lg-tinted { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
+                      bg-accent-100 text-accent-700 hover:bg-accent-200 transition-all duration-200 active:scale-[0.97]; }
+  .lg-quiet  { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium
+                      text-ink-700 hover:bg-ink-100 transition-all duration-200 active:scale-[0.97]; }
+  .lg-plain  { @apply inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700
+                      transition-colors duration-200; }
+  .lg-destruct { @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium
+                      text-blocked-600 hover:bg-blocked-100 transition-all duration-200 active:scale-[0.97]; }
+  .lg-tap-sm { @apply px-3 py-1 text-xs; }
+
+  /* Fields are filled, not outlined, until you are in them. */
+  .lg-field { @apply w-full bg-ink-100 rounded-xl px-3.5 py-2.5 text-ink-900 placeholder:text-ink-400
+                     border border-transparent transition-all duration-200 focus:bg-white focus:border-ink-200; }
+
+  .lg-pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
+  .lg-sub  { @apply text-[13px] text-ink-500; }
+  .lg-row  { @apply flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-ink-100/70; }
 }
