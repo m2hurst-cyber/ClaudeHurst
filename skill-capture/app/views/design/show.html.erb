@@ -203,10 +203,14 @@
 
     <%= sect.("office", "The Office marks", "Our renditions in the Office visual language, floating on white tiles. Not Microsoft's own files.") %>
     <div class="lg-surface p-7">
-      <div class="flex flex-wrap items-center gap-3">
+      <p class="text-[13px] font-medium text-paper-500 mb-2">Tile — for choosing, where the mark is the whole control</p>
+      <div class="flex flex-wrap items-center gap-3 mb-6">
         <% SkillClassification::APPS.each { |a| %><%= office_tile(a, size: 44) %><% } %>
-        <span class="w-px h-8 bg-paper-200 mx-2"></span>
-        <% SkillClassification::APPS.first(3).each { |a| %><%= app_chip(a) %><% } %>
+      </div>
+
+      <p class="text-[13px] font-medium text-paper-500 mb-2">Chip — for reading, where the app is one fact among several</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <% SkillClassification::APPS.each { |a| %><%= app_chip(a) %><% } %>
       </div>
       <p class="lg-sub mt-4 max-w-2xl">Microsoft distributes the genuine marks under its trademark and brand guidelines and
         does not publish them to any package registry. Drop licensed files into
