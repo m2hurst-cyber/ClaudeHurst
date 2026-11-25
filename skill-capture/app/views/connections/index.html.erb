@@ -1,0 +1,99 @@
+<% content_for :title, "Connections" %>
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-bold">Connections</h1>
+  <p class="text-slate-600 mt-1">Everything that can reach your work: the Office add-in, and any agent you have
+    given a key to. Switching one off stops it answering immediately, without losing the key.</p>
+
+  <% if @issued %>
+    <%# Shown once. We keep only a digest, so there is no second chance to copy it. %>
+    <div class="panel-soft p-4 mt-5 border-l-4 border-verified-600">
+      <h2 class="font-semibold">Key for <%= @issued_for %></h2>
+      <p class="text-sm text-slate-600 mt-0.5">Copy it now — this is the only time it is shown. We keep only a
+        fingerprint of it, so it cannot be shown again or recovered.</p>
+      <pre class="mt-3 bg-white rounded-lg p-3 text-xs font-mono overflow-x-auto select-all"><%= @issued %></pre>
+      <p class="text-sm font-medium mt-4 mb-1">Point an agent at it</p>
+      <pre class="bg-paper-900 text-paper-200 rounded-lg p-3 text-[11px] font-mono overflow-x-auto select-all"><%=
+"{
+  \"mcpServers\": {
+    \"skill-capture\": {
+      \"type\": \"http\",
+      \"url\": \"#{request.base_url}/mcp\",
+      \"headers\": { \"Authorization\": \"Bearer #{@issued}\" }
+    }
+  }
+}" %></pre>
+    </div>
+  <% end %>
+
+  <h2 class="font-semibold mt-7 mb-2">Yours</h2>
+  <% if @connections.empty? %>
+    <p class="panel-soft p-5 text-sm text-slate-600">Nothing is connected yet. The add-in connects itself when you
+      sign in from Excel; an agent needs a key, below.</p>
+  <% else %>
+    <ul class="panel-soft divide-y divide-sage-200">
+      <% @connections.each do |c| %>
+        <li class="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+          <span class="grid place-items-center w-9 h-9 rounded-[10px] shrink-0 <%= c.kind == "mcp" ? "bg-model-100 text-model-600" : "bg-white shadow-knob" %>">
+            <% if c.kind == "mcp" %>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h7l2-3h7"/><path d="M4 12h16"/><path d="M4 17h7l2 3h7"/></svg>
+            <% else %>
+              <%= office_icon(c.platform.to_s.titleize.presence || "Excel", size: 18) %>
+            <% end %>
+          </span>
+
+          <span class="min-w-0 flex-1">
+            <span class="block font-medium truncate"><%= c.label %></span>
+            <span class="block text-xs text-slate-500">
+              <%= c.kind == "mcp" ? "Agent key" : "Office add-in" %>
+              <%= "· #{c.host}" if c.host.present? %>
+              · <%= c.last_used_at ? "last used #{nice_time(c.last_used_at)}" : "never used" %>
+              · added <%= c.created_at.to_date.strftime("%-d %b %Y") %>
+            </span>
+          </span>
+
+          <span class="flex items-center gap-1.5 text-xs shrink-0 w-[72px]">
+            <span class="w-2 h-2 rounded-full <%= { "online" => "bg-verified-600 animate-pulse", "on" => "bg-verified-600/40", "off" => "bg-slate-300" }[c.state] %>"></span>
+            <span class="<%= c.online? ? "text-verified-600 font-medium" : "text-slate-500" %>">
+              <%= c.online? ? "Online" : c.enabled? ? "Idle" : "Off" %>
+            </span>
+          </span>
+
+          <%= render "switch", connection: c %>
+          <%= button_to "Revoke", connection_path(c), method: :delete, class: "text-xs text-blocked-600 hover:underline",
+                data: { turbo_confirm: "Revoke #{c.label}? The key stops working for good — switching off is reversible, this is not." } %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div class="panel-tool p-4 mt-4">
+    <h2 class="font-semibold text-sm mb-1">Connect an agent</h2>
+    <p class="text-xs text-slate-600 mb-3">A key acts as you: it sees your sandbox skills and can start jobs on your
+      behalf. Name it for the thing you are connecting, so you can tell them apart later.
+      <%= link_to "How this works", help_guide_path("connect-an-agent"), class: "underline" %>.</p>
+    <%= form_with url: connections_path, method: :post, class: "flex flex-wrap gap-2 items-center" do %>
+      <%= text_field_tag :name, nil, placeholder: "Claude Desktop, Cursor, the close bot…",
+            class: "bg-white border-0 rounded-lg px-3 py-2 shadow-sm text-sm flex-1 min-w-56" %>
+      <%= submit_tag "Create a key", class: "px-3.5 py-2 rounded-full bg-slate-900 text-white text-sm hover:bg-slate-700 transition-colors cursor-pointer" %>
+    <% end %>
+  </div>
+
+  <% if @sources %>
+    <h2 class="font-semibold mt-8 mb-2">The firm's collectors <span class="text-xs font-normal text-slate-500">— admin</span></h2>
+    <ul class="panel-soft divide-y divide-sage-200 text-sm">
+      <% @sources.each do |s| %>
+        <li class="flex flex-wrap items-center gap-3 p-3">
+          <span class="min-w-0 flex-1">
+            <span class="font-medium"><%= s.name %></span>
+            <span class="block text-xs text-slate-500"><%= s.kind.titleize %>
+              · <%= s.last_seen_at ? "last seen #{nice_time(s.last_seen_at)}" : "never seen" %></span>
+          </span>
+          <span class="lg-pill <%= s.active? ? "bg-verified-100 text-verified-600" : "bg-slate-100 text-slate-500" %>">
+            <%= s.active? ? "on" : "off" %>
+          </span>
+          <%= link_to "Manage", admin_sources_path, class: "text-xs text-signal-700 hover:underline" %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

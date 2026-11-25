@@ -1,0 +1,15 @@
+<%# The switch says what it is, not what it would do. The word rides in the track behind
+    the knob — on the left when off, so the knob never covers it. %>
+<%= button_to connection_path(connection, enabled: !connection.enabled?), method: :patch,
+      class: "group", "aria-label": "Turn #{connection.label} #{connection.enabled? ? 'off' : 'on'}",
+      "aria-pressed": connection.enabled?.to_s, title: connection.enabled? ? "Switch off" : "Switch on" do %>
+  <span class="relative inline-flex items-center w-[62px] h-[32px] rounded-full p-[3px] transition-colors duration-200
+               <%= connection.enabled? ? "bg-verified-600" : "bg-slate-300 group-hover:bg-slate-400" %>">
+    <span class="absolute inset-y-0 flex items-center text-[11px] font-semibold tracking-wide
+                 <%= connection.enabled? ? "left-2.5 text-white" : "right-2.5 text-slate-600" %>">
+      <%= connection.enabled? ? "on" : "off" %>
+    </span>
+    <span class="relative block w-[26px] h-[26px] rounded-full bg-white shadow-knob transition-transform duration-200
+                 <%= "translate-x-[30px]" if connection.enabled? %>"></span>
+  </span>
+<% end %>

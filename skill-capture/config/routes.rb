@@ -221,6 +221,7 @@ Rails.application.routes.draw do
       end
     end
     resources :connected_apps, only: %i[index destroy]
+    resources :connections, only: %i[index create update destroy]
     resources :resources, only: %i[index show create update destroy] do
       member { get :download }
     end

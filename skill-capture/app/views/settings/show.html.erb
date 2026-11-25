@@ -45,6 +45,12 @@
   <%# A copy of your own work, in your own repository. Bounded by firm policy, not by what
       you can see — otherwise this button is a tidy way to move the library somewhere private. %>
   <div class="panel-soft p-4 mt-4 text-sm">
+    <h2 class="font-semibold mb-1">Connections</h2>
+    <p class="text-slate-600">What can reach your work: the Office add-in, and any agent you have given a key to.</p>
+    <p class="mt-2"><%= link_to "Open connections", connections_path, class: btn %></p>
+  </div>
+
+  <div class="panel-soft p-4 mt-4 text-sm">
     <h2 class="font-semibold mb-1">Back up to your own Git</h2>
     <% if !GitBackup.allowed? %>
       <p class="text-slate-600">Personal backups are turned off for this firm.</p>
