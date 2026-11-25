@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ledger · Skill Capture design</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= stylesheet_link_tag "tailwind" %>
+  </head>
+  <body class="bg-ink-50 text-ink-900 antialiased">
+
+  <% section = ->(id, title, note) { capture do %>
+    <div class="flex items-baseline gap-3 mb-3 mt-10" id="<%= id %>">
+      <h2 class="text-sm font-semibold tracking-wide uppercase text-ink-500"><%= title %></h2>
+      <p class="text-sm text-ink-400"><%= note %></p>
+    </div>
+  <% end } %>
+
+  <!-- The top bar: ink, not black. One accent, used for the thing you are on. -->
+  <header class="bg-ink-900 text-ink-200 sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-5 h-14 flex items-center gap-2">
+      <span class="flex items-center gap-2 mr-4">
+        <span class="w-6 h-6 rounded-md bg-accent-500 text-white grid place-items-center text-xs font-bold">SC</span>
+        <span class="font-semibold text-white tracking-tight">Skill Capture</span>
+      </span>
+      <% ["Library", "Work", "Flows", "Market"].each_with_index do |t, i| %>
+        <span class="px-3 py-1.5 rounded-md text-sm <%= i.zero? ? "bg-ink-800 text-white" : "text-ink-300 hover:text-white hover:bg-ink-800/70" %> transition-colors cursor-default"><%= t %></span>
+      <% end %>
+      <span class="ml-auto flex items-center gap-2">
+        <span class="hidden sm:block relative">
+          <input class="lg-input !w-64 !bg-ink-800 !border-ink-700 !text-white placeholder:!text-ink-400 !py-1.5 text-sm" placeholder="Ask for a skill, a client, a schedule…">
+        </span>
+        <span class="w-8 h-8 rounded-full bg-ink-700 text-white grid place-items-center text-xs font-semibold">SO</span>
+      </span>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-5 pb-24">
+    <div class="pt-10 pb-2">
+      <p class="lg-chip bg-accent-100 text-accent-700 mb-3">Design language · proposal</p>
+      <h1 class="text-3xl font-semibold tracking-tight text-ink-900">Ledger</h1>
+      <p class="mt-2 text-ink-600 max-w-2xl">The design language for Skill Capture. Cool neutrals and one sober accent, so
+        colour is left free to carry meaning — verified, waiting, blocked, runs on a model, runs as a macro. Softer corners
+        than stock. Every figure tabular, because a column of numbers that does not line up costs us the room.</p>
+      <p class="mt-2 lg-meta">Shown on finance work: equity research, month-end close, individual returns, partnership K-1s.</p>
+    </div>
+
+    <%= section.("palette", "Palette", "11 inks, 8 accents, 5 meanings") %>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% [["Ink — text, bars, structure", (%w[50 100 200 300 400 500 600 700 800 900 950].map { |s| ["ink-#{s}", s] })],
+          ["Accent — links, primary action, current", (%w[50 100 200 300 400 500 600 700 800].map { |s| ["accent-#{s}", s] })]].each do |label, swatches| %>
+        <div class="lg-card p-4 lg:col-span-3">
+          <p class="text-sm font-medium mb-3"><%= label %></p>
+          <div class="flex flex-wrap gap-1.5">
+            <% swatches.each do |cls, s| %>
+              <span class="w-16">
+                <span class="block h-10 rounded-md border border-ink-200" style="background: var(--color-<%= cls %>)"></span>
+                <span class="block mt-1 text-[10px] text-ink-500 text-center"><%= s %></span>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+      <% [["verified", "Verified", "a check passed, a leg signed off"],
+          ["waiting", "Waiting", "in review, paused, someone's turn"],
+          ["blocked", "Blocked", "refused, failed, over budget"],
+          ["macro", "Macro", "runs as a script — no tokens"],
+          ["ai", "Model", "runs on a model — tokens"]].each do |k, name, why| %>
+        <div class="lg-card p-4">
+          <div class="flex items-center gap-2">
+            <span class="w-9 h-9 rounded-md" style="background: var(--color-<%= k %>-600)"></span>
+            <span class="w-9 h-9 rounded-md border border-ink-200" style="background: var(--color-<%= k %>-100)"></span>
+            <span>
+              <span class="block text-sm font-medium"><%= name %></span>
+              <span class="block lg-meta"><%= why %></span>
+            </span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%= section.("shape", "Shape, type, elevation", "what makes it read as modern") %>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="lg-card p-4">
+        <p class="text-sm font-medium mb-3">Corners</p>
+        <% [["rounded-sm", "6px", "chips, dense buttons"], ["rounded-md", "10px", "buttons, inputs, tiles"],
+            ["rounded-lg", "14px", "cards"], ["rounded-xl", "18px", "panels, dialogs"]].each do |cls, px, use| %>
+          <div class="flex items-center gap-3 py-1.5">
+            <span class="w-12 h-8 bg-ink-100 border border-ink-300 <%= cls %>"></span>
+            <span class="text-sm"><%= px %></span><span class="lg-meta"><%= use %></span>
+          </div>
+        <% end %>
+      </div>
+      <div class="lg-card p-4">
+        <p class="text-sm font-medium mb-3">Type</p>
+        <p class="text-2xl font-semibold tracking-tight">DCF — three-statement</p>
+        <p class="text-base mt-1">Section heading, 16</p>
+        <p class="text-sm mt-1 text-ink-700">Body, 14. The working size of the console.</p>
+        <p class="lg-meta mt-1">Meta, 12 — ink-500, for everything said in passing.</p>
+        <p class="mt-3 text-sm tabular">1,284,500.00 &nbsp; 97,300.25 &nbsp; (4,118.70)</p>
+        <p class="lg-meta">Tabular numerals, always, so columns align.</p>
+      </div>
+      <div class="lg-card p-4">
+        <p class="text-sm font-medium mb-3">Elevation</p>
+        <div class="rounded-lg bg-white border border-ink-200 shadow-card p-3 text-sm">shadow-card — rests on the page</div>
+        <div class="rounded-lg bg-white border border-ink-200 shadow-pop p-3 text-sm mt-3">shadow-pop — floats above it</div>
+        <p class="lg-meta mt-3">Two levels only. Depth is for menus and dialogs, not for decoration.</p>
+      </div>
+    </div>
+
+    <%= section.("controls", "Controls", "buttons, fields, segmented") %>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="lg-card p-4 space-y-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="lg-btn-primary">Capture this worksheet</button>
+          <button class="lg-btn-secondary">Open in Excel</button>
+          <button class="lg-btn-ghost">Copy for LLM</button>
+          <button class="lg-btn-danger">Withdraw</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="lg-btn-primary lg-btn-sm">Send for review</button>
+          <button class="lg-btn-secondary lg-btn-sm">Skip</button>
+          <button class="lg-btn-secondary" disabled>Promote <span class="lg-meta ml-1">needs sign-off</span></button>
+        </div>
+        <div class="inline-flex rounded-md border border-ink-300 bg-white p-0.5">
+          <% ["Mine", "My team", "Firm", "Market"].each_with_index do |t, i| %>
+            <span class="px-3 py-1 text-sm rounded-sm <%= i == 2 ? "bg-ink-900 text-white" : "text-ink-600" %>"><%= t %></span>
+          <% end %>
+        </div>
+      </div>
+      <div class="lg-card p-4 space-y-3">
+        <label class="block">
+          <span class="block text-sm font-medium mb-1">Skill name</span>
+          <input class="lg-input" value="equity.dcf.wacc-build">
+        </label>
+        <label class="block">
+          <span class="block text-sm font-medium mb-1">Area</span>
+          <select class="lg-input"><option>Equity research</option><option>Month-end close</option><option>Tax — individual</option></select>
+        </label>
+        <label class="block">
+          <span class="block text-sm font-medium mb-1">What it is for</span>
+          <textarea class="lg-input" rows="2">Builds WACC from the comp set's levered betas and the current risk-free, then feeds the DCF's discount row.</textarea>
+        </label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded-sm border-ink-300" checked> Require a reviewer before anyone else can run it</label>
+      </div>
+    </div>
+
+    <%= section.("badges", "Badges", "level, state, engine, intensity, app") %>
+    <div class="lg-card p-4 flex flex-wrap gap-2 items-center">
+      <% [["bg-ink-100 text-ink-700", "●", "Sandbox", "text-waiting-600"],
+          ["bg-ink-100 text-ink-700", "●", "Firm", "text-accent-600"],
+          ["bg-ink-100 text-ink-700", "●", "Market", "text-verified-600"]].each do |cls, dot, label, dotcls| %>
+        <span class="lg-chip <%= cls %>"><span class="<%= dotcls %>"><%= dot %></span><%= label %></span>
+      <% end %>
+      <span class="w-px h-5 bg-ink-200 mx-1"></span>
+      <span class="lg-chip bg-verified-100 text-verified-600">✓ Verified</span>
+      <span class="lg-chip bg-waiting-100 text-waiting-600">◴ In review</span>
+      <span class="lg-chip bg-blocked-100 text-blocked-600">✕ Failed check</span>
+      <span class="w-px h-5 bg-ink-200 mx-1"></span>
+      <span class="lg-chip bg-ai-100 text-ai-600">◆ Model</span>
+      <span class="lg-chip bg-macro-100 text-macro-600">⌁ Macro</span>
+      <span class="lg-chip bg-ink-100 text-ink-700">◍ Person</span>
+      <span class="w-px h-5 bg-ink-200 mx-1"></span>
+      <span class="lg-chip bg-ink-100 text-ink-600">Light · 4k tok</span>
+      <span class="lg-chip bg-waiting-100 text-waiting-600">Heavy · 180k tok</span>
+      <span class="w-px h-5 bg-ink-200 mx-1"></span>
+      <% [["X", "#107c41", "Excel"], ["W", "#185abd", "Word"], ["P", "#c43e1c", "PowerPoint"], ["BI", "#b48a00", "Power BI"]].each do |a, hex, name| %>
+        <span class="lg-chip bg-white border border-ink-200 text-ink-700">
+          <span class="w-4 h-4 rounded-[4px] text-white text-[9px] grid place-items-center font-bold" style="background: <%= hex %>"><%= a %></span><%= name %>
+        </span>
+      <% end %>
+    </div>
+
+    <%= section.("tiles", "Metric tiles", "a run's budget, in the open") %>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <% [["Anticipated", "$0.84", "9 tasks · 3 models", "text-ink-900", nil],
+          ["Spent so far", "$0.37", "44% of budget", "text-ink-900", 44],
+          ["Tokens", "128,400", "of ~290,000", "text-ink-900", 44],
+          ["Saved by macros", "$0.21", "3 of 9 tasks run as script", "text-macro-600", nil]].each do |label, value, note, vcls, pct| %>
+        <div class="lg-card p-4">
+          <p class="lg-meta uppercase tracking-wide"><%= label %></p>
+          <p class="mt-1 text-2xl font-semibold tabular <%= vcls %>"><%= value %></p>
+          <p class="lg-meta mt-0.5"><%= note %></p>
+          <% if pct %>
+            <span class="mt-3 block h-1.5 rounded-full bg-ink-100 overflow-hidden">
+              <span class="block h-full rounded-full bg-accent-500" style="width: <%= pct %>%"></span>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%= section.("cards", "The skill card", "the unit everything else hangs off") %>
+    <div class="grid md:grid-cols-2 gap-4">
+      <% [["equity.dcf.wacc-build", "Build WACC from the comp set",
+           "Pulls levered betas for the comps over BQL, unlevers at each name's net debt/equity, relevers at target structure, and writes the discount row the DCF reads.",
+           "Market", "text-verified-600", "✓ Verified", "bg-verified-100 text-verified-600", "Model", "bg-ai-100 text-ai-600", "Sam Ortiz · run 412 times · avg 31k tok"],
+          ["close.variance.commentary", "Month-end variance commentary",
+           "Reads the trial-balance variance tab, flags every account over the materiality floor, and drafts the commentary line finance review expects.",
+           "Firm", "text-accent-600", "◴ In review", "bg-waiting-100 text-waiting-600", "Macro", "bg-macro-100 text-macro-600", "Jordan Pike · run 96 times · no tokens"]].each do |key, title, body, lvl, dotcls, state, statecls, engine, enginecls, foot| %>
+        <div class="lg-panel overflow-hidden">
+          <div class="p-4">
+            <div class="flex items-start gap-3">
+              <div class="min-w-0">
+                <p class="font-mono text-xs text-ink-500"><%= key %></p>
+                <h3 class="mt-0.5 text-lg font-semibold tracking-tight text-ink-900"><%= title %></h3>
+              </div>
+              <span class="lg-chip bg-ink-100 text-ink-700 ml-auto shrink-0"><span class="<%= dotcls %>">●</span><%= lvl %></span>
+            </div>
+            <p class="mt-2 text-sm text-ink-600"><%= body %></p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span class="lg-chip <%= statecls %>"><%= state %></span>
+              <span class="lg-chip <%= enginecls %>"><%= engine %></span>
+              <span class="lg-chip bg-white border border-ink-200 text-ink-700">
+                <span class="w-4 h-4 rounded-[4px] text-white text-[9px] grid place-items-center font-bold" style="background:#107c41">X</span>Excel
+              </span>
+            </div>
+          </div>
+          <div class="px-4 py-2.5 bg-ink-50 border-t border-ink-200 flex items-center gap-2">
+            <span class="lg-meta truncate"><%= foot %></span>
+            <span class="ml-auto flex gap-1.5 shrink-0">
+              <button class="lg-btn-ghost lg-btn-sm">Copy .md</button>
+              <button class="lg-btn-secondary lg-btn-sm">Open</button>
+            </span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%= section.("road", "The road strip", "where a skill sits on the route") %>
+    <div class="lg-card p-5">
+      <div class="flex items-center">
+        <% [["Pull comps", :done], ["Unlever betas", :done], ["Build WACC", :here], ["Discount FCF", :next], ["Sensitivity grid", :next], ["Write the note", :next]].each_with_index do |(label, state), i| %>
+          <% if i > 0 %><span class="h-px flex-1 <%= state == :next ? "bg-ink-200" : "bg-verified-600" %>"></span><% end %>
+          <span class="flex flex-col items-center gap-1.5 px-1">
+            <span class="w-7 h-7 rounded-full grid place-items-center text-xs font-semibold <%=
+              state == :done ? "bg-verified-600 text-white" : state == :here ? "bg-accent-600 text-white ring-4 ring-accent-100" : "bg-white border border-ink-300 text-ink-400" %>">
+              <%= state == :done ? "✓" : i + 1 %>
+            </span>
+            <span class="text-[11px] <%= state == :here ? "font-semibold text-ink-900" : "text-ink-500" %> text-center w-20 leading-tight"><%= label %></span>
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <%= section.("table", "Tables", "dense, quiet rules, figures right") %>
+    <div class="lg-panel overflow-hidden">
+      <div class="px-4 py-3 flex items-center gap-3 border-b border-ink-200">
+        <h3 class="font-semibold tracking-tight">Month-end close · variance by account</h3>
+        <span class="lg-chip bg-waiting-100 text-waiting-600 ml-auto">3 over materiality</span>
+      </div>
+      <table class="w-full">
+        <thead><tr>
+          <th class="lg-th">Account</th><th class="lg-th">Skill</th>
+          <th class="lg-th text-right">Actual</th><th class="lg-th text-right">Budget</th>
+          <th class="lg-th text-right">Var</th><th class="lg-th">State</th>
+        </tr></thead>
+        <tbody>
+          <% [["6100 · Professional fees", "close.variance.commentary", "412,980", "368,000", "+44,980", :over],
+              ["6200 · Software", "close.variance.commentary", "188,440", "190,000", "(1,560)", :ok],
+              ["7010 · Travel", "close.travel.recode", "96,120", "61,000", "+35,120", :over],
+              ["4000 · Fee revenue", "close.revenue.tieout", "3,884,200", "3,900,000", "(15,800)", :ok],
+              ["8100 · Interest", "close.debt.schedule", "74,610", "52,000", "+22,610", :over]].each do |acct, skill, act, bud, var, st| %>
+            <tr class="hover:bg-ink-50 transition-colors">
+              <td class="lg-td font-medium"><%= acct %></td>
+              <td class="lg-td font-mono text-xs text-ink-500"><%= skill %></td>
+              <td class="lg-td text-right tabular"><%= act %></td>
+              <td class="lg-td text-right tabular text-ink-500"><%= bud %></td>
+              <td class="lg-td text-right tabular <%= st == :over ? "text-blocked-600 font-medium" : "text-ink-600" %>"><%= var %></td>
+              <td class="lg-td"><span class="lg-chip <%= st == :over ? "bg-blocked-100 text-blocked-600" : "bg-verified-100 text-verified-600" %>"><%= st == :over ? "Explain" : "✓ Tied" %></span></td>
+            </tr>
+          <% end %>
+          <tr class="bg-ink-50 font-semibold">
+            <td class="lg-td" colspan="2">Total</td>
+            <td class="lg-td text-right tabular">4,656,350</td>
+            <td class="lg-td text-right tabular">4,571,000</td>
+            <td class="lg-td text-right tabular">+85,350</td>
+            <td class="lg-td"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <%= section.("surfaces", "Menus, dialogs, states", "everything that floats or is empty") %>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="lg-card p-4">
+        <p class="text-sm font-medium mb-2">Menu</p>
+        <div class="rounded-lg bg-white border border-ink-200 shadow-pop p-1 w-full">
+          <% [["Skills", "every captured procedure"], ["Map", "how they connect"], ["Formulas", "BQL and FactSet libraries"], ["Macro library", "approved scripts"]].each_with_index do |(l, n), i| %>
+            <span class="block px-3 py-2 rounded-md <%= i.zero? ? "bg-accent-50" : "hover:bg-ink-50" %>">
+              <span class="block text-sm font-medium <%= i.zero? ? "text-accent-700" : "" %>"><%= l %></span>
+              <span class="block lg-meta"><%= n %></span>
+            </span>
+          <% end %>
+        </div>
+      </div>
+      <div class="lg-card p-4">
+        <p class="text-sm font-medium mb-2">Dialog</p>
+        <div class="rounded-xl bg-white border border-ink-200 shadow-pop p-4">
+          <h4 class="font-semibold tracking-tight">Send to a coworker</h4>
+          <p class="text-sm text-ink-600 mt-1">Both sides are held until the transfer crosses. Nothing moves one-way.</p>
+          <input class="lg-input mt-3 text-sm" value="rae@firm.com">
+          <div class="flex gap-2 mt-3">
+            <button class="lg-btn-primary lg-btn-sm">Hold in escrow</button>
+            <button class="lg-btn-ghost lg-btn-sm">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="lg-card p-4 space-y-3">
+        <div>
+          <p class="text-sm font-medium mb-2">Notice</p>
+          <div class="rounded-md bg-verified-100 border border-verified-600/20 px-3 py-2 text-sm text-verified-600">Promoted to Firm. 14 people can run it.</div>
+          <div class="rounded-md bg-blocked-100 border border-blocked-600/20 px-3 py-2 text-sm text-blocked-600 mt-2">Run stopped: budget ceiling reached at task 6.</div>
+        </div>
+        <div>
+          <p class="text-sm font-medium mb-2">Empty</p>
+          <div class="rounded-lg border border-dashed border-ink-300 p-5 text-center">
+            <p class="text-sm font-medium text-ink-700">No K-1 skills captured yet</p>
+            <p class="lg-meta mt-1">Open a partnership workbook and capture the first allocation step.</p>
+            <button class="lg-btn-secondary lg-btn-sm mt-3">Capture a worksheet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%= section.("code", "Formulas and markdown", "what the agents actually read") %>
+    <div class="rounded-lg bg-ink-900 p-4 overflow-x-auto">
+      <pre class="font-mono text-xs leading-relaxed text-ink-200"><span class="text-ink-500"># equity.dcf.wacc-build · v4 · firm</span>
+<span class="text-accent-300">get</span>(px_last, beta_raw(period=<span class="text-verified-600">5Y</span>))
+  <span class="text-accent-300">for</span>(members(<span class="text-waiting-600">'SPX Index'</span>) <span class="text-accent-300">filter</span> gics_sector = <span class="text-waiting-600">'Industrials'</span>)
+  <span class="text-ink-500">-- unlever: βu = βl / (1 + (1 - t) × D/E)</span>
+=D4/(1+(1-$B$2)*C4)   <span class="text-ink-500">→ writes {row:beta_unlevered}</span></pre>
+    </div>
+
+  </main>
+  </body>
+</html>

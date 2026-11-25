@@ -1,1 +1,94 @@
 @import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Ledger: the design tokens for Skill Capture.
+
+   A tool people keep open beside Excel all day. It should read as precise and
+   calm: cool neutrals, one confident accent, colour reserved for meaning
+   (verified, waiting, blocked, macro, AI) rather than decoration. Figures line
+   up because every number is tabular.
+
+   Everything here is additive — it defines tokens and utilities; it changes no
+   existing page until that page uses them.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme static {
+  /* Neutrals: a blue-cast grey. Ink for text and the top bar, paper for surfaces. */
+  --color-ink-50:  #f6f8fc;
+  --color-ink-100: #eef2f8;
+  --color-ink-200: #dfe5ef;
+  --color-ink-300: #c3ccdc;
+  --color-ink-400: #94a3be;
+  --color-ink-500: #6b7b99;
+  --color-ink-600: #475777;
+  --color-ink-700: #2b3850;
+  --color-ink-800: #1a2336;
+  --color-ink-900: #0e1626;
+  --color-ink-950: #080c16;
+
+  /* The accent: a sober indigo-blue. Links, primary actions, the current thing. */
+  --color-accent-50:  #f2f4fe;
+  --color-accent-100: #e6e9fd;
+  --color-accent-200: #ccd3fb;
+  --color-accent-300: #a3b0f6;
+  --color-accent-400: #7d8cf0;
+  --color-accent-500: #5a6dea;
+  --color-accent-600: #3d53d9;
+  --color-accent-700: #2f41b4;
+  --color-accent-800: #26348d;
+
+  /* Meaning, not decoration. */
+  --color-verified-100: #d9f5ea;  /* a check that passes, a leg that is done   */
+  --color-verified-600: #0e9f6e;
+  --color-waiting-100:  #fdf0d7;  /* review, a pause, something's turn          */
+  --color-waiting-600:  #c2770b;
+  --color-blocked-100:  #fde4ea;  /* refused, over budget, a failed check       */
+  --color-blocked-600:  #d9365a;
+  --color-macro-100:    #d3eef8;  /* runs as a script: no tokens                */
+  --color-macro-600:    #0b87b0;
+  --color-ai-100:       #efe7fd;  /* runs on a model: tokens                    */
+  --color-ai-600:       #7c4dda;
+
+  /* Corners: controls are softly rounded, cards more so, dialogs most. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* Shadows: barely there on the page, deliberate when something floats above it. */
+  --shadow-card: 0 1px 2px rgb(11 18 32 / 0.05), 0 1px 1px rgb(11 18 32 / 0.03);
+  --shadow-pop:  0 12px 32px -14px rgb(11 18 32 / 0.28), 0 2px 8px rgb(11 18 32 / 0.06);
+
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@layer base {
+  /* Figures in a column have to line up: that is half of a finance tool's credibility. */
+  table, .tabular, [data-figures] { font-variant-numeric: tabular-nums; }
+  :where(input, select, textarea, button):focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 1px;
+  }
+  @media (prefers-reduced-motion: reduce) { *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+}
+
+@layer components {
+  /* The handful of shapes the whole console is built from. */
+  .lg-card    { @apply bg-white border border-ink-200 rounded-lg shadow-card; }
+  .lg-panel   { @apply bg-white border border-ink-200 rounded-xl shadow-card; }
+  .lg-input   { @apply w-full bg-white border border-ink-300 rounded-md px-3 py-2 text-ink-900 placeholder:text-ink-400
+                       transition-colors duration-150 hover:border-ink-400 focus:border-accent-500; }
+  .lg-btn,
+  .lg-btn-primary, .lg-btn-secondary, .lg-btn-ghost, .lg-btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150;
+  }
+  .lg-btn-primary   { @apply bg-accent-600 text-white hover:bg-accent-700 active:bg-accent-800 shadow-card; }
+  .lg-btn-secondary { @apply bg-white text-ink-800 border border-ink-300 hover:border-ink-400 hover:bg-ink-50; }
+  .lg-btn-ghost     { @apply text-ink-600 hover:text-ink-900 hover:bg-ink-100; }
+  .lg-btn-danger    { @apply bg-white text-blocked-600 border border-blocked-100 hover:bg-blocked-100; }
+  .lg-btn-sm        { @apply px-2.5 py-1 text-xs rounded-sm; }
+  .lg-chip    { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium; }
+  .lg-meta    { @apply text-xs text-ink-500; }
+  .lg-row     { @apply px-4 py-3 border-b border-ink-100 last:border-0; }
+  .lg-th      { @apply px-3 py-2 text-left text-xs font-semibold text-ink-500 bg-ink-50 border-b border-ink-200; }
+  .lg-td      { @apply px-3 py-2 border-b border-ink-100 text-sm; }
+}

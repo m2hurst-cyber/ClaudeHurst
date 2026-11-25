@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # The style guide: the design language on its own, no sign-in needed to review it.
+  get "design", to: "design#show"
+
   devise_for :users, skip: :registrations
 
   get "up" => "rails/health#show", as: :rails_health_check
