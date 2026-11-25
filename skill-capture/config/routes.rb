@@ -12,6 +12,10 @@ Rails.application.routes.draw do
   get "addin/connect", to: "addin_connect#show", as: :addin_connect
   post "addin/connect", to: "addin_connect#create"
 
+  # MCP: one endpoint any agent can speak to (POST), plus a plain description (GET).
+  post "mcp", to: "mcp#handle"
+  get "mcp", to: "mcp#discover"
+
   namespace :api do
     namespace :v1 do
       namespace :addin do

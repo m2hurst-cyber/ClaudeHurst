@@ -403,5 +403,13 @@ The full list is in `app/services/capture/config.rb` and `app/services/capture/a
 
 - The top bar's 21 links became five menus by function (`nav_menu` helper + `nav_menu_controller.js`): Library, Work, Review, Market, Admin. Each item carries a one-line note; counts roll up to the bucket unless marked `:quiet` (screened macros), so the badge means "waiting on you".
 - Menus: click or Enter to open, Escape or an outside click to close, opening one closes the others, arrow keys walk the items; the Admin menu aligns right so it doesn't overflow.
-- Tests: 177 Rails runs, 42 JavaScript tests.
+
+
+## Changelog: MCP server
+
+- `POST /mcp` (`McpController`, JSON-RPC 2.0: initialize / ping / tools/list / tools/call, notifications accepted, batches, client's protocolVersion echoed back) and `GET /mcp` for discovery. Auth: Source token (agent) or AddinToken (acts as that person); tool results carry both a text block and `structuredContent`.
+- `Mcp::Registry` (ten tools with JSON schemas) and `Mcp::Handlers`. Every call is audited (`mcp.call` / `mcp.refused`).
+- `FlowRun#close_dispatch!`: finishing a task (or a part) clears it from the doer's queue, so `list_tasks` only ever shows live work.
+- Connection snippet on Admin → Integrations.
+- Tests: 185 Rails runs, 42 JavaScript tests.
 

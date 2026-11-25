@@ -83,6 +83,7 @@ class FlowRun < ApplicationRecord
                                  "by" => by_label(user, source, part["engine"]), "usage" => u.presence).compact
       set_step(current_index, "parts" => new_parts)
       record_usage!(step, part.merge("engine" => part["engine"]), u, user: user, source: source, part_id: part["id"])
+      close_dispatch!(current_index, part_id: part["id"])
       if new_parts.all? { |p| p["state"] == "done" }
         set_step(current_index, "state" => "done", "finished_at" => Time.current.iso8601,
                                 "by" => new_parts.map { |p| p["by"] }.uniq.join(" + "),
@@ -106,6 +107,7 @@ class FlowRun < ApplicationRecord
       set_step(current_index, "state" => "done", "finished_at" => Time.current.iso8601, "note" => note.to_s.strip.first(2000).presence,
                               "by" => by_label(user, source, step["engine"]), "usage" => u.presence)
       record_usage!(step, step, u, user: user, source: source)
+      close_dispatch!(current_index)
       advance!
     end
     AuditLog.record("flow.step_done", user: user, subject: self, step: index.to_i + 1, by_agent: source&.name)
@@ -325,6 +327,14 @@ class FlowRun < ApplicationRecord
       Notification.create!(user: who, subject: self, kind: "flow", title: "Your turn: #{payload['title']}",
                            body: "#{payload['note']}#{s['app'] != 'Agent' ? ", in #{s['app']}" : ''}#{engine == 'macro' ? ' · runs as a macro, no AI' : ''}#{prev ? ". Handed off by #{prev['by']}." : '.'}", url: url)
     end
+  end
+
+  # Work that has been done shouldn't still be sitting in anyone's queue.
+  def close_dispatch!(i, part_id: nil)
+    scope = AddinCommand.pending.where(kind: "flow_task")
+                        .where("payload->>'flow_run_id' = ? AND payload->>'step_index' = ?", id.to_s, i.to_s)
+    scope = scope.where("payload->>'part_id' = ?", part_id.to_s) if part_id
+    scope.update_all(status: "delivered", delivered_at: Time.current)
   end
 
   # A task taken off the current slot shouldn't still be waiting in someone's add-in.
