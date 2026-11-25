@@ -40,6 +40,7 @@
                   ["Models", model_profiles_path, "Tiers, prices and what each kind of task runs on"]] %>
             <% if current_user.admin? %>
               <%= nav_menu "Admin", align: :right, items_list: [
+                    ["Setup", admin_setup_path, "Keys and registrations this installation needs"],
                     ["People", admin_users_path, "Roles, areas and departments"],
                     ["Fields", admin_fields_path, "The field tree skills are classified into"],
                     ["Gates", admin_gates_path, "What a skill must pass to be promoted"],

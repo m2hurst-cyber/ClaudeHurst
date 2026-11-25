@@ -39,3 +39,16 @@ never:
   - contact details
   - credit limits
   - notes
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  One Entra ID app registration, plus an application user in each customer's Dataverse.
+portal: https://entra.microsoft.com/
+credentials:
+  - env: DYNAMICS_CLIENT_ID
+    what: the Entra app id
+  - env: DYNAMICS_CLIENT_SECRET
+    what: its client secret
+  - env: DYNAMICS_TENANT_ID
+    what: the directory it lives in

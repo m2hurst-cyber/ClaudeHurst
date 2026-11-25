@@ -35,3 +35,16 @@ never:
   - vendor bank details
   - invoice images
   - approver comments
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  A developer key from BILL, plus per-organisation credentials.
+portal: https://developer.bill.com/docs
+credentials:
+  - env: BILL_DEV_KEY
+    what: the developer key
+  - env: BILL_CLIENT_ID
+    what: the app's client id
+  - env: BILL_CLIENT_SECRET
+    what: its secret

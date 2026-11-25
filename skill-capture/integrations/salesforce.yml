@@ -42,3 +42,14 @@ never:
   - contact names and emails
   - deal values on named accounts
   - call notes
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  One connected app, used by every customer who installs it.
+portal: https://developer.salesforce.com/signup
+credentials:
+  - env: SALESFORCE_CLIENT_ID
+    what: the connected app's consumer key
+  - env: SALESFORCE_CLIENT_SECRET
+    what: its consumer secret

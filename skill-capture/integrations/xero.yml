@@ -39,3 +39,14 @@ never:
   - contact details
   - statement line narratives
   - bank balances
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  One app in the Xero developer portal. Production volume needs app-partner certification.
+portal: https://developer.xero.com/app/manage
+credentials:
+  - env: XERO_CLIENT_ID
+    what: the app's client id
+  - env: XERO_CLIENT_SECRET
+    what: its client secret

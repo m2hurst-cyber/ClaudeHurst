@@ -45,3 +45,45 @@ never:
   - customer names
   - bank feed descriptions
   - amounts on named accounts
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  One app in the Intuit developer portal. Production keys need Intuit's review.
+portal: https://developer.intuit.com/app/developer/dashboard
+credentials:
+  - env: QUICKBOOKS_CLIENT_ID
+    what: the app's client id
+  - env: QUICKBOOKS_CLIENT_SECRET
+    what: its client secret
+  - env: QUICKBOOKS_REDIRECT_URI
+    what: the redirect registered with Intuit
+  - env: QUICKBOOKS_WEBHOOK_VERIFIER
+    what: the webhook verifier token
+
+# The API itself. UNVERIFIED: developer.intuit.com is not reachable from the build
+# container, so these were not read off Intuit's documentation. Check them, then set
+# verified: true. A wrong value fails loudly at connect time; it cannot corrupt anything.
+verified: false
+authorize_url: https://appcenter.intuit.com/connect/oauth2
+token_url: https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer
+revoke_url: https://developer.api.intuit.com/v2/oauth2/tokens/revoke
+scope: com.intuit.quickbooks.accounting
+api_base:
+  production: https://quickbooks.api.intuit.com
+  sandbox: https://sandbox-quickbooks.api.intuit.com
+minor_version: 75
+cdc:
+  path: /v3/company/%<realm>s/cdc
+  max_lookback_days: 30
+  max_objects: 1000
+  entities:
+  - Invoice
+  - Payment
+  - Bill
+  - BillPayment
+  - JournalEntry
+  - Purchase
+  - Deposit
+  - Customer
+  - Vendor

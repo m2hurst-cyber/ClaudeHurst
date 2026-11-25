@@ -42,3 +42,14 @@ never:
   - employee names in dimensions
   - bank details
   - memo text
+
+# What has to be registered before this can be connected, and where.
+per_tenant: true
+registration: >-
+  A web services sender id issued by Sage, then authorisation inside each customer's company.
+portal: https://developer.sage.com/intacct/
+credentials:
+  - env: INTACCT_SENDER_ID
+    what: the sender id Sage issues
+  - env: INTACCT_SENDER_PASSWORD
+    what: its password

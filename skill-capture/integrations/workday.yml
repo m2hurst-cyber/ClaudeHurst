@@ -39,3 +39,14 @@ never:
   - worker names
   - compensation
   - anything from an expense receipt
+
+# What has to be registered before this can be connected, and where.
+per_tenant: true
+registration: >-
+  An integration system user and API client created in each customer's tenant. No central portal.
+portal: https://community.workday.com/api
+credentials:
+  - env: WORKDAY_CLIENT_ID
+    what: the API client id
+  - env: WORKDAY_CLIENT_SECRET
+    what: its secret

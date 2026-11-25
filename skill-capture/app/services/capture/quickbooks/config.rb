@@ -5,7 +5,10 @@ module Capture
     module Config
       module_function
 
-      def file = @file ||= YAML.safe_load(Rails.root.join("config/quickbooks.yml").read).freeze
+      # The API details live with the rest of that provider's manifest, so one file
+      # describes a system completely: what it is, what it produces, what it needs, and
+      # how to reach it.
+      def file = Integrations.find("quickbooks")&.api || {}
 
       def verified? = file["verified"] == true
       def authorize_url = file["authorize_url"]
@@ -25,8 +28,7 @@ module Capture
       def redirect_uri = ENV["QUICKBOOKS_REDIRECT_URI"]
 
       # Say which one is missing rather than failing at the far end of a redirect.
-      def missing = { "QUICKBOOKS_CLIENT_ID" => client_id, "QUICKBOOKS_CLIENT_SECRET" => client_secret,
-                      "QUICKBOOKS_REDIRECT_URI" => redirect_uri }.select { |_, v| v.blank? }.keys
+      def missing = Integrations.find("quickbooks").missing_credentials.map { |c| c["env"] } - ["QUICKBOOKS_WEBHOOK_VERIFIER"]
       def configured? = missing.empty?
     end
   end

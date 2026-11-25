@@ -46,3 +46,14 @@ never:
   - customer contact details
   - bank account numbers
   - anything in a free-text memo
+
+# What has to be registered before this can be connected, and where.
+per_tenant: true
+registration: >-
+  An integration record and token-based auth created inside each customer's NetSuite account. There is no app to register once.
+portal: https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_157771733782.html
+credentials:
+  - env: NETSUITE_CONSUMER_KEY
+    what: the integration's consumer key
+  - env: NETSUITE_CONSUMER_SECRET
+    what: its consumer secret

@@ -24,7 +24,10 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  # The address resets come from. Set MAIL_FROM; the fallback is deliberately obvious
+  # rather than plausible, so nobody ships it by accident.
+  config.mailer_sender = ENV["MAIL_FROM"].presence || "skill-capture-mail-is-not-configured@invalid"
+
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'

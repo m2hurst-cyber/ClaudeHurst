@@ -36,3 +36,14 @@ never:
   - contact details
   - email bodies
   - form submissions
+
+# What has to be registered before this can be connected, and where.
+per_tenant: false
+registration: >-
+  One public app in a HubSpot developer account.
+portal: https://developers.hubspot.com/get-started
+credentials:
+  - env: HUBSPOT_CLIENT_ID
+    what: the app's client id
+  - env: HUBSPOT_CLIENT_SECRET
+    what: its client secret

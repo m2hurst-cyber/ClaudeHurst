@@ -11,11 +11,18 @@ module Capture
     CATEGORIES = { "erp" => "ERP", "crm" => "CRM", "accounting" => "Accounting and payments" }.freeze
     AUTH_LABELS = { "oauth2" => "OAuth", "api_key" => "API key", "token" => "Token", "basic" => "Username and password" }.freeze
 
-    Provider = Struct.new(:key, :name, :vendor, :category, :auth, :docs, :blurb, :actions, :records, :never, keyword_init: true) do
+    Provider = Struct.new(:key, :name, :vendor, :category, :auth, :docs, :blurb, :actions, :records, :never,
+                          :per_tenant, :registration, :portal, :credentials, :api, keyword_init: true) do
       def category_label = CATEGORIES.fetch(category, category.to_s.humanize)
       def auth_label = AUTH_LABELS.fetch(auth, auth.to_s.humanize)
       def action_keys = actions.map { |a| a["key"] }
       def connected? = Integration.exists?(provider: key)
+      def per_tenant? = per_tenant == true
+      def env_names = Array(credentials).map { |c| c["env"] }
+      def missing_credentials = Array(credentials).reject { |c| ENV[c["env"]].present? }
+      def ready? = missing_credentials.empty?
+      # An entry that carries API details can say whether anyone has checked them.
+      def endpoints_verified? = api.nil? || api["verified"] == true
     end
 
     module_function
@@ -37,7 +44,11 @@ module Capture
       raw = YAML.safe_load(file.read)
       Provider.new(key: raw["key"], name: raw["name"], vendor: raw["vendor"], category: raw["category"],
                    auth: raw["auth"], docs: raw["docs"], blurb: raw["blurb"].to_s.strip,
-                   actions: Array(raw["actions"]), records: Array(raw["records"]), never: Array(raw["never"]))
+                   actions: Array(raw["actions"]), records: Array(raw["records"]), never: Array(raw["never"]),
+                   per_tenant: raw["per_tenant"] == true, registration: raw["registration"].to_s.strip,
+                   portal: raw["portal"], credentials: Array(raw["credentials"]),
+                   api: raw.slice("verified", "authorize_url", "token_url", "revoke_url", "scope", "api_base",
+                                  "minor_version", "cdc").presence)
     rescue Psych::SyntaxError => e
       Rails.logger.warn("Integration #{file.basename} has broken YAML: #{e.message}")
       nil

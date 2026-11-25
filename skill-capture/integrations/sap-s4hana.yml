@@ -42,3 +42,14 @@ never:
   - employee identifiers
   - vendor bank details
   - document line text
+
+# What has to be registered before this can be connected, and where.
+per_tenant: true
+registration: >-
+  A communication arrangement and user on each customer's tenant, plus an app on SAP BTP.
+portal: https://api.sap.com/
+credentials:
+  - env: SAP_CLIENT_ID
+    what: the BTP client id
+  - env: SAP_CLIENT_SECRET
+    what: its secret

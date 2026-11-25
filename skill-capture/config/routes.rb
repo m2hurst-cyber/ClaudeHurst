@@ -258,6 +258,7 @@ Rails.application.routes.draw do
       get :deploy, to: "deploy#show"
       resource :pricing, only: %i[show update], controller: :pricing
       resource :gates, only: %i[show update]
+      resource :setup, only: :show, controller: :setup
       resources :integrations, only: %i[index create update destroy]
       get "integrations/quickbooks/connect", to: "/quickbooks#connect", as: :quickbooks_connect
       get "integrations/quickbooks/callback", to: "/quickbooks#callback", as: :quickbooks_callback

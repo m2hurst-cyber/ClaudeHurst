@@ -1,0 +1,69 @@
+<% content_for :title, "Setup" %>
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-bold">Setup</h1>
+  <p class="text-slate-600 mt-1">What this installation needs from the outside world, checked against the
+    environment as it is now. Each of these used to announce itself as something else — a colleague who never
+    got a password reset, drafting that quietly got blunter, an error at the end of a redirect.</p>
+
+  <% blocking = @checks.count(&:blocking?) %>
+  <div class="panel-soft p-4 mt-5 flex items-center gap-3">
+    <span class="w-2.5 h-2.5 rounded-full <%= blocking.zero? ? "bg-verified-600" : "bg-blocked-600" %>"></span>
+    <span class="font-medium"><%= blocking.zero? ? "Nothing is blocking." : "#{pluralize(blocking, 'thing')} blocking." %></span>
+    <span class="text-sm text-slate-500 ml-auto"><%= @checks.count(&:ok?) %> of <%= @checks.size %> ready</span>
+  </div>
+
+  <ul class="panel-soft divide-y divide-sage-200 mt-4">
+    <% @checks.each do |c| %>
+      <li class="p-4 flex flex-wrap gap-x-4 gap-y-2">
+        <span class="w-2 h-2 rounded-full mt-2 shrink-0
+          <%= { ok: "bg-verified-600", degraded: "bg-waiting-600", missing: "bg-blocked-600" }[c.state] %>"></span>
+        <span class="min-w-0 flex-1">
+          <span class="block font-medium"><%= c.label %>
+            <span class="text-xs font-normal <%= { ok: "text-verified-600", degraded: "text-waiting-600", missing: "text-blocked-600" }[c.state] %>">
+              · <%= { ok: "ready", degraded: "works, but not fully set up", missing: "not set up" }[c.state] %>
+            </span>
+          </span>
+          <span class="block text-sm text-slate-600 mt-0.5"><%= c.detail %></span>
+          <% if c.fix.present? %>
+            <span class="block text-xs mt-1">
+              <span class="text-slate-500">Set</span>
+              <code class="bg-white rounded px-1.5 py-0.5"><%= c.fix %></code>
+              <% if c.where.present? %>
+                <%= c.where.start_with?("http") ? link_to("get them ↗", c.where, class: "text-signal-700 hover:underline ml-1", target: "_blank", rel: "noopener") : content_tag(:span, "— #{c.where}", class: "text-slate-500 ml-1") %>
+              <% end %>
+            </span>
+          <% end %>
+        </span>
+      </li>
+    <% end %>
+  </ul>
+
+  <h2 class="font-semibold mt-8 mb-1">What each system needs registering</h2>
+  <p class="text-sm text-slate-500 mb-3">Some are one app that serves every customer. Others have no app to
+    register at all: the credentials are created inside each customer's own tenant, which means they cannot be
+    set here once and forgotten.</p>
+
+  <% [[false, "Register once"], [true, "Per customer tenant"]].each do |per_tenant, heading| %>
+    <p class="text-xs uppercase tracking-wide text-slate-400 mt-4 mb-1.5"><%= heading %></p>
+    <ul class="panel-soft divide-y divide-sage-200 text-sm">
+      <% @catalogue.select { |p| p.per_tenant? == per_tenant }.each do |p| %>
+        <li class="p-3">
+          <div class="flex flex-wrap items-baseline gap-2">
+            <span class="font-medium"><%= p.name %></span>
+            <span class="text-xs text-slate-500"><%= p.auth_label %></span>
+            <span class="lg-pill ml-auto <%= p.ready? ? "bg-verified-100 text-verified-600" : "bg-slate-100 text-slate-500" %>">
+              <%= p.ready? ? "keys set" : "no keys" %>
+            </span>
+          </div>
+          <p class="text-slate-600 mt-0.5"><%= p.registration %></p>
+          <p class="text-xs text-slate-500 mt-1">
+            <% p.credentials.each do |c| %>
+              <code class="bg-white rounded px-1 py-0.5 mr-1 <%= "opacity-50" if ENV[c["env"]].present? %>"><%= c["env"] %></code>
+            <% end %>
+            <%= link_to "portal ↗", p.portal, class: "text-signal-700 hover:underline", target: "_blank", rel: "noopener" if p.portal %>
+          </p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>
