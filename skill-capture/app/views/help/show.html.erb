@@ -1,0 +1,39 @@
+<% content_for :title, @guide.title %>
+
+<div class="max-w-3xl">
+  <p class="text-sm text-slate-500"><%= link_to "Help", help_path, class: "hover:underline" %> › <%= @guide.section_label %></p>
+  <div class="flex flex-wrap items-start gap-3 mt-1">
+    <div class="min-w-0">
+      <h1 class="text-2xl font-bold"><%= @guide.title %></h1>
+      <p class="text-slate-600 mt-1"><%= @guide.summary %></p>
+    </div>
+    <%= link_to "Copy as .md", help_guide_path(@guide.slug, format: :md), class: "#{btn} ml-auto shrink-0",
+          title: "This guide as Markdown, for pasting into a model" %>
+  </div>
+
+  <article class="mt-5 bg-white border rounded p-5 prose-sm"><%= skill_markdown(@guide.body) %></article>
+
+  <% if @questions.any? %>
+    <h2 class="font-semibold mt-7 mb-2">Questions about this</h2>
+    <div class="bg-white border rounded divide-y">
+      <% @questions.each do |q| %>
+        <div class="p-3">
+          <p class="font-medium"><%= q.question %></p>
+          <p class="text-sm text-slate-600 mt-1"><%= q.answer %></p>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @related.any? %>
+    <h2 class="font-semibold mt-7 mb-2">Related</h2>
+    <ul class="grid sm:grid-cols-3 gap-2">
+      <% @related.each do |g| %>
+        <li class="bg-white border rounded p-3">
+          <%= link_to g.title, help_guide_path(g.slug), class: "font-medium hover:underline" %>
+          <p class="text-sm text-slate-600 mt-0.5"><%= g.summary.truncate(80) %></p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

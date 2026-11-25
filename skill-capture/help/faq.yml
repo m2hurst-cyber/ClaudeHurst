@@ -1,0 +1,82 @@
+Getting started:
+  - q: Do I have to write skills myself?
+    a: No. You work normally and the system asks you when it notices repetition. You can write one by hand if you want to, but that is the exception rather than how the library fills up.
+    guide: getting-started
+  - q: Nothing has been captured — what is wrong?
+    a: Almost always the add-in is not loaded, so nothing you do in Office reaches the system. After that, the usual reason is simply that you have not repeated anything often enough yet — most things done twice never become a prompt, on purpose.
+    guide: getting-started
+  - q: Is it watching everything I do?
+    a: It records which steps you took and in what order, within the Office applications where the add-in is loaded. It does not record cell values, document contents, client names or identifiers, and events are discarded after the retention window.
+    guide: capture-a-worksheet
+  - q: Can I use it without the add-in?
+    a: You can read the library, run playbooks, review candidates and use everything in the console. What you cannot get is capture, because nothing is observing the work.
+
+Capture and prompts:
+  - q: Why was I asked about something trivial?
+    a: Because it repeated and looked coherent. Dismiss it — permanently, not "not now" — and that exact pattern is never raised with you again. If it keeps happening with different trivia, the granularity setting is cutting work too finely for your area.
+    guide: granularity
+  - q: Why was I not asked about something obviously reusable?
+    a: "It has to repeat enough times, be long enough, and at finer settings appear in more than one context. If you know it is worth keeping, do not wait: write it up yourself from the skills page."
+    guide: save-extend-branch
+  - q: What is the difference between extend and branch?
+    a: Extend changes the skill for everyone by creating its next version — use it when your way is simply better. Branch creates a variant that lives alongside the original — use it when both ways are legitimate and the choice depends on the situation.
+    guide: save-extend-branch
+  - q: Can I edit what the AI wrote before it goes to review?
+    a: Yes, and you should. The draft is a starting point; the title and description you give it are what colleagues and agents will search against.
+  - q: What if the capture misread my worksheet?
+    a: Correct it in the interpretation step before sending it for review. That is the step the whole thing hangs on, which is why it is shown to you rather than being done silently.
+    guide: capture-a-worksheet
+
+Review and stages:
+  - q: Who can see my skill?
+    a: A new skill is in the sandbox, visible to your area, its contributors and admins. At firm stage everyone in the firm and any connected agent can see it. At market stage it goes beyond the firm.
+    guide: stages-and-review
+  - q: Why can I not approve my own skill?
+    a: The person who wrote it and the person who requested its promotion are both barred from approving it. Review that you can grant yourself is not review.
+    guide: stages-and-review
+  - q: What if a gate is failing and I disagree with it?
+    a: Say so in the promotion request. An admin can waive a failed gate, but only with a written reason, and that reason is kept with the decision for good.
+    guide: stages-and-review
+  - q: How long does review take?
+    a: It depends on your area's reviewers. The candidate shows who it is waiting on, and reviewers are notified when it arrives.
+
+Cost and models:
+  - q: Why do some tasks cost nothing?
+    a: They run as a macro rather than on a model. Anything repetitive enough to be written as a script is, the AI writes it once, and every run after that is free. Those tasks are shown in a different colour.
+    guide: run-a-flow
+  - q: How does it know which model to use?
+    a: From how the task is classified — programmatic, linear, critical thinking, opaque — and from what previous runs of the same task actually used. The more runs report their usage, the better the suggestion.
+    guide: run-a-flow
+  - q: Why did the run cost more than it anticipated?
+    a: The anticipated figure comes from previous runs of similar tasks, so it is an estimate and it widens when a task is new. The running total is shown against it during the run so you can stop before a ceiling rather than after.
+
+Sharing and ownership:
+  - q: Can I send a skill to one person without publishing it?
+    a: Yes. A transfer goes straight to a colleague without passing up a level. It can be free or priced, and both sides are held until they cross.
+    guide: send-a-skill
+  - q: What happens if the skill changes after I offer it?
+    a: The offer is pinned to the content hash at the moment you made it. If the skill has changed, the transfer refuses rather than delivering something different, and any credits are refunded.
+    guide: provenance
+  - q: Who owns a skill I contributed to?
+    a: Contributors are named on the skill and travel with it. The firm holds the licence; the attribution is not something the firm can quietly remove, because it is in the provenance chain.
+    guide: provenance
+
+Privacy and security:
+  - q: Does our data go to an AI provider?
+    a: Step keys and labels, counts, and a skill's own title, description and steps are sent when a draft or a judgement is being made. Document contents, cell values, client names and identifiers are not.
+  - q: Can a skill contain instructions that do something I did not expect?
+    a: This is a real risk in the field, and it is why a reviewer reads every skill before it is published and why market-stage skills need written agent directions. A capability declaration and an automated safety check are being added.
+  - q: Can someone edit history to cover something up?
+    a: Not without it showing. Every publication, promotion and transfer is chained to the one before it, and a daily root is written outside the database. Altering a past entry breaks every hash after it.
+    guide: provenance
+
+Running it:
+  - q: How do I change what counts as a skill here?
+    a: The granularity slider under Admin → Protocols, which also shows what each setting would have found in the events already collected. Areas can override the firm default and people can override their area.
+    guide: granularity
+  - q: How do I connect Claude or another agent?
+    a: Issue a token under Admin → Sources and point the client at the MCP endpoint. The page shows the exact snippet. Agent tokens see only firm and market skills.
+    guide: connect-an-agent
+  - q: What do I do when people are getting too many prompts?
+    a: Move granularity coarser for the area that is complaining, or raise the minimum confidence under Admin → Protocols so only patterns the judge is sure about are raised at all.
+    guide: granularity

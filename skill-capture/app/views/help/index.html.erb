@@ -1,0 +1,93 @@
+<% content_for :title, "Help" %>
+
+<div class="max-w-4xl">
+  <div class="flex flex-wrap items-baseline gap-3">
+    <h1 class="text-2xl font-bold">Help</h1>
+    <span class="ml-auto flex items-center gap-2 text-sm">
+      <%= link_to "Getting started", tour_path, class: btn %>
+      <%= link_to "Copy all as .md", help_path(format: :md), class: btn, title: "The whole help centre as one Markdown document, for pasting into a model" %>
+    </span>
+  </div>
+  <p class="text-slate-600 mt-1">How-to guides, how the thing works, and the questions people actually ask.</p>
+
+  <%= form_with url: help_path, method: :get, class: "mt-4" do %>
+    <%= search_field_tag :q, @query, placeholder: "Search the help — escrow, granularity, why wasn't I asked…",
+          class: "#{input_css} max-w-xl", autofocus: @query.present? %>
+  <% end %>
+
+  <% if @query.present? %>
+    <h2 class="font-semibold mt-6 mb-2"><%= pluralize(@hits.size, "result") %> for “<%= @query %>”</h2>
+    <% if @hits.empty? %>
+      <p class="text-sm text-slate-500">Nothing matched. Try a word from the thing itself — "branch", "gate", "macro", "token".</p>
+    <% end %>
+    <ul class="space-y-2">
+      <% @hits.each do |hit| %>
+        <li class="bg-white border rounded p-3">
+          <span class="text-xs uppercase tracking-wide text-slate-400"><%= hit.kind %></span>
+          <p class="font-medium">
+            <%= hit.slug ? link_to(hit.title, help_guide_path(hit.slug), class: "hover:underline") : hit.title %>
+          </p>
+          <p class="text-sm text-slate-600 mt-0.5"><%= hit.blurb %></p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% unless @query.present? %>
+    <% unless @tour.complete? %>
+      <div class="mt-5 bg-emerald-50 border border-emerald-200 rounded p-4 flex flex-wrap items-center gap-3">
+        <span class="text-sm">
+          <span class="font-medium">New here?</span>
+          The walkthrough is <%= @tour.done_count %> of <%= @tour.total %> done<%= ": next is #{@tour.next_step.title.downcase}" if @tour.next_step %>.
+        </span>
+        <%= link_to "Pick it up", tour_path, class: "#{btn_primary} ml-auto" %>
+      </div>
+    <% end %>
+
+    <h2 class="font-semibold mt-7 mb-2">Guides</h2>
+    <% @by_section.each do |section, guides| %>
+      <p class="text-xs uppercase tracking-wide text-slate-400 mt-4 mb-1"><%= Capture::Help::SECTIONS.fetch(section, section.humanize) %></p>
+      <ul class="grid sm:grid-cols-2 gap-2">
+        <% guides.each do |g| %>
+          <li class="bg-white border rounded p-3 hover:border-slate-400">
+            <%= link_to g.title, help_guide_path(g.slug), class: "font-medium hover:underline" %>
+            <p class="text-sm text-slate-600 mt-0.5"><%= g.summary %></p>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <h2 class="font-semibold mt-8 mb-2">Frequently asked</h2>
+    <% @topics.each do |topic, questions| %>
+      <p class="text-xs uppercase tracking-wide text-slate-400 mt-4 mb-1"><%= topic %></p>
+      <div class="bg-white border rounded divide-y">
+        <% questions.each do |q| %>
+          <details class="p-3 group">
+            <summary class="cursor-pointer font-medium list-none flex gap-2">
+              <span class="text-slate-400 group-open:rotate-90 transition-transform">›</span><%= q.question %>
+            </summary>
+            <p class="text-sm text-slate-600 mt-2 pl-4"><%= q.answer %></p>
+            <% if q.guide && (g = Capture::Help.find(q.guide)) %>
+              <p class="mt-2 pl-4"><%= link_to "More: #{g.title}", help_guide_path(g.slug), class: "text-sm text-slate-700 underline" %></p>
+            <% end %>
+          </details>
+        <% end %>
+      </div>
+    <% end %>
+
+    <h2 class="font-semibold mt-8 mb-2">Resources</h2>
+    <ul class="grid sm:grid-cols-2 gap-2">
+      <% [["The skill map", skill_map_path, "Every skill and how they connect"],
+          ["Playbooks", playbooks_path, "Curated workflows you can start a job from"],
+          ["Formula libraries", formulas_path, "The provider command libraries, with agent directions"],
+          ["Macro library", library_macro_reviews_path, "Approved macros anyone can reuse"],
+          ["Models and pricing", model_profiles_path, "What each kind of task runs on, and what it costs"],
+          ["Connected Office apps", connected_apps_path, "Which apps are sending work to the system"]].each do |label, path, blurb| %>
+        <li class="bg-white border rounded p-3">
+          <%= link_to label, path, class: "font-medium hover:underline" %>
+          <p class="text-sm text-slate-600 mt-0.5"><%= blurb %></p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

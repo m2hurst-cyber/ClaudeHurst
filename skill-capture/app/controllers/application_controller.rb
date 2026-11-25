@@ -9,6 +9,12 @@ class ApplicationController < ActionController::Base
     redirect_back fallback_location: root_path, alert: "You are not allowed to do that."
   end
 
+  # Someone signing in for the first time starts at the walkthrough, not at an empty library.
+  def after_sign_in_path_for(resource)
+    return super if resource.tour_seen_at.present? || resource.tour_dismissed_at.present?
+    tour_path
+  end
+
   private
 
   # A .md response for LLMs and agents (?download=1 saves it as a file).

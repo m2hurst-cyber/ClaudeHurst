@@ -115,7 +115,18 @@ module ApplicationHelper
 
   # Minimal Markdown for skill instructions: headings, lists, quotes, bold, code. Escapes everything first.
   def skill_markdown(text)
-    inline = ->(t) { ERB::Util.h(t).gsub(/\*\*(.+?)\*\*/, '<strong>\\1</strong>').gsub(/`([^`]+)`/, '<code class="text-xs bg-slate-100 px-1 rounded">\\1</code>') }
+    # Links are allowed only to our own paths and to https, so nothing written into a skill
+    # or a help file can point somewhere unexpected.
+    link = lambda do |text, href|
+      return ERB::Util.h(text) unless href.start_with?("/") || href.start_with?("https://")
+      %(<a href="#{ERB::Util.h(href)}" class="underline">#{ERB::Util.h(text)}</a>)
+    end
+    inline = lambda do |t|
+      ERB::Util.h(t)
+        .gsub(/\[([^\]]+)\]\(([^)\s]+)\)/) { link.(CGI.unescapeHTML(Regexp.last_match(1)), CGI.unescapeHTML(Regexp.last_match(2))) }
+        .gsub(/\*\*(.+?)\*\*/, '<strong>\\1</strong>')
+        .gsub(/`([^`]+)`/, '<code class="text-xs bg-slate-100 px-1 rounded">\\1</code>')
+    end
     html = []
     list = nil
     close = -> { html << "</#{list}>" if list; list = nil }

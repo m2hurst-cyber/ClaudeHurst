@@ -52,6 +52,7 @@
             <% end %>
           </nav>
           <div class="ml-auto flex items-center gap-3 text-sm">
+            <%= link_to "Help", help_path, class: "text-slate-300 hover:text-white", title: "Guides, FAQ and the walkthrough" %>
             <%= link_to notifications_path, class: "text-slate-300 hover:text-white" do %>
               Inbox<% if unread_notifications_count.positive? %> <span class="ml-1 bg-red-500 text-white rounded-full px-1.5 text-xs"><%= unread_notifications_count %></span><% end %>
             <% end %>
@@ -60,6 +61,21 @@
           </div>
         </div>
       </header>
+      <% tour = Capture::Onboarding.for(current_user) %>
+      <% if tour.nudge? && !request.path.start_with?("/start") %>
+        <div class="bg-emerald-50 border-b border-emerald-200">
+          <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
+            <span>
+              <span class="font-medium">Getting started</span>
+              — <%= tour.done_count %> of <%= tour.total %> done<%= ". Next: #{tour.next_step.title.downcase}" if tour.next_step %>.
+            </span>
+            <span class="ml-auto flex items-center gap-3">
+              <%= link_to "Show me", tour_path, class: "underline font-medium" %>
+              <%= button_to "Not now", dismiss_tour_path, class: "text-emerald-800/70 hover:text-emerald-900" %>
+            </span>
+          </div>
+        </div>
+      <% end %>
     <% end %>
     <main class="<%= content_for?(:wide) ? "max-w-[100rem]" : "max-w-6xl" %> mx-auto px-4 py-6">
       <% if notice %><div class="mb-4 rounded border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-2 text-sm"><%= notice %></div><% end %>

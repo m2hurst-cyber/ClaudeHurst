@@ -95,6 +95,13 @@ Rails.application.routes.draw do
   authenticate :user do
     root "find#show"
     get "find", to: "find#show"
+
+    # The walkthrough and the help centre.
+    get "start", to: "tour#show", as: :tour
+    post "start/dismiss", to: "tour#dismiss", as: :dismiss_tour
+    post "start/restart", to: "tour#restart", as: :restart_tour
+    get "help", to: "help#index", as: :help, format: /html|md/
+    get "help/:slug", to: "help#show", as: :help_guide, format: /html|md/
     get "map", to: "skill_maps#show", as: :skill_map
     get "map/route", to: "skill_maps#route", as: :skill_map_route
     get "map/areas", to: "skill_maps#areas", as: :skill_map_areas

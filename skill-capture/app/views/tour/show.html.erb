@@ -1,0 +1,47 @@
+<% content_for :title, "Getting started" %>
+
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-bold">Getting started</h1>
+  <p class="text-slate-600 mt-1">You don't write skills here. You work normally, and when you repeat something
+    often enough you get asked whether it's worth keeping. These are the steps that make that work.</p>
+
+  <%# Progress is computed from what the person has actually done, not from screens they clicked through. %>
+  <div class="mt-5 bg-white border rounded p-4">
+    <div class="flex items-baseline justify-between text-sm">
+      <span class="font-medium"><%= @tour.done_count %> of <%= @tour.total %> done</span>
+      <span class="text-slate-500"><%= @tour.complete? ? "You're set up." : "Nothing here expires — come back to it." %></span>
+    </div>
+    <div class="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+      <div class="h-full rounded-full bg-emerald-600 transition-all" style="width: <%= @tour.percent %>%"></div>
+    </div>
+  </div>
+
+  <ol class="mt-5 space-y-3">
+    <% @tour.steps.each_with_index do |step, i| %>
+      <li class="bg-white border rounded p-4 flex gap-4 <%= "opacity-70" if step.done? %>">
+        <span class="shrink-0 w-7 h-7 rounded-full grid place-items-center text-xs font-semibold
+                     <%= step.done? ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500" %>">
+          <%= step.done? ? "✓" : i + 1 %>
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">
+            <%= step.title %>
+            <% if step.optional %><span class="ml-1 text-xs font-normal text-slate-400">optional</span><% end %>
+            <% if step.role %><span class="ml-1 text-xs font-normal text-slate-400">because you're <%= step.role == "admin" ? "an admin" : "a reviewer" %></span><% end %>
+          </p>
+          <p class="text-sm text-slate-600 mt-1"><%= step.blurb %></p>
+          <p class="mt-2">
+            <%= link_to step.done? ? "Go again" : step.action, step.path, class: step.done? ? btn : btn_primary %>
+          </p>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+
+  <div class="mt-6 flex flex-wrap items-center gap-3 text-sm">
+    <%= link_to "Read the help centre", help_path, class: btn %>
+    <% unless @tour.dismissed? %>
+      <%= button_to "I'll explore on my own", dismiss_tour_path, class: "text-slate-500 hover:text-slate-800 underline" %>
+    <% end %>
+  </div>
+</div>
