@@ -71,6 +71,11 @@
   --shadow-knob: 0 1px 1px rgb(60 48 24 / 0.06), 0 3px 8px -2px rgb(60 48 24 / 0.16);
 
   --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Panels that sit on the page rather than being drawn onto it: no outline, a wash of
+     white over whatever is behind, and a shadow soft enough to read as depth of field. */
+  --shadow-soft:      0 1px 2px rgb(15 23 42 / 0.04), 0 10px 28px -14px rgb(15 23 42 / 0.20);
+  --shadow-soft-lift: 0 2px 6px -2px rgb(15 23 42 / 0.07), 0 18px 40px -16px rgb(15 23 42 / 0.26);
 }
 
 @layer base {
@@ -110,6 +115,11 @@
 
   .lg-field { @apply w-full bg-paper-100 rounded-xl px-3.5 py-2.5 text-paper-900 placeholder:text-paper-400
                      border border-transparent transition-all duration-200 focus:bg-white focus:border-paper-200; }
+
+  /* The front door's panels. Kept here rather than in the view so the design conversion
+     has one place to change, and so every box on that page agrees with the others. */
+  .panel-soft { @apply bg-white/65 backdrop-blur-sm rounded-2xl shadow-soft transition-shadow duration-300 hover:shadow-soft-lift; }
+  .panel-lead { @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft-lift; }
 
   .lg-pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
   .lg-sub  { @apply text-[13px] text-paper-500; }
