@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   # The style guide: the design language on its own, no sign-in needed to review it.
   get "design", to: "design#show"
+  # Intuit calls this without a session.
+  post "integrations/quickbooks/webhook", to: "quickbooks#webhook", as: :quickbooks_webhook
 
   devise_for :users, skip: :registrations
 
@@ -257,6 +259,8 @@ Rails.application.routes.draw do
       resource :pricing, only: %i[show update], controller: :pricing
       resource :gates, only: %i[show update]
       resources :integrations, only: %i[index create update destroy]
+      get "integrations/quickbooks/connect", to: "/quickbooks#connect", as: :quickbooks_connect
+      get "integrations/quickbooks/callback", to: "/quickbooks#callback", as: :quickbooks_callback
       resource :protocols, only: %i[show update] do
         get :preview, on: :member
       end

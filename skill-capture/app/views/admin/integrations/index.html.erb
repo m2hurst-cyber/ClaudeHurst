@@ -73,7 +73,16 @@ Content-Type: application/json
           </details>
 
           <div class="flex items-center gap-2 mt-3">
-            <% unless p.connected? %>
+            <% if p.key == "quickbooks" %>
+              <%= link_to p.connected? ? "Reconnect" : "Connect with Intuit", admin_quickbooks_connect_path,
+                    class: "px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs hover:bg-slate-700 transition-colors" %>
+              <% unless Capture::Quickbooks::Config.configured? %>
+                <span class="text-xs text-waiting-600">needs <%= Capture::Quickbooks::Config.missing.to_sentence %></span>
+              <% end %>
+              <% unless Capture::Quickbooks::Config.verified? %>
+                <span class="text-xs text-waiting-600" title="config/quickbooks.yml">endpoints unconfirmed</span>
+              <% end %>
+            <% elsif !p.connected? %>
               <%= form_with url: admin_integrations_path, method: :post, class: "flex gap-2 items-center" do %>
                 <%= hidden_field_tag :provider, p.key %>
                 <%= text_field_tag :label, nil, placeholder: "#{p.name} (production)",

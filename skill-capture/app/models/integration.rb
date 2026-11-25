@@ -5,6 +5,8 @@
 # with the firm's ERP password, which means connecting one cannot read anything we were
 # not sent, and switching it off is immediate and complete.
 class Integration < ApplicationRecord
+  encrypts :credentials
+
   belongs_to :source, optional: true
   belongs_to :connected_by, class_name: "User", optional: true
 
@@ -37,6 +39,16 @@ class Integration < ApplicationRecord
     source&.update!(active: false)
     AuditLog.record("integration.disconnected", user: user, subject: self, provider: provider)
     destroy!
+  end
+
+  def credentials_hash = credentials.present? ? (JSON.parse(credentials) rescue {}) : {}
+  def connected_to_api? = credentials_hash["refresh_token"].present?
+
+  # Intuit rotates the refresh token on every use. Storing the new one is not optional:
+  # miss it once and the connection dies quietly a few weeks later.
+  def store_tokens!(tokens)
+    update!(credentials: JSON.generate({ "access_token" => tokens[:access_token], "refresh_token" => tokens[:refresh_token] }),
+            token_expires_at: tokens[:expires_at])
   end
 
   # Kept in step with what has actually arrived on this integration's token.

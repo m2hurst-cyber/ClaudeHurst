@@ -19,6 +19,9 @@ actions:
   - key: quickbooks.enter:bill
     label: Enter a bill
     domain: finance
+  - key: quickbooks.post:journal
+    label: Post a journal entry
+    domain: finance
   - key: quickbooks.reconcile:account
     label: Reconcile an account
     domain: finance

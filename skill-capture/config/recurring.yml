@@ -3,6 +3,10 @@ default: &default
     class: CaptureSweepJob
     queue: default
     schedule: every hour at minute 23
+  quickbooks_sync:
+    class: QuickbooksSyncJob
+    queue: default
+    schedule: every hour at minute 41
   provenance_anchor:
     class: ProvenanceAnchorJob
     queue: default

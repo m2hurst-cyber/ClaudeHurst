@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_25_180000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_25_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -211,7 +211,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_25_180000) do
     t.integer "event_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "external_id"
+    t.text "credentials"
+    t.datetime "token_expires_at"
+    t.datetime "last_synced_at"
+    t.text "last_sync_error"
     t.index ["connected_by_id"], name: "index_integrations_on_connected_by_id"
+    t.index ["external_id"], name: "index_integrations_on_external_id"
     t.index ["provider"], name: "index_integrations_on_provider", unique: true
     t.index ["source_id"], name: "index_integrations_on_source_id"
   end
