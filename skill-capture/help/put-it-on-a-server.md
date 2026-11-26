@@ -25,8 +25,15 @@ whole department from the Microsoft 365 admin centre, pointing at that address.
 
 **2. Create a Render account** at render.com and connect it to GitHub. Free to start.
 
-**3. New → Blueprint → choose the repository.** Render reads `render.yaml` from the
-repository and does the rest: builds the image, creates the Postgres database, starts the
+**3. New → Blueprint → choose the repository**, and set two fields that do not default
+correctly:
+
+- **Branch** — the branch this code is on. It is not `main` unless you have merged it.
+- **Blueprint Path** — `skill-capture/render.yaml`. Skill Capture is a subdirectory of
+  this repository; another application sits at the root, and Render looks at the root by
+  default. If you see *"Blueprint file render.yaml not found"*, this is why.
+
+Render then does the rest: builds the image, creates the Postgres database, starts the
 web service and the background worker, and issues the HTTPS certificate. The first build
 takes about ten minutes.
 

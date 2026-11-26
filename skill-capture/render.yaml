@@ -1,7 +1,11 @@
 # Deploying Skill Capture to Render, without a terminal.
 #
 #   1. Push this repository to GitHub.
-#   2. Render → New → Blueprint → pick the repository.
+#   2. Render → New → Blueprint → pick the repository, then set BOTH of these:
+#        Branch:         claude/skill-capture-institutional-memory-b7ksev
+#        Blueprint Path: skill-capture/render.yaml
+#      Skill Capture is not at the root of this repository — another application is — so
+#      the path matters, and rootDir below keeps the build inside this directory.
 #   3. Render reads this file, builds the image, creates the database, and gives the
 #      service an HTTPS address of its own. Nothing to install on your machine.
 #   4. Open that address, create the first administrator from the service's Shell tab:
@@ -15,6 +19,7 @@ services:
   - type: web
     name: skill-capture
     runtime: docker
+    rootDir: skill-capture   # this app is a subdirectory; build from here, not the repo root
     plan: starter            # free will work for a demo; starter keeps it awake
     healthCheckPath: /up
     autoDeployTrigger: commit
@@ -63,6 +68,7 @@ services:
   - type: worker
     name: skill-capture-jobs
     runtime: docker
+    rootDir: skill-capture
     plan: starter
     dockerCommand: ./bin/jobs
     autoDeployTrigger: commit
