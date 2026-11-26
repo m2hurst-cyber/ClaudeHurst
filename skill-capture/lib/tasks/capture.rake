@@ -1,17 +1,22 @@
 namespace :users do
+  # Case does not matter. Somebody typing this into a phone should not lose two minutes
+  # to having written email= rather than EMAIL=.
+  def self.setting(name) = ENV[name.upcase].presence || ENV[name.downcase].presence
+
   desc "Create a user and print a one-time password: bin/rails users:create EMAIL=a@b.org NAME='A B' ROLE=admin [DOMAINS=finance,ops]"
   task create: :environment do
-    email = ENV.fetch("EMAIL") { abort "EMAIL is required" }
+    email = setting("EMAIL") || abort("EMAIL is required, e.g. bin/rails users:create EMAIL=you@firm.com ROLE=admin")
     password = SecureRandom.base58(16)
-    user = User.create!(email: email, name: ENV.fetch("NAME", email.split("@").first), role: ENV.fetch("ROLE", "member"),
-                        domains: ENV.fetch("DOMAINS", "").split(","), password: password, password_confirmation: password)
+    user = User.create!(email: email, name: setting("NAME") || email.split("@").first,
+                        role: setting("ROLE") || "member",
+                        domains: setting("DOMAINS").to_s.split(","), password: password, password_confirmation: password)
     puts "Created #{user.role} #{user.email}"
     puts "One-time password: #{password}"
   end
 
   desc "First administrator for a fresh deployment, from SKILL_CAPTURE_BOOTSTRAP_ADMIN. Inert once anyone exists."
   task bootstrap: :environment do
-    email = ENV["SKILL_CAPTURE_BOOTSTRAP_ADMIN"].presence
+    email = setting("SKILL_CAPTURE_BOOTSTRAP_ADMIN")
     next if email.nil?
 
     # Only ever on an empty installation. Once one person exists this does nothing, so the
@@ -22,7 +27,7 @@ namespace :users do
     end
 
     password = SecureRandom.base58(16)
-    user = User.create!(email: email, name: ENV.fetch("SKILL_CAPTURE_BOOTSTRAP_NAME", email.split("@").first),
+    user = User.create!(email: email, name: setting("SKILL_CAPTURE_BOOTSTRAP_NAME") || email.split("@").first,
                         role: "admin", password: password, password_confirmation: password)
     puts "", "=" * 68
     puts "  FIRST ADMINISTRATOR CREATED"
