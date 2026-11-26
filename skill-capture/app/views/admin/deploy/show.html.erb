@@ -1,6 +1,8 @@
 <% content_for :title, "Deploy the add-in" %>
 <h1 class="text-2xl font-bold mb-1">Deploy the Office add-in</h1>
-<p class="text-sm text-slate-500 mb-4">Skill Capture runs as an add-in in Excel, Word and PowerPoint (Windows, Mac and the web). This server hosts it.</p>
+<p class="text-sm text-slate-500 mb-4">Skill Capture runs as an add-in in Excel, Word and PowerPoint (Windows, Mac and the web). This server hosts it.
+  <%= link_to "The full deployment guide", help_guide_path("deploy-the-add-in"), class: "text-signal-700 hover:underline" %>
+  covers what to set first, updating it later, and what to do when it does not appear.</p>
 
 <% unless @https %>
   <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-3 text-sm mb-4">Office only loads add-ins over HTTPS. Serve this app over HTTPS (or set <code>SKILL_CAPTURE_PUBLIC_URL</code>) before deploying.</div>

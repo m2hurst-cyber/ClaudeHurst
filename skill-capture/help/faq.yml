@@ -71,6 +71,15 @@ Privacy and security:
     guide: provenance
 
 Running it:
+  - q: How do we get the add-in to everyone?
+    a: "Upload the manifest in the Microsoft 365 admin centre under Settings, Integrated apps, Upload custom apps, and assign the people who should have it. It then appears on their Home tab by itself — allow up to 24 hours. Try it on yourself first by sideloading the same manifest in Office on the web."
+    guide: deploy-the-add-in
+  - q: Why has the add-in not appeared for anyone yet?
+    a: "Almost always propagation: central deployment can take 24 hours. After that, the usual causes are the person not being in the assigned group, or the server address in the manifest not being reachable over HTTPS from their machine."
+    guide: deploy-the-add-in
+  - q: Do we have to redeploy every time you change something?
+    a: "No. The pane and its code load from your own server, so changes reach people on their next reload. Only a change to the ribbon itself — a new button or tooltip — needs the manifest uploading again."
+    guide: deploy-the-add-in
   - q: How do I change what counts as a skill here?
     a: The granularity slider under Admin → Protocols, which also shows what each setting would have found in the events already collected. Areas can override the firm default and people can override their area.
     guide: granularity
