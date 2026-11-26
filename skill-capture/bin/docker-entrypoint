@@ -1,0 +1,6 @@
+#!/bin/bash -e
+# Bring the schema up to date before the first request, so a deploy is one step.
+if [ "${@: -1}" == "./bin/rails" ] || [ "${1}" == "./bin/rails" ]; then
+  ./bin/rails db:prepare
+fi
+exec "${@}"

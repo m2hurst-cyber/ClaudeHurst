@@ -81,8 +81,9 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Hosts hand you one DATABASE_URL. Rails uses it over anything here, so production needs
+# no host, user or password of its own.
 production:
   <<: *default
   database: institutional_memory_production
-  username: institutional_memory
-  password: <%= ENV["INSTITUTIONAL_MEMORY_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>

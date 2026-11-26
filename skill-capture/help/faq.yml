@@ -1,4 +1,7 @@
 Getting started:
+  - q: How do I let a colleague try it, or give it to the department?
+    a: "Put it on a server, which takes about twenty minutes and nothing installed on your computer: push the repository to GitHub, then Render reads render.yaml and builds it. Your laptop cannot work for this — Office fetches the add-in in the other person's browser, and nobody else can reach your machine."
+    guide: put-it-on-a-server
   - q: How do I try the add-in myself, before involving anyone?
     a: "Run the app on your own machine with bin/addin-dev — it serves it over HTTPS with Office's development certificate — then sideload the manifest in Excel on the web. About twenty minutes from nothing, and it needs no server and no administrator."
     guide: try-it-on-your-machine

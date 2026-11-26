@@ -11,7 +11,12 @@ module Capture
     # Public HTTPS origin the add-in is served from. SKILL_CAPTURE_PUBLIC_URL wins
     # (needed behind proxies); otherwise the request's own origin.
     def base_url(request = nil)
-      url = ENV["SKILL_CAPTURE_PUBLIC_URL"].presence || request&.base_url || "https://localhost:3000"
+      # RENDER_EXTERNAL_URL and FLY_APP_NAME are set by those hosts, so a fresh deployment
+      # serves a correct manifest before anyone has configured anything.
+      url = ENV["SKILL_CAPTURE_PUBLIC_URL"].presence ||
+            ENV["RENDER_EXTERNAL_URL"].presence ||
+            (ENV["FLY_APP_NAME"].presence && "https://#{ENV['FLY_APP_NAME']}.fly.dev") ||
+            request&.base_url || "https://localhost:3000"
       url.chomp("/")
     end
   end
