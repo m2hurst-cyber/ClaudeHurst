@@ -1,6 +1,26 @@
 #!/bin/bash -e
-# Bring the schema up to date before the first request, so a deploy is one step.
-if [ "${@: -1}" == "./bin/rails" ] || [ "${1}" == "./bin/rails" ]; then
-  ./bin/rails db:prepare
-fi
+# One image, two jobs. The web service brings the schema up to date; the worker waits for
+# it rather than migrating, because two services migrating the same database at once is a
+# good way to meet a deadlock at the worst moment.
+
+case "${1}" in
+  ./bin/rails|bin/rails)
+    ./bin/rails db:prepare
+    ;;
+  ./bin/jobs|bin/jobs)
+    tries=0
+    until ./bin/rails runner 'exit(ActiveRecord::Base.connection.table_exists?("solid_queue_processes") ? 0 : 1)' >/dev/null 2>&1; do
+      tries=$((tries + 1))
+      if [ "$tries" -ge 60 ]; then
+        echo "The queue tables never appeared after five minutes."
+        echo "The web service runs the migrations — check that it deployed, then redeploy this worker."
+        exit 1
+      fi
+      echo "Waiting for the web service to create the database schema (${tries}/60)…"
+      sleep 5
+    done
+    echo "Schema is ready; starting the worker."
+    ;;
+esac
+
 exec "${@}"

@@ -55,6 +55,17 @@ exists: an installation should never arrive with a password somebody else knows.
 **5. Sign in** at the address Render gave you, and go to **Admin → Setup**. It lists what is
 still missing — mail, a model key — and what each one costs you while it is missing.
 
+## If the worker fails on the first deploy
+
+The web service and the worker are built at the same time, and the worker has nothing to
+do until the schema exists. It now waits for it rather than failing, but a worker deployed
+before the very first migration finished may already have given up. Redeploy it; it will
+find the schema and start.
+
+If it still fails, read its log. The two things that have actually gone wrong here are a
+missing `SECRET_KEY_BASE` — it is copied from the web service, so the web service has to
+exist first — and a database that was not reachable.
+
 ## Then give it to people
 
 **One colleague trying it:** add them under Admin → People, send them the address and the
