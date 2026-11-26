@@ -17,7 +17,19 @@ module Capture
             ENV["RENDER_EXTERNAL_URL"].presence ||
             (ENV["FLY_APP_NAME"].presence && "https://#{ENV['FLY_APP_NAME']}.fly.dev") ||
             request&.base_url || "https://localhost:3000"
-      url.chomp("/")
+      normalise(url)
+    end
+
+    # A host can hand us a bare hostname rather than a URL — Render's `property: host`
+    # gives "example.onrender.com" — and a manifest built from that has no scheme, so
+    # Office cannot fetch a single icon or the pane itself. Assume https, because Office
+    # will not load an add-in over anything else.
+    def normalise(url)
+      url = url.to_s.strip.chomp("/")
+      return url if url.start_with?("https://")
+      return url.sub(/\Ahttp:/, "https:") if url.start_with?("http://localhost", "http://127.0.0.1")
+      return url if url.start_with?("http://") # a deliberate local choice; leave it alone
+      "https://#{url}"
     end
   end
 end

@@ -233,4 +233,21 @@ class OfficeAddinTest < ActionDispatch::IntegrationTest
     assert_response :no_content
     assert_equal ["rejected", "Too specific"], c.reload.values_at(:status, :review_notes)
   end
+
+  test "a bare hostname from the host becomes a usable https origin" do
+    # Render's `property: host` hands over "skill-capture.onrender.com", with no scheme.
+    # Built into a manifest unchanged, Office cannot fetch the pane or a single icon.
+    assert_equal "https://skill-capture.onrender.com", Capture::Addin.normalise("skill-capture.onrender.com")
+    assert_equal "https://skill-capture.onrender.com", Capture::Addin.normalise("https://skill-capture.onrender.com/")
+    assert_equal "https://localhost:3000", Capture::Addin.normalise("http://localhost:3000"),
+                 "local development is still https, because Office insists on it"
+  end
+
+  test "the manifest an unconfigured host serves is still fetchable" do
+    previous = ENV["SKILL_CAPTURE_PUBLIC_URL"]
+    ENV["SKILL_CAPTURE_PUBLIC_URL"] = "skill-capture.onrender.com"
+    assert_equal "https://skill-capture.onrender.com", Capture::Addin.base_url
+  ensure
+    previous.nil? ? ENV.delete("SKILL_CAPTURE_PUBLIC_URL") : ENV["SKILL_CAPTURE_PUBLIC_URL"] = previous
+  end
 end
