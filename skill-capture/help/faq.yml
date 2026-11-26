@@ -1,4 +1,10 @@
 Getting started:
+  - q: How do I try the add-in myself, before involving anyone?
+    a: "Run the app on your own machine with bin/addin-dev — it serves it over HTTPS with Office's development certificate — then sideload the manifest in Excel on the web. About twenty minutes from nothing, and it needs no server and no administrator."
+    guide: try-it-on-your-machine
+  - q: Can I load the add-in from a copy running somewhere else?
+    a: "Only if your own machine can open that address. Office fetches the pane in your browser, from the address inside the manifest, so a server you cannot reach is a server Excel cannot reach either."
+    guide: try-it-on-your-machine
   - q: Do I have to write skills myself?
     a: No. You work normally and the system asks you when it notices repetition. You can write one by hand if you want to, but that is the exception rather than how the library fills up.
     guide: getting-started

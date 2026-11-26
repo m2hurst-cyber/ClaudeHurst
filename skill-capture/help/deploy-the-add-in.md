@@ -37,6 +37,9 @@ areas. A draft captured on day one has nowhere to go if nobody reviews that area
 
 ### 1. Try it yourself — one person, five minutes
 
+(If nothing is deployed yet and you just want to see it work on your own laptop, start with
+[Try it on your own machine](/help/try-it-on-your-machine) instead.)
+
 In Excel, Word or PowerPoint **on the web**: Home → Add-ins → More add-ins → My add-ins →
 **Upload my add-in**, and choose the manifest from [Deploy](/admin/deploy). No admin
 rights, no waiting. Do this before you involve anybody else.
