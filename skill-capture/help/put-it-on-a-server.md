@@ -42,15 +42,23 @@ dashboard and keep them somewhere safe.** Whatever they encrypted — integratio
 return documents — is unreadable without them, and Render will not show you them again if
 the service is destroyed.
 
-**4. Make yourself an administrator.** Open the web service in Render, go to the **Shell**
-tab, and run:
+**4. Make yourself an administrator.** Nothing is ever seeded with a login — an
+installation should not arrive with a password somebody else knows — so the first account
+has to be asked for. Two ways:
+
+*From the dashboard, with no terminal.* Add an environment variable
+`SKILL_CAPTURE_BOOTSTRAP_ADMIN` set to your email address, and deploy. The account is
+created as the service starts and **the password is printed into the deploy log**, once.
+Sign in, change it, then clear the variable. It is inert as soon as anybody has an
+account, so it cannot be used again later.
+
+*From a terminal, if you have one.* The web service's **Shell** tab:
 
 ```
-bin/rails users:create EMAIL=you@yourfirm.com NAME="Your Name" ROLE=admin
+bin/rails users:create EMAIL=you@yourfirm.com ROLE=admin
 ```
 
-It prints a one-time password. Nothing is ever seeded with a login, which is why this step
-exists: an installation should never arrive with a password somebody else knows.
+Browser terminals paste badly on a phone, which is why the first way exists.
 
 **5. Sign in** at the address Render gave you, and go to **Admin → Setup**. It lists what is
 still missing — mail, a model key — and what each one costs you while it is missing.

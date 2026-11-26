@@ -8,6 +8,30 @@ namespace :users do
     puts "Created #{user.role} #{user.email}"
     puts "One-time password: #{password}"
   end
+
+  desc "First administrator for a fresh deployment, from SKILL_CAPTURE_BOOTSTRAP_ADMIN. Inert once anyone exists."
+  task bootstrap: :environment do
+    email = ENV["SKILL_CAPTURE_BOOTSTRAP_ADMIN"].presence
+    next if email.nil?
+
+    # Only ever on an empty installation. Once one person exists this does nothing, so the
+    # variable can be left set without becoming a way in later.
+    if User.exists?
+      puts "[bootstrap] Somebody already has an account; SKILL_CAPTURE_BOOTSTRAP_ADMIN ignored."
+      next
+    end
+
+    password = SecureRandom.base58(16)
+    user = User.create!(email: email, name: ENV.fetch("SKILL_CAPTURE_BOOTSTRAP_NAME", email.split("@").first),
+                        role: "admin", password: password, password_confirmation: password)
+    puts "", "=" * 68
+    puts "  FIRST ADMINISTRATOR CREATED"
+    puts "  Email:    #{user.email}"
+    puts "  Password: #{password}"
+    puts "  Sign in, change it, then remove SKILL_CAPTURE_BOOTSTRAP_ADMIN."
+    puts "  This is the only time the password is shown; only a hash is kept."
+    puts "=" * 68, ""
+  end
 end
 
 namespace :capture do

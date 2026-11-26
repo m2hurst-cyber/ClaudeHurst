@@ -6,6 +6,10 @@
 case "${1}" in
   ./bin/rails|bin/rails)
     ./bin/rails db:prepare
+    # A fresh deployment has nobody who can sign in. Setting SKILL_CAPTURE_BOOTSTRAP_ADMIN
+    # to an email address makes the first administrator here and prints the password into
+    # this log — no terminal, which matters when the only terminal is a phone.
+    ./bin/rails users:bootstrap
     ;;
   ./bin/jobs|bin/jobs)
     tries=0

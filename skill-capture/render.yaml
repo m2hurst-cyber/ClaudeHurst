@@ -8,10 +8,10 @@
 #      the path matters, and rootDir below keeps the build inside this directory.
 #   3. Render reads this file, builds the image, creates the database, and gives the
 #      service an HTTPS address of its own. Nothing to install on your machine.
-#   4. Open that address, create the first administrator from the service's Shell tab:
-#        bin/rails users:create EMAIL=you@yourfirm.com NAME="Your Name" ROLE=admin
-#      It prints a one-time password. Nothing is ever seeded, which is why this step
-#      exists at all.
+#   4. Set SKILL_CAPTURE_BOOTSTRAP_ADMIN to your email address in the dashboard and
+#      deploy. The first administrator is created on boot and the password is printed
+#      into the deploy log, once. Sign in, change it, then clear the variable.
+#      Nothing is ever seeded with a login, which is why this step exists at all.
 #
 # The keys below are generated once by Render and kept. Losing them loses whatever they
 # encrypted — tokens and return documents — so copy them somewhere safe.
@@ -51,6 +51,11 @@ services:
       - key: SKILL_CAPTURE_ADDIN_ID
         value: 6f0c2a52-7d1e-4c0b-9a8e-3b5f0d9c1e47
       # Drafting and judging run on rules until a key is set. Add it in the dashboard.
+      # Your email address, to create the first administrator on the next deploy. The
+      # password goes into the deploy log, once. Clear this afterwards; it is inert as
+      # soon as anybody has an account, but there is no reason to leave it set.
+      - key: SKILL_CAPTURE_BOOTSTRAP_ADMIN
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       # Password resets need these four. Add them when you have a mail provider.
