@@ -20,9 +20,18 @@ RUN bundle install && \
 COPY . .
 RUN bundle exec bootsnap precompile app/ lib/ || true
 
-# Build the stylesheet and digest the assets. A throwaway key: nothing here decrypts
-# anything, and the real one arrives at run time.
-RUN SECRET_KEY_BASE=precompile-only ./bin/rails tailwindcss:build assets:precompile
+# Build the stylesheet and digest the assets.
+#
+# Precompiling boots the application, so every initializer runs — including the one that
+# refuses to start in production without encryption keys. These values are throwaway and
+# never touch data: nothing is encrypted or decrypted at build time, and the real keys
+# arrive from the environment at run time. There is no database here either, which is
+# fine: nothing in the asset build reads one.
+RUN SECRET_KEY_BASE=precompile-only \
+    SKILL_CAPTURE_ENCRYPTION_PRIMARY_KEY=precompile-only \
+    SKILL_CAPTURE_ENCRYPTION_DETERMINISTIC_KEY=precompile-only \
+    SKILL_CAPTURE_ENCRYPTION_KEY_DERIVATION_SALT=precompile-only \
+    ./bin/rails tailwindcss:build assets:precompile
 
 # ---- run ----
 FROM base
